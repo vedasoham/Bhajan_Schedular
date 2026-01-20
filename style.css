@@ -1,0 +1,369 @@
+/* Global Styles */
+* { 
+  margin: 0; 
+  padding: 0; 
+  box-sizing: border-box; 
+}
+
+body {
+  font-family: 'Poppins', 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg, #fff5e6 0%, #ffe8cc 50%, #ffd9a3 100%);
+  min-height: 100vh;
+  padding: 20px;
+  position: relative;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Decorative background elements */
+body::before {
+  content: '';
+  position: fixed;
+  top: -50%;
+  right: -50%;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle, rgba(255,153,51,0.1) 0%, transparent 70%);
+  z-index: -1;
+  animation: float 20s ease-in-out infinite;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  bottom: -50%;
+  left: -50%;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle, rgba(255,119,0,0.08) 0%, transparent 70%);
+  z-index: -1;
+  animation: float 25s ease-in-out infinite reverse;
+}
+
+@keyframes float {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  33% { transform: translate(30px, -30px) rotate(5deg); }
+  66% { transform: translate(-20px, 20px) rotate(-5deg); }
+}
+
+.container {
+  width: 100%;
+  max-width: 650px;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 24px;
+  box-shadow: 0 20px 60px rgba(255, 119, 0, 0.15), 
+              0 10px 30px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+  animation: slideUp 0.6s ease-out;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Headers */
+.sairam-header {
+  background: linear-gradient(135deg, #ffd93d 0%, #ffc107 50%, #ffb300 100%);
+  color: #8b4513;
+  text-align: center;
+  padding: 16px;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-shadow: 2px 2px 4px rgba(255,255,255,0.5);
+  position: relative;
+  overflow: hidden;
+}
+
+.header {
+  background: linear-gradient(135deg, #ff9933 0%, #ff7700 50%, #ff6600 100%);
+  color: white;
+  padding: 32px 24px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.header h1 { 
+  font-size: 26px; 
+  font-weight: 700; 
+  margin-bottom: 6px;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+}
+
+.header p { 
+  font-size: 14px; 
+  opacity: 0.95;
+  font-weight: 300;
+  letter-spacing: 0.5px;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  background: linear-gradient(to bottom, #ffffff, #f8f9fa);
+  border-bottom: 3px solid #ffe8cc;
+}
+
+.tab {
+  flex: 1;
+  padding: 18px;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 600;
+  color: #868e96;
+  cursor: pointer;
+  border: none;
+  background: none;
+  transition: all 0.3s;
+  position: relative;
+}
+
+.tab.active {
+  color: #ff7700;
+  background: white;
+}
+
+.tab.active::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 10%;
+  width: 80%;
+  height: 3px;
+  background: linear-gradient(90deg, #ff9933, #ff7700);
+  border-radius: 3px 3px 0 0;
+}
+
+.tab-content { 
+  display: none; 
+  padding: 32px 28px;
+  animation: fadeIn 0.5s ease-out;
+}
+
+.tab-content.active { display: block; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Progress Bar */
+.progress-section {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  padding: 20px;
+  border-radius: 16px;
+  margin-bottom: 28px;
+  border: 2px solid #e9ecef;
+}
+
+.progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #495057;
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+
+.progress-bar {
+  height: 12px;
+  background: #e9ecef;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #51cf66 0%, #40c057 50%, #37b24d 100%);
+  border-radius: 20px;
+  transition: width 0.6s;
+}
+
+/* Forms */
+.form-group { margin-bottom: 18px; }
+.form-group label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 8px;
+}
+.form-group input, .form-group select {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #dee2e6;
+  border-radius: 12px;
+  font-size: 14px;
+  font-family: 'Poppins', sans-serif;
+}
+.required { color: #ff6b6b; }
+
+/* Deity Grid */
+.deity-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.deity-card {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  border: 2px solid #dee2e6;
+  border-radius: 16px;
+  padding: 18px 14px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.deity-card.available:hover {
+  border-color: #ff9933;
+  transform: translateY(-4px);
+}
+
+.deity-card.taken {
+  background: linear-gradient(135deg, #d3f9d8 0%, #b2f2bb 100%);
+  border-color: #8ce99a;
+}
+
+.deity-card.selected {
+  background: linear-gradient(135deg, #e7f5ff 0%, #d0ebff 100%);
+  border-color: #4dabf7;
+  border-width: 3px;
+  transform: scale(1.05);
+}
+
+.hanuman-card {
+  background: linear-gradient(135deg, #fff9db 0%, #fff3bf 50%, #ffec99 100%) !important;
+  border-color: #ffd43b !important;
+}
+
+.deity-name { font-size: 14px; font-weight: 700; color: #343a40; margin-bottom: 10px; }
+.singer-name { font-size: 11px; color: #495057; margin-top: 8px; font-weight: 500; }
+
+/* Badges */
+.badge {
+  display: inline-block;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.badge-available { background: #e9ecef; color: #6c757d; }
+.badge-taken { background: #51cf66; color: white; }
+.badge-optional { background: #ffe066; color: #7a5f0c; }
+
+/* Modal */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+}
+.modal.show { display: flex; align-items: center; justify-content: center; }
+.modal-content {
+  background: white;
+  padding: 28px;
+  border-radius: 20px;
+  max-width: 420px;
+  width: 90%;
+}
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  border-bottom: 2px solid #f1f3f5;
+  padding-bottom: 16px;
+}
+.close-btn {
+  background: #f8f9fa;
+  border: none;
+  font-size: 28px;
+  cursor: pointer;
+  padding: 4px 12px;
+  border-radius: 8px;
+}
+.detail-row {
+  margin: 14px 0;
+  padding: 14px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border-left: 4px solid #ff9933;
+}
+.detail-label { font-size: 11px; color: #868e96; text-transform: uppercase; font-weight: 600; }
+.detail-value { font-size: 16px; color: #343a40; font-weight: 600; }
+
+/* Bhajan Details Form Section */
+.bhajan-details {
+  display: none;
+  background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+  border: 3px solid #ffb74d;
+  border-radius: 16px;
+  padding: 24px;
+  margin-top: 28px;
+}
+.bhajan-details.show { display: block; animation: slideDown 0.4s; }
+@keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+
+.submit-btn {
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(135deg, #ff9933 0%, #ff7700 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 24px;
+  box-shadow: 0 4px 16px rgba(255, 119, 0, 0.3);
+}
+.submit-btn:hover { transform: translateY(-3px); }
+
+/* Plan View Tables */
+table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+th, td { border: 1px solid #ddd; padding: 8px; font-size: 14px; }
+th { background: #eee; }
+
+/* Error/Success Pages */
+.error-icon, .success-icon { font-size: 64px; margin-bottom: 16px; text-align: center; }
+.info-box, .details-box {
+  background: #fff5f5;
+  border: 2px solid #ffc9c9;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+.details-box { background: #d3f9d8; border-color: #8ce99a; }
+.button {
+  display: inline-block;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #ff9933 0%, #ff7700 100%);
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 600;
+  text-align: center;
+}
+.button.secondary { background: #f1f3f5; color: #495057; border: 2px solid #dee2e6; }
+
+/* Responsive */
+@media (max-width: 480px) {
+  .deity-grid { grid-template-columns: repeat(2, 1fr); }
+  .deity-card.optional { grid-column: span 2; }
+}
