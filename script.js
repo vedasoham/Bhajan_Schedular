@@ -1,10 +1,12 @@
-function switchTab(tabName) {
+function switchTab(tabName, element) {
   document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
   document.getElementById(tabName).classList.add('active');
   
   // Highlight clicked tab
-  if (window.event && window.event.currentTarget) {
+  if (element) {
+    element.classList.add('active');
+  } else if (window.event && window.event.currentTarget) {
     window.event.currentTarget.classList.add('active');
   }
 }
@@ -23,17 +25,22 @@ function closeModal() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-  // 1. Load saved details
-  const savedName = localStorage.getItem('bj_singer_name');
-  const savedGender = localStorage.getItem('bj_gender');
+  const adminInput = document.querySelector('input[name="admin"]');
+  const isAdmin = adminInput && adminInput.value === 'true';
 
-  if (savedName) {
-    const nameInput = document.querySelector('input[name="singer_name"]');
-    if (nameInput) nameInput.value = savedName;
-  }
-  if (savedGender) {
-    const genderSelect = document.querySelector('select[name="gender"]');
-    if (genderSelect) genderSelect.value = savedGender;
+  // 1. Load saved details only if not in admin mode
+  if (!isAdmin) {
+    const savedName = localStorage.getItem('bj_singer_name');
+    const savedGender = localStorage.getItem('bj_gender');
+
+    if (savedName) {
+      const nameInput = document.querySelector('input[name="singer_name"]');
+      if (nameInput) nameInput.value = savedName;
+    }
+    if (savedGender) {
+      const genderSelect = document.querySelector('select[name="gender"]');
+      if (genderSelect) genderSelect.value = savedGender;
+    }
   }
 
   // Modal close on outside click
@@ -68,11 +75,73 @@ document.addEventListener('DOMContentLoaded', function() {
         alert('⚠️ Please select a deity first');
         return false;
       }
-      // Save to browser
-      const name = document.querySelector('input[name="singer_name"]').value;
-      const gender = document.querySelector('select[name="gender"]').value;
-      localStorage.setItem('bj_singer_name', name);
-      localStorage.setItem('bj_gender', gender);
+      // Save to browser only if not in admin mode
+      if (!isAdmin) {
+        const name = document.querySelector('input[name="singer_name"]').value;
+        const gender = document.querySelector('select[name="gender"]').value;
+        localStorage.setItem('bj_singer_name', name);
+        localStorage.setItem('bj_gender', gender);
+      }
     });
   }
 });
+
+function filterTable(colIndex) {
+  const input = document.querySelectorAll('.filter-input')[colIndex];
+  const filter = input.value.toUpperCase();
+  const table = document.getElementById("dbTable");
+  const tr = table.getElementsByTagName("tr");
+
+  // Start from 2 because row 0 is inputs, row 1 is headers
+  for (let i = 2; i < tr.length; i++) {
+    const td = tr[i].getElementsByTagName("td")[colIndex];
+    if (td) {
+      const txtValue = td.textContent || td.innerText;
+      if (txtValue.toUpperCase().indexOf(filter) > -1) {
+        tr[i].style.display = "";
+      } else {
+        tr[i].style.display = "none";
+      }
+    }
+  }
+}
+
+// Admin Calendar Modal Logic
+let currentAdminDate = null;
+
+function openAdminDateModal(date, type, description) {
+  currentAdminDate = date;
+  document.getElementById('adminModalDate').textContent = 'Manage ' + date;
+  document.getElementById('permDescription').value = description || '';
+  document.getElementById('adminDateModal').classList.add('show');
+}
+
+function closeAdminModal() {
+  document.getElementById('adminDateModal').classList.remove('show');
+}
+
+function viewAdminDate() {
+  if(currentAdminDate) window.location.href = '/admin/date/' + currentAdminDate;
+}
+
+function updatePermission(type) {
+  if(!currentAdminDate) return;
+  
+  const description = document.getElementById('permDescription').value.trim();
+
+  if (type !== 'clear' && !description) {
+    alert('⚠️ Description is mandatory for Special/Festival sessions.');
+    return;
+  }
+
+  fetch('/admin/permission', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ date: currentAdminDate, type: type, description: description })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if(data.success) location.reload();
+    else alert('Error updating permission');
+  });
+}
