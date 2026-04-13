@@ -6,6 +6,7 @@
 require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
+const fs = require('fs');
 const { Sequelize, DataTypes } = require('sequelize');
 const path = require('path');
 const session = require('express-session');
@@ -20,7 +21,9 @@ const {
   generateAdminSessionViewHtml,
   generateDashboardHtml,
   generateDatabaseHtml,
-  generateAdminLoginHtml
+  generateMasterBankHtml,
+  generateAdminLoginHtml,
+  generateAdminRulesHtml
 } = require('./templates');
 
 // ============================================================
@@ -72,14 +75,16 @@ const BhajanSubmission = sequelize.define('BhajanSubmission', {
     type: DataTypes.STRING,
     allowNull: false
   },
+  raga: { type: DataTypes.STRING, allowNull: true },
+  level: { type: DataTypes.STRING, allowNull: true },
+  language: { type: DataTypes.STRING, allowNull: true },
   created_at: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW
   }
 }, {
-  tableName: 'bhajan_submissions',
-  timestamps: false,
-  indexes: []
+  tableName: 'bhajans_submitted_v2', // Changed to bypass SQLite's locked constraints
+  timestamps: false
 });
 
 // Define SessionPermission Model (For Special/Festival days)
@@ -97,8 +102,137 @@ const SessionPermission = sequelize.define('SessionPermission', {
   }
 }, { tableName: 'session_permissions', timestamps: false });
 
+// Define MasterBhajan Model
+const MasterBhajan = sequelize.define('MasterBhajan', {
+  title: { type: DataTypes.STRING, allowNull: false },
+  deity: { type: DataTypes.STRING, allowNull: false },
+  level: { type: DataTypes.STRING, allowNull: true },
+  tempo: { type: DataTypes.STRING, allowNull: true },
+  language: { type: DataTypes.STRING, allowNull: true },
+  raga: { type: DataTypes.STRING, allowNull: true },
+  shruti: { type: DataTypes.STRING, allowNull: true }
+}, {
+  tableName: 'master_bhajans',
+  timestamps: false
+});
+
+// Define Deity Rule Model
+const DeityRule = sequelize.define('DeityRule', {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
+  session_date: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    defaultValue: 'default',
+    unique: 'session_deity_unique'
+  },
+  deity_name: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    unique: 'session_deity_unique'
+  },
+  min_required: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0
+  },
+  max_allowed: {
+    type: DataTypes.INTEGER,
+    defaultValue: 99
+  }
+}, {
+  tableName: 'deity_rules_v4',
+  timestamps: false
+});
+
+// Load Master Bhajans from JSON to Database if empty
+async function loadMasterBhajans() {
+  try {
+    const count = await MasterBhajan.count();
+    if (count === 0) {
+      const filePath = path.join(__dirname, 'master_bhajans.json');
+      if (fs.existsSync(filePath)) {
+        const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+        await MasterBhajan.bulkCreate(data);
+        console.log(`✅ Loaded ${data.length} master bhajans into the database.`);
+      } else {
+        console.log('⚠️ master_bhajans.json not found. Skipping load.');
+      }
+    }
+  } catch (error) {
+    console.error('Error loading master bhajans:', error);
+  }
+}
+
+// Setup Default Rules for "Regular Thursday"
+async function initDeityRules() {
+  try {
+    const count = await DeityRule.count({ where: { session_date: 'default' } });
+    if (count === 0) {
+      // Attempt to migrate from v3
+      try {
+        const [oldRules] = await sequelize.query('SELECT session_date, deity_name, min_required, max_allowed FROM deity_rules_v3');
+        if (oldRules && oldRules.length > 0) {
+          await DeityRule.bulkCreate(oldRules);
+          console.log('✅ Migrated old deity rules to v4.');
+          return;
+        }
+      } catch(e) {} // Silently ignore if v3 doesn't exist
+
+      // Attempt to migrate from v2
+      try {
+        const [oldRules] = await sequelize.query('SELECT session_date, deity_name, min_required, max_allowed FROM deity_rules_v2');
+        if (oldRules && oldRules.length > 0) {
+          await DeityRule.bulkCreate(oldRules);
+          console.log('✅ Migrated old deity rules to v4.');
+          return;
+        }
+      } catch(e) {} // Silently ignore if v2 doesn't exist
+
+      await DeityRule.bulkCreate([
+        { session_date: 'default', deity_name: 'Ganesha', min_required: 1, max_allowed: 1 },
+        { session_date: 'default', deity_name: 'Guru', min_required: 1, max_allowed: 2 },
+        { session_date: 'default', deity_name: 'Mata', min_required: 1, max_allowed: 2 },
+        { session_date: 'default', deity_name: 'SarvaDharma', min_required: 1, max_allowed: 1 },
+        { session_date: 'default', deity_name: 'Sai', min_required: 1, max_allowed: 2 },
+        { session_date: 'default', deity_name: 'Shiva', min_required: 1, max_allowed: 2 },
+        { session_date: 'default', deity_name: 'Krishna', min_required: 1, max_allowed: 2 },
+        { session_date: 'default', deity_name: 'Rama', min_required: 1, max_allowed: 2 },
+        { session_date: 'default', deity_name: 'Vitthala', min_required: 1, max_allowed: 2 },
+        { session_date: 'default', deity_name: 'Hanuman', min_required: 0, max_allowed: 2 }
+      ]);
+    }
+  } catch (error) {
+    console.error('Error initializing deity rules:', error);
+  }
+}
+
 // Sync database
-sequelize.sync({ alter: true });
+sequelize.sync({ alter: true }).then(() => {
+  // Auto-Migrate data from the old constrained table to the new one
+  BhajanSubmission.count().then(async (count) => {
+    if (count === 0) {
+      try {
+        const [oldData] = await sequelize.query('SELECT * FROM bhajan_submissions');
+        if (oldData && oldData.length > 0) {
+          // Copy data over, but let the new table generate fresh IDs
+          const mappedData = oldData.map(d => {
+            delete d.id; 
+            return d;
+          });
+          await BhajanSubmission.bulkCreate(mappedData);
+          console.log(`✅ Migrated ${oldData.length} records to the new unconstrained database table.`);
+        }
+      } catch (err) {
+        // Silently ignore if old table doesn't exist
+      }
+    }
+  });
+  loadMasterBhajans();
+  initDeityRules();
+});
 
 // ============================================================
 // EXPRESS APP SETUP
@@ -144,8 +278,6 @@ const DEITY_ORDER = [
 ];
 
 const SPEED_ORDER = { "slow": 0, "medium": 1, "fast": 2 };
-
-const ALLOWED_REPEAT = ["Sai", "Krishna", "SarvaDharma", "Shiva", "Rama", "Vitthala", "Mata", "Guru", "Hanuman"];
 
 function deityOrderKey(deity) {
   const index = DEITY_ORDER.findIndex(d => d.toLowerCase() === deity.toLowerCase());
@@ -219,8 +351,8 @@ app.get('/plan/:session_date', async (req, res) => {
       const deityCompare = deityOrderKey(a.deity) - deityOrderKey(b.deity);
       if (deityCompare !== 0) return deityCompare;
       
-      const speedCompare = (SPEED_ORDER[a.speed.toLowerCase()] || 1) - 
-                           (SPEED_ORDER[b.speed.toLowerCase()] || 1);
+      const speedCompare = (SPEED_ORDER[(a.speed || '').toLowerCase()] || 1) - 
+                           (SPEED_ORDER[(b.speed || '').toLowerCase()] || 1);
       if (speedCompare !== 0) return speedCompare;
       
       return a.singer_name.toLowerCase().localeCompare(b.singer_name.toLowerCase());
@@ -244,12 +376,57 @@ app.get('/plan/:session_date', async (req, res) => {
 });
 
 // ============================================================
+// API: GET /api/deity-rules
+// ============================================================
+
+app.get('/api/deity-rules', async (req, res) => {
+  try {
+    const date = req.query.date || 'default';
+    let rules = await DeityRule.findAll({ where: { session_date: date } });
+    if (rules.length === 0 && date !== 'default') {
+      rules = await DeityRule.findAll({ where: { session_date: 'default' } });
+    }
+    res.json(rules);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================================
+// API: POST /admin/update-rules
+// ============================================================
+
+app.post('/admin/update-rules', requireLogin, async (req, res) => {
+  try {
+    const newRules = req.body.rules;
+    const date = req.body.date || 'default';
+    for (let rule of newRules) {
+      const existing = await DeityRule.findOne({ where: { session_date: date, deity_name: rule.deity_name } });
+      if (existing) {
+        await existing.update({ min_required: rule.min_required, max_allowed: rule.max_allowed });
+      } else {
+        await DeityRule.create({
+          session_date: date,
+          deity_name: rule.deity_name,
+          min_required: rule.min_required,
+          max_allowed: rule.max_allowed
+        });
+      }
+    }
+    res.json({ success: true, message: 'Rules successfully saved!' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================================
 // WEB FORM: GET /submit-form
 // ============================================================
 
 app.get('/submit-form', async (req, res) => {
   try {
     const isAdmin = req.query.admin === 'true';
+    const showSuccess = req.query.success === 'true';
     let sessionDate = req.query.session_date;
 
     // Helper to fetch available dates
@@ -310,25 +487,26 @@ app.get('/submit-form', async (req, res) => {
 
     const isSpecialOrFestival = !!permission;
     
+    // Load rules specifically for this session
+    let rules = await DeityRule.findAll({ where: { session_date: sessionDate } });
+    if (rules.length === 0) rules = await DeityRule.findAll({ where: { session_date: 'default' } });
+
     // Fetch existing submissions
     const results = await BhajanSubmission.findAll({
       where: { session_date: sessionDate }
     });
     
-    // Track deity status
-    const deityStatus = {
-      "Ganesha": { taken: false, count: 0, by: "", bhajan: "", scale: "", speed: "", mandatory: true },
-      "Guru": { taken: false, count: 0, by: "", bhajan: "", scale: "", speed: "", mandatory: true },
-      "Mata": { taken: false, count: 0, by: "", bhajan: "", scale: "", speed: "", mandatory: true },
-      "SarvaDharma": { taken: false, count: 0, by: "", bhajan: "", scale: "", speed: "", mandatory: true },
-      "Sai": { taken: false, count: 0, by: "", bhajan: "", scale: "", speed: "", mandatory: true },
-      "Shiva": { taken: false, count: 0, by: "", bhajan: "", scale: "", speed: "", mandatory: true },
-      "Krishna": { taken: false, count: 0, by: "", bhajan: "", scale: "", speed: "", mandatory: true },
-      "Rama": { taken: false, count: 0, by: "", bhajan: "", scale: "", speed: "", mandatory: true },
-      "Vitthala": { taken: false, count: 0, by: "", bhajan: "", scale: "", speed: "", mandatory: true },
-      "Hanuman": { taken: false, count: 0, by: "", bhajan: "", scale: "", speed: "", mandatory: false }
-    };
-    
+    // Build base deityStatus dynamically
+    const deityStatus = {};
+    const ALL_DEITIES = ["Ganesha", "Guru", "Mata", "SarvaDharma", "Sai", "Shiva", "Krishna", "Rama", "Vitthala", "Hanuman"];
+    ALL_DEITIES.forEach(d => {
+      const rule = rules.find(r => r.deity_name === d) || { min_required: 0, max_allowed: 2 };
+      deityStatus[d] = {
+        taken: false, count: 0, by: "", bhajan: "", scale: "", speed: "",
+        mandatory: rule.min_required > 0, minReq: rule.min_required, maxAllowed: rule.max_allowed
+      };
+    });
+
     results.forEach(bhajan => {
       if (deityStatus[bhajan.deity]) {
         deityStatus[bhajan.deity].taken = true;
@@ -336,40 +514,37 @@ app.get('/submit-form', async (req, res) => {
         deityStatus[bhajan.deity].bhajan = bhajan.title;
         deityStatus[bhajan.deity].scale = bhajan.scale || "Not specified";
         deityStatus[bhajan.deity].speed = bhajan.speed;
-        deityStatus[bhajan.deity].count = (deityStatus[bhajan.deity].count || 0) + 1;
+        deityStatus[bhajan.deity].count += 1;
       }
     });
     
-    // Count filled slots
-    const mandatoryFilled = Object.values(deityStatus)
-      .filter(d => d.mandatory && d.taken).length;
-    const optionalFilled = Object.values(deityStatus)
-      .filter(d => !d.mandatory && d.taken).length;
+    const mandatoryFilled = Object.values(deityStatus).filter(d => d.mandatory && d.count >= 1).length;
+    const totalMandatory = Object.values(deityStatus).filter(d => d.mandatory).length;
+    const isMandatoryComplete = mandatoryFilled === totalMandatory;
       
-    const isMandatoryComplete = mandatoryFilled === 9;
+    const optionalFilled = Object.values(deityStatus).filter(d => !d.mandatory && d.count >= 1).length;
+    const totalOptional = Object.values(deityStatus).filter(d => !d.mandatory && d.maxAllowed > 0).length;
     
     // Generate deity cards HTML
     const generateCardHtml = (deity) => {
       const status = deityStatus[deity];
       let cardClass, statusBadge, singerInfo, onclick;
       
+      if (status.maxAllowed === 0) {
+        return `<div class="deity-card disabled" style="opacity:0.4; pointer-events:none;"><div class="deity-name">${deity}</div><span class="badge badge-taken" style="background:#e03131;">Blocked</span></div>`;
+      }
+
       if (status.taken) {
-        // Check if we can add a second bhajan
-        if (isSpecialOrFestival) {
+        if (isSpecialOrFestival || (isMandatoryComplete && status.count < status.maxAllowed)) {
           cardClass = "deity-card available"; 
-          statusBadge = `<span class="badge badge-available">Add (${status.count})</span>`;
-          singerInfo = `<div class="singer-name">Latest: ${status.by}</div>`;
-          onclick = ""; 
-        } else if (isMandatoryComplete && ALLOWED_REPEAT.includes(deity) && status.count < 2) {
-          cardClass = "deity-card available"; // Make it selectable
-          statusBadge = '<span class="badge badge-available">Add 2nd</span>';
-          singerInfo = `<div class="singer-name">1st: ${status.by}</div>`;
-          onclick = ""; // Let script.js handle selection
+          statusBadge = `<span class="badge badge-available">Add ${status.count + 1}</span>`;
+          singerInfo = `<div class="singer-name">Prev: ${status.by}</div>`;
+          onclick = "";
         } else {
           cardClass = "deity-card taken";
           statusBadge = '<span class="badge badge-taken">✓ Taken</span>';
           singerInfo = `<div class="singer-name">${status.by}</div>`;
-          onclick = `onclick="showDetails('${deity}', '${status.by}', '${status.bhajan}', '${status.scale}', '${status.speed}')" style="cursor:pointer;"`;
+          onclick = `onclick="showDetails('${deity}', '${status.by.replace(/'/g, "\\'")}', '${status.bhajan.replace(/'/g, "\\'")}', '${status.scale}', '${status.speed}')" style="cursor:pointer;"`;
         }
       } else {
         cardClass = "deity-card available";
@@ -378,11 +553,14 @@ app.get('/submit-form', async (req, res) => {
         onclick = "";
       }
       
+      let mandatoryLabel = status.mandatory ? `<div class="rule-warning" style="color:#ff9933; font-size:11px; margin-top:6px; font-weight:700;">⭐ Required (${status.minReq})</div>` : '';
+
       return `
         <div class="${cardClass}" data-deity="${deity}" ${onclick}>
           <div class="deity-name">${deity}</div>
           ${statusBadge}
           ${singerInfo}
+          ${mandatoryLabel}
         </div>
       `;
     };
@@ -391,50 +569,10 @@ app.get('/submit-form', async (req, res) => {
     const otherDeities = ["Guru", "Mata", "SarvaDharma", "Sai", "Shiva", "Krishna", "Rama", "Vitthala"];
     let otherDeitiesHtml = "";
     otherDeities.forEach(d => otherDeitiesHtml += generateCardHtml(d));
-    
-    // Hanuman card (with yellow background)
-    const hanumanStatus = deityStatus["Hanuman"];
-    let hanumanCard;
-    
-    if (hanumanStatus.taken) {
-      if (isSpecialOrFestival) {
-        hanumanCard = `
-          <div class="deity-card available hanuman-card" data-deity="Hanuman">
-            <div class="deity-name">Hanuman <span style="font-size:12px;">(Optional)</span></div>
-            <span class="badge badge-available">Add (${hanumanStatus.count})</span>
-            <div class="singer-name">Latest: ${hanumanStatus.by}</div>
-          </div>
-        `;
-      } else if (isMandatoryComplete && ALLOWED_REPEAT.includes("Hanuman") && hanumanStatus.count < 2) {
-        hanumanCard = `
-          <div class="deity-card available hanuman-card" data-deity="Hanuman">
-            <div class="deity-name">Hanuman <span style="font-size:12px;">(Optional)</span></div>
-            <span class="badge badge-available">Add 2nd</span>
-            <div class="singer-name">1st: ${hanumanStatus.by}</div>
-          </div>
-        `;
-      } else {
-        hanumanCard = `
-          <div class="deity-card taken hanuman-card" data-deity="Hanuman" 
-               onclick="showDetails('Hanuman', '${hanumanStatus.by}', '${hanumanStatus.bhajan}', '${hanumanStatus.scale}', '${hanumanStatus.speed}')" 
-               style="cursor:pointer;">
-            <div class="deity-name">Hanuman <span style="font-size:12px;">(Optional)</span></div>
-            <span class="badge badge-taken">✓ Taken</span>
-            <div class="singer-name">${hanumanStatus.by}</div>
-          </div>
-        `;
-      }
-    } else {
-      hanumanCard = `
-        <div class="deity-card available hanuman-card" data-deity="Hanuman">
-          <div class="deity-name">Hanuman <span style="font-size:12px;">(Optional)</span></div>
-          <span class="badge badge-optional">Optional</span>
-        </div>
-      `;
-    }
+    let hanumanCard = generateCardHtml("Hanuman").replace('deity-card', 'deity-card hanuman-card');
     
     // Send HTML response
-    res.send(generateSubmitFormHtml(sessionDate, mandatoryFilled, optionalFilled, ganeshaCardHtml, otherDeitiesHtml, hanumanCard, isAdmin));
+    res.send(generateSubmitFormHtml(sessionDate, mandatoryFilled, totalMandatory, optionalFilled, totalOptional, ganeshaCardHtml, otherDeitiesHtml, hanumanCard, isAdmin, showSuccess));
     
   } catch (error) {
     res.status(500).send(`<h1>Error</h1><p>${error.message}</p>`);
@@ -447,7 +585,7 @@ app.get('/submit-form', async (req, res) => {
 
 app.post('/submit-form', async (req, res) => {
   try {
-    const { session_date, singer_name, gender, partner_name, deity, title, speed, scale, admin } = req.body;
+    const { session_date, singer_name, gender, partner_name, deity, title, speed, scale, raga, level, language, admin } = req.body;
     
     // Fetch all submissions for this date to check rules
     const allSubmissions = await BhajanSubmission.findAll({ where: { session_date } });
@@ -456,29 +594,33 @@ app.post('/submit-form', async (req, res) => {
     const permission = await SessionPermission.findByPk(session_date);
     const isSpecialOrFestival = !!permission;
     
-    if (!isSpecialOrFestival) {
+    // Load rules specifically for this session
+    let rules = await DeityRule.findAll({ where: { session_date } });
+    if (rules.length === 0) rules = await DeityRule.findAll({ where: { session_date: 'default' } });
+    
+    const mandatoryDeities = rules.filter(r => r.min_required > 0).map(r => r.deity_name);
+    const takenDeities = new Set(allSubmissions.map(s => s.deity));
+    const isMandatoryComplete = mandatoryDeities.every(d => takenDeities.has(d));
+    const ruleForDeity = rules.find(r => r.deity_name === deity) || { max_allowed: 2 };
+    const maxAllowed = ruleForDeity.max_allowed;
+
+    if (maxAllowed === 0 && !isSpecialOrFestival && admin !== 'true') {
+      return res.send(generateErrorHtml(deity, { singer_name: "Admin", title: "Blocked for this session", created_at: new Date() }, session_date));
+    }
+    
+    if (!isSpecialOrFestival && admin !== 'true') {
       // Check mandatory completeness
-      const takenDeities = new Set(allSubmissions.map(s => s.deity));
-      const MANDATORY_DEITIES = ["Ganesha", "Guru", "Mata", "SarvaDharma", "Sai", "Shiva", "Krishna", "Rama", "Vitthala"];
-      const isMandatoryComplete = MANDATORY_DEITIES.every(d => takenDeities.has(d));
-      
       // Check existing count for requested deity
       const existingEntries = allSubmissions.filter(s => s.deity === deity);
       
       if (existingEntries.length > 0) {
-        // If mandatory set is NOT complete, no repeats allowed
         if (!isMandatoryComplete) {
           return res.send(generateErrorHtml(deity, existingEntries[0], session_date));
         }
         
-        // If mandatory complete, check if this deity is allowed to repeat
-        if (!ALLOWED_REPEAT.includes(deity)) {
-          return res.send(generateErrorHtml(deity, existingEntries[0], session_date));
-        }
-        
-        // Check max limit (allow max 2)
-        if (existingEntries.length >= 2) {
-          return res.send(generateErrorHtml(deity, existingEntries[1], session_date));
+        // Check specific max limit for this deity
+        if (existingEntries.length >= maxAllowed) {
+          return res.send(generateErrorHtml(deity, existingEntries[existingEntries.length - 1], session_date));
         }
         
         // If we pass here, we allow the 2nd entry
@@ -494,11 +636,15 @@ app.post('/submit-form', async (req, res) => {
       title,
       deity,
       scale: scale || "Not specified",
-      speed
+      speed,
+      raga,
+      level,
+      language
     });
     
     // Success response
-    res.send(generateSuccessHtml(singer_name, deity, title, speed.charAt(0).toUpperCase() + speed.slice(1), scale, session_date, admin === 'true'));
+    const adminQuery = admin === 'true' ? '&admin=true' : '';
+    res.redirect(`/submit-form?session_date=${session_date}&success=true${adminQuery}`);
     
   } catch (error) {
     if (error.name === 'SequelizeUniqueConstraintError') {
@@ -509,6 +655,47 @@ app.post('/submit-form', async (req, res) => {
        }, req.body.session_date));
     }
     res.status(500).send(`<h1>Error</h1><p>${error.message}</p>`);
+  }
+});
+
+// ============================================================
+// API: GET /api/master-bhajans/:deity
+// ============================================================
+
+app.get('/api/master-bhajans/:deity', async (req, res) => {
+  try {
+    const bhajans = await MasterBhajan.findAll({
+      where: { deity: req.params.deity },
+      order: [['title', 'ASC']]
+    });
+    res.json(bhajans);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================================
+// API: GET /api/check-cooldown
+// ============================================================
+app.get('/api/check-cooldown', async (req, res) => {
+  try {
+    const { title } = req.query;
+    if (!title) return res.json(null);
+    
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const recentSubmission = await BhajanSubmission.findOne({
+      where: {
+        title: { [Sequelize.Op.like]: title },
+        session_date: { [Sequelize.Op.gte]: thirtyDaysAgo.toISOString().split('T')[0] }
+      },
+      order: [['session_date', 'DESC']]
+    });
+    
+    res.json(recentSubmission);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -535,8 +722,8 @@ app.get('/plan-view', async (req, res) => {
       const deityCompare = deityOrderKey(a.deity) - deityOrderKey(b.deity);
       if (deityCompare !== 0) return deityCompare;
       
-      const speedCompare = (SPEED_ORDER[a.speed.toLowerCase()] || 1) - 
-                           (SPEED_ORDER[b.speed.toLowerCase()] || 1);
+      const speedCompare = (SPEED_ORDER[(a.speed || '').toLowerCase()] || 1) - 
+                           (SPEED_ORDER[(b.speed || '').toLowerCase()] || 1);
       if (speedCompare !== 0) return speedCompare;
       
       return a.singer_name.toLowerCase().localeCompare(b.singer_name.toLowerCase());
@@ -564,7 +751,7 @@ app.get('/plan-view', async (req, res) => {
         
         let line = `${index + 1}) ${item.singer_name}`;
         if (item.partner_name) line += ` (${item.partner_name})`;
-        line += ` – [${item.deity}] ${item.title} – Scale: ${item.scale || "N/A"}, Speed: ${item.speed.charAt(0).toUpperCase() + item.speed.slice(1)}`;
+        line += ` – [${item.deity}] ${item.title} – Scale: ${item.scale || "N/A"}, Speed: ${item.speed ? item.speed.charAt(0).toUpperCase() + item.speed.slice(1) : "N/A"}`;
         whatsappLines.push(line);
       });
     }
@@ -592,10 +779,10 @@ app.get('/admin-login', (req, res) => {
 app.post('/admin-login', (req, res) => {
   const { username, password } = req.body;
   
-  const adminUser = process.env.ADMIN_USER || 'admin';
-  const adminPass = process.env.ADMIN_PASS || 'sairam';
+  const adminUser = (process.env.ADMIN_USER || 'admin').trim().toLowerCase();
+  const adminPass = (process.env.ADMIN_PASS || 'sairam').trim();
 
-  if (username === adminUser && password === adminPass) {
+  if ((username || '').trim().toLowerCase() === adminUser && (password || '').trim() === adminPass) {
     req.session.isAdmin = true; // <--- SAVE LOGIN STATE
     req.session.save(() => {
       res.redirect('/admin');
@@ -620,6 +807,34 @@ app.get('/database', async (req, res) => {
       ]
     });
     res.send(generateDatabaseHtml(submissions));
+  } catch (error) {
+    res.status(500).send(`<h1>Error</h1><p>${error.message}</p>`);
+  }
+});
+
+app.get('/master-bank', async (req, res) => {
+  try {
+    const isAdmin = req.session && req.session.isAdmin;
+    const bhajans = await MasterBhajan.findAll({
+      order: [['title', 'ASC']]
+    });
+    res.send(generateMasterBankHtml(bhajans, isAdmin));
+  } catch (error) {
+    res.status(500).send(`<h1>Error</h1><p>${error.message}</p>`);
+  }
+});
+
+app.get('/admin/rules', requireLogin, async (req, res) => {
+  try {
+    const date = req.query.date || 'default';
+    let rules = await DeityRule.findAll({
+      where: { session_date: date },
+      order: [['deity_name', 'ASC']]
+    });
+    if (rules.length === 0 && date !== 'default') {
+      rules = await DeityRule.findAll({ where: { session_date: 'default' }, order: [['deity_name', 'ASC']] });
+    }
+    res.send(generateAdminRulesHtml(rules, date));
   } catch (error) {
     res.status(500).send(`<h1>Error</h1><p>${error.message}</p>`);
   }
@@ -664,7 +879,19 @@ app.get('/admin', requireLogin, async (req, res) => {
       eventCounts[s.session_date] = (eventCounts[s.session_date] || 0) + 1;
     });
 
-    res.send(generateAdminCalendarHtml(year, month, eventCounts, permissionMap, descriptionMap));
+    // Compute Missing Bhajans Catcher
+    const submittedTitles = await BhajanSubmission.findAll({
+      attributes: [[Sequelize.fn('DISTINCT', Sequelize.col('title')), 'title']],
+      raw: true
+    });
+    const masterTitles = await MasterBhajan.findAll({
+      attributes: [[Sequelize.fn('DISTINCT', Sequelize.col('title')), 'title']],
+      raw: true
+    });
+    const masterSet = new Set(masterTitles.map(m => (m.title || '').trim().toLowerCase()));
+    const missingBhajans = submittedTitles.map(s => (s.title || '').trim()).filter(title => title && !masterSet.has(title.toLowerCase()));
+
+    res.send(generateAdminCalendarHtml(year, month, eventCounts, permissionMap, descriptionMap, missingBhajans));
   } catch (error) {
     res.status(500).send(`<h1>Error</h1><p>${error.message}</p>`);
   }
@@ -733,6 +960,49 @@ app.post('/admin/permission', requireLogin, async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/add-master-bhajan', requireLogin, async (req, res) => {
+  try {
+    const { title, deity, raga, tempo, level, shruti } = req.body;
+    await MasterBhajan.create({ title, deity, raga, tempo, level, shruti });
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================================
+// API: POST /api/admin/update-master-bhajan/:id
+// ============================================================
+app.post('/api/admin/update-master-bhajan/:id', requireLogin, async (req, res) => {
+  try {
+    const { title, deity, level, tempo, raga, shruti, language } = req.body;
+    
+    await MasterBhajan.update(
+      { title, deity, level, tempo, raga, shruti, language },
+      { where: { id: req.params.id } }
+    );
+    
+    res.json({ success: true, message: "Bhajan updated successfully!" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================================
+// API: GET /admin/export-master
+// ============================================================
+app.get('/admin/export-master', requireLogin, async (req, res) => {
+  try {
+    const allBhajans = await MasterBhajan.findAll();
+    const jsonString = JSON.stringify(allBhajans, null, 2);
+    res.setHeader('Content-disposition', 'attachment; filename=cleaned_master_bhajans.json');
+    res.setHeader('Content-type', 'application/json');
+    res.send(jsonString);
+  } catch (error) {
+    res.status(500).send("Export failed");
   }
 });
 

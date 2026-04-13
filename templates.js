@@ -1,6 +1,7 @@
-function generateSubmitFormHtml(sessionDate, mandatoryFilled, optionalFilled, ganeshaCardHtml, otherDeitiesHtml, hanumanCard, isAdmin) {
+function generateSubmitFormHtml(sessionDate, mandatoryFilled, totalMandatory, optionalFilled, totalOptional, ganeshaCardHtml, otherDeitiesHtml, hanumanCard, isAdmin, showSuccess = false) {
   const dateAttr = isAdmin ? '' : 'readonly style="cursor:not-allowed; background:#f8f9fa;"';
   const dateMsg = isAdmin ? '<span style="color:#e03131; font-weight:bold;">Admin Mode: Select any date</span>' : 'This form is for the upcoming Thursday session';
+  
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -18,19 +19,14 @@ function generateSubmitFormHtml(sessionDate, mandatoryFilled, optionalFilled, ga
       <p>Sri Sathya Sai Seva Organisation - Gandhinagar</p>
     </div>
     
-    <div class="tabs">
-      <button class="tab active" onclick="switchTab('scheduler', this)">📋 Scheduler</button>
-      <button class="tab" onclick="switchTab('history', this)">📚 History</button>
-    </div>
-    
     <div id="scheduler" class="tab-content active">
       <div class="progress-section">
         <div class="progress-label">
           <span><strong>Session Progress</strong></span>
-          <span>${mandatoryFilled}/9 Mandatory | ${optionalFilled}/1 Optional</span>
+          <span>${mandatoryFilled}/${totalMandatory} Mandatory | ${optionalFilled}/${totalOptional} Optional</span>
         </div>
         <div class="progress-bar">
-          <div class="progress-fill" style="width: ${(mandatoryFilled/9)*100}%"></div>
+          <div class="progress-fill" style="width: ${totalMandatory > 0 ? (mandatoryFilled/totalMandatory)*100 : 100}%"></div>
         </div>
       </div>
       
@@ -46,17 +42,17 @@ function generateSubmitFormHtml(sessionDate, mandatoryFilled, optionalFilled, ga
           <div class="form-row cols-3">
             <div class="form-group">
               <label>Singer Name <span class="required">*</span></label>
-              <input type="text" name="singer_name" required placeholder="Enter your full name" />
+              <input type="text" name="singer_name" id="singerName" required placeholder="Enter your full name" />
             </div>
             
             <div class="form-group">
               <label>Partner Name</label>
-              <input type="text" name="partner_name" placeholder="Optional" />
+              <input type="text" name="partner_name" id="partnerName" placeholder="Optional" />
             </div>
 
             <div class="form-group">
               <label>Gender <span class="required">*</span></label>
-              <select name="gender" required>
+              <select name="gender" id="gender" required>
                 <option value="">Select</option>
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
@@ -88,57 +84,46 @@ function generateSubmitFormHtml(sessionDate, mandatoryFilled, optionalFilled, ga
         <input type="hidden" name="deity" id="selectedDeity" />
         
         <div class="bhajan-details" id="bhajanDetails">
-          <h3 style="font-size:18px; color:#C2185B; margin-bottom:20px; font-weight:700;">
-            📝 Bhajan Details for <strong id="deityDisplay">---</strong>
+          <h3 style="font-size:18px; color:#e65100; margin-bottom:15px; font-weight:700; border-bottom:1px solid rgba(0,0,0,0.1); padding-bottom:10px;">
+            🎶 Details for <span id="deityDisplay">---</span>
           </h3>
           
-          <div class="form-group">
-            <label>Bhajan Title <span class="required">*</span></label>
-            <input type="text" name="title" required placeholder="Enter bhajan name" />
+          <div class="form-row">
+            <div class="form-group" style="flex: 2;">
+              <label>Bhajan Title <span class="required">*</span></label>
+              <input list="bhajanList" name="title" id="bhajanTitleInput" required placeholder="Select Deity to search..." autocomplete="off" />
+              <datalist id="bhajanList"></datalist>
+              
+              <div id="masterDataBadge" style="display:none; color:#28a745; font-size:12px; margin-top:4px; font-weight:600;">
+                ✅ Master DB Synced <span id="badgeDetails"></span>
+              </div>
+              
+              <div id="cooldownWarning" style="display:none; color:#d32f2f; background:#ffebee; padding:8px; border-radius:6px; font-size:12px; margin-top:8px; font-weight:500;"></div>
+            </div>
+            
+            <div class="form-group" style="flex: 1;">
+              <label>Speed / Tempo</label>
+              <input type="text" name="speed" id="speedInput" readonly placeholder="Auto-filled..." style="background-color: #e9ecef; cursor: not-allowed; color: #495057; border: 1px solid #ced4da;" />
+            </div>
           </div>
           
           <div class="form-row">
-            <div class="form-group">
-              <label>Speed <span class="required">*</span></label>
-              <select name="speed" required>
-                <option value="">Select speed</option>
-                <option value="slow">Slow (Vilambit)</option>
-                <option value="medium">Medium (Madhya)</option>
-                <option value="fast">Fast (Drut)</option>
-              </select>
+            <div class="form-group" style="flex: 1;">
+               <label>🎵 Scale / Shruti</label>
+               <input type="text" name="scale" id="scaleInput" placeholder="e.g., 1.5P or C#" />
             </div>
-            
-            <div class="form-group">
-              <label>Scale / Sa (optional)</label>
-              <select name="scale">
-                <option value="">Select Scale (or leave blank)</option>
-                <option value="C">C (White 1)</option>
-                <option value="C#">C# (Black 1)</option>
-                <option value="D">D (White 2)</option>
-                <option value="D#">D# (Black 2)</option>
-                <option value="E">E (White 3)</option>
-                <option value="F">F (White 4)</option>
-                <option value="F#">F# (Black 3)</option>
-                <option value="G">G (White 5)</option>
-                <option value="G#">G# (Black 4)</option>
-                <option value="A">A (White 6)</option>
-                <option value="A#">A# (Black 5)</option>
-                <option value="B">B (White 7)</option>
-              </select>
+            <div class="form-group" style="flex: 1;">
+               <label>🎼 Raag</label>
+               <input type="text" name="raga" id="ragaInput" readonly placeholder="Auto-filled..." style="background-color: #e9ecef; cursor: not-allowed; color: #495057; border: 1px solid #ced4da;" />
             </div>
           </div>
+
+          <input type="hidden" name="level" id="hiddenLevel" />
+          <input type="hidden" name="language" id="hiddenLanguage" />
           
-          <button type="submit" class="submit-btn">Submit Bhajan 🙏</button>
+          <button type="button" id="preSubmitBtn" class="submit-btn">Submit Form</button>
         </div>
       </form>
-    </div>
-    
-    <div id="history" class="tab-content">
-      <div style="text-align:center; padding:80px 20px; color:#adb5bd;">
-        <div style="font-size:80px; margin-bottom:20px;">📚</div>
-        <h3 style="font-size:22px; margin-bottom:10px; color:#6c757d;">History Coming Soon</h3>
-        <p>View past bhajan sessions and your singing history</p>
-      </div>
     </div>
   </div>
   
@@ -163,6 +148,35 @@ function generateSubmitFormHtml(sessionDate, mandatoryFilled, optionalFilled, ga
       <div class="detail-row">
         <div class="detail-label">Speed</div>
         <div class="detail-value" id="modalSpeed">---</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="confirmSubmitModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 style="color:#2f9e44;">Review Your Submission</h3>
+        <button class="close-btn" onclick="closeConfirmModal()">&times;</button>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Singer(s)</div>
+        <div class="detail-value" id="modSinger">---</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Deity</div>
+        <div class="detail-value" id="modDeity">---</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Bhajan</div>
+        <div class="detail-value" id="modTitle">---</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Scale/Shruti</div>
+        <div class="detail-value" id="modScale">---</div>
+      </div>
+      <div style="display:flex; gap:12px; margin-top:24px; justify-content: flex-end;">
+        <button type="button" id="editBtn" class="button secondary">Edit</button>
+        <button type="button" id="confirmBtn" class="button" style="background:#28a745; border:none; color:white; padding:8px 24px; border-radius:8px; font-weight:600;">Confirm</button>
       </div>
     </div>
   </div>
@@ -271,10 +285,13 @@ function generateDatePickerHtml(today) {
 function generateAdminSessionViewHtml(date, submissions) {
   const rows = submissions.map(s => `
     <tr>
-      <td data-label="Date">${s.session_date}</td>
+      <td data-label="Singer(s)"><strong>${s.singer_name}</strong>${s.partner_name ? `<br><small>& ${s.partner_name}</small>` : ''}</td>
+      <td data-label="Gender">${s.gender || '-'}</td>
       <td data-label="Deity"><span class="deity-pill">${s.deity}</span></td>
-      <td data-label="Singer"><strong>${s.singer_name}</strong></td>
       <td data-label="Title">${s.title}</td>
+      <td data-label="Tempo">${s.speed || '-'}</td>
+      <td data-label="Raag">${s.raga || '-'}</td>
+      <td data-label="Scale">${s.scale || '-'}</td>
       <td data-label="Actions">
         <div style="display:flex; gap:8px; justify-content:flex-end;">
           <a href="/admin/edit/${s.id}" class="button" style="padding:6px 12px; font-size:13px; text-decoration:none;">Edit</a>
@@ -304,6 +321,7 @@ function generateAdminSessionViewHtml(date, submissions) {
     <div style="margin-bottom: 24px; display:flex; gap:12px; flex-wrap:wrap; justify-content:center;">
       <a href="/admin" class="button secondary">⬅️ Back to Calendar</a>
       <a href="/submit-form?admin=true&session_date=${date}" class="button">➕ Add / Append to this Date</a>
+      <a href="/admin/rules?date=${date}" class="button secondary">⚙️ Session Rules</a>
       <a href="/plan-view" class="button secondary">📅 View Plans</a>
       <a href="/" class="button secondary">🏠 Home</a>
     </div>
@@ -312,15 +330,18 @@ function generateAdminSessionViewHtml(date, submissions) {
       <table>
         <thead>
           <tr>
-            <th>Date</th>
+            <th>Singer(s)</th>
+            <th>Gender</th>
             <th>Deity</th>
-            <th>Singer</th>
             <th>Title</th>
+            <th>Tempo</th>
+            <th>Raag</th>
+            <th>Scale</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
-          ${rows.length > 0 ? rows : '<tr><td colspan="5" style="padding:20px; text-align:center;">No records found for this date.</td></tr>'}
+          ${rows.length > 0 ? rows : '<tr><td colspan="8" style="padding:20px; text-align:center;">No records found for this date.</td></tr>'}
         </tbody>
       </table>
     </div>
@@ -329,7 +350,7 @@ function generateAdminSessionViewHtml(date, submissions) {
 </html>`;
 }
 
-function generateAdminCalendarHtml(year, month, eventCounts, permissionMap = {}, descriptionMap = {}) {
+function generateAdminCalendarHtml(year, month, eventCounts, permissionMap = {}, descriptionMap = {}, missingBhajans = []) {
   const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
   const currentMonthName = monthNames[month - 1];
   
@@ -410,6 +431,7 @@ function generateAdminCalendarHtml(year, month, eventCounts, permissionMap = {},
     <div style="margin-bottom: 20px; display:flex; gap:10px;">
       <a href="/" class="button secondary">🏠 Home</a>
       <a href="/submit-form?admin=true" class="button secondary">➕ New Entry (Any Date)</a>
+      <a href="/admin/rules" class="button secondary">⚙️ Default Deity Rules</a>
     </div>
 
     <div class="calendar-header">
@@ -431,6 +453,22 @@ function generateAdminCalendarHtml(year, month, eventCounts, permissionMap = {},
       <div class="calendar-day-header">Sat</div>
       ${calendarCells}
     </div>
+
+    <!-- Missing Bhajan Catcher -->
+    <div class="admin-section" style="margin-top: 40px; padding: 20px; background: #fff3cd; border-radius: 12px; border: 1px solid #ffe066;">
+      <h2 style="color: #d9480f; margin-bottom: 15px;">🚨 Missing Bhajan Catcher</h2>
+      <p style="font-size:14px; margin-bottom:15px; color:#555;">The following bhajans have been sung in sessions but are missing from the Master Database.</p>
+      <ul style="list-style:none; padding:0; display:flex; flex-direction:column; gap:10px;">
+        ${missingBhajans.length === 0 ? '<li style="color:#2b8a3e; font-weight:bold;">✅ All sung bhajans are safely in the Master Database!</li>' : 
+          missingBhajans.map(b => `
+          <li style="display:flex; justify-content:space-between; align-items:center; background:#fff; padding:10px 15px; border-radius:8px; border:1px solid #ffd43b;">
+            <strong>${b}</strong>
+            <button class="button" style="padding:6px 12px; font-size:12px; background:#4dabf7; border:none;" onclick="openMissingBhajanModal('${b.replace(/'/g, "\\'")}')">➕ Add to Master</button>
+          </li>
+        `).join('')}
+      </ul>
+    </div>
+
   </div>
 
   <!-- Admin Date Modal -->
@@ -450,6 +488,37 @@ function generateAdminCalendarHtml(year, month, eventCounts, permissionMap = {},
         <button onclick="updatePermission('clear')" class="button secondary">❌ Clear Permission</button>
         <hr style="width:100%; border:0; border-top:1px solid #eee; margin:8px 0;">
         <button onclick="viewAdminDate()" class="button secondary">📅 View / Edit Plan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Missing Bhajan Catcher Modal -->
+  <div id="missingBhajanModal" class="modal">
+    <div class="modal-content" style="max-width: 400px; text-align:left;">
+      <div class="modal-header">
+        <h3>Add to Master Database</h3>
+        <button class="close-btn" onclick="closeMissingBhajanModal()">&times;</button>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:12px; margin-top:15px;">
+        <div><label style="font-size:12px; font-weight:600; color:#495057;">Title</label>
+          <input type="text" id="mbTitle" readonly style="width:100%; padding:8px; border:1px solid #ddd; background:#f5f5f5; border-radius:4px;"></div>
+        <div><label style="font-size:12px; font-weight:600; color:#495057;">Deity</label>
+          <select id="mbDeity" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;">
+            <option value="Ganesha">Ganesha</option><option value="Guru">Guru</option><option value="Mata">Mata</option><option value="SarvaDharma">SarvaDharma</option><option value="Sai">Sai</option><option value="Shiva">Shiva</option><option value="Krishna">Krishna</option><option value="Rama">Rama</option><option value="Vitthala">Vitthala</option><option value="Hanuman">Hanuman</option>
+          </select></div>
+        <div><label style="font-size:12px; font-weight:600; color:#495057;">Tempo (Speed)</label>
+          <select id="mbTempo" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;">
+            <option value="Slow">Slow</option><option value="Medium">Medium</option><option value="Fast">Fast</option>
+          </select></div>
+        <div><label style="font-size:12px; font-weight:600; color:#495057;">Raga</label>
+          <input type="text" id="mbRaga" placeholder="e.g., Yaman Kalyani" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;"></div>
+        <div><label style="font-size:12px; font-weight:600; color:#495057;">Shruti (Scale)</label>
+          <input type="text" id="mbShruti" placeholder="e.g., C#" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;"></div>
+        <div><label style="font-size:12px; font-weight:600; color:#495057;">Level</label>
+          <select id="mbLevel" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;">
+            <option value="">Unknown</option><option value="Easy">Easy</option><option value="Medium">Medium</option><option value="Advanced">Advanced</option>
+          </select></div>
+        <button class="button" onclick="saveMissingBhajan()" style="margin-top:10px; background:#28a745; border:none;">Save to Master DB</button>
       </div>
     </div>
   </div>
@@ -507,28 +576,27 @@ function generateDashboardHtml() {
         <img src="/logo.png" alt="Bhagwan Baba" class="hero-image" onerror="this.src='/logo.png'">
       </div>
       <div class="hero-text">
-        <h2 class="hero-subtitle">Bhajan Scheduler</h2>
-        <h1 class="hero-title">Bhajans - The Royal Highway to SAI</h1>
+        <h2 class="hero-subtitle">Sri Sathya Sai Seva Organisations</h2>
+        <h1 class="hero-title">Bhajan Planner</h1>
       </div>
       <div class="hero-img-container">
         <img src="/logo_birthday.png" alt="Logo" class="hero-image">
       </div>
     </div>
 
-    <div class="sai-info-card" style="background: #fff9db; border-left: 4px solid #ff9933; border-radius: 8px; padding: 20px; margin-bottom: 40px; text-align: left; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-      <h3 style="color: #e65100; margin-bottom: 15px; text-align: center; font-family: 'Playfair Display', serif;">🕉️ The Spirit of Bhajan</h3>
-      <p style="margin-bottom: 10px; font-size: 14px; color: #555;"><strong>BHARAT:</strong> The heart of singing lies in the union of Bha (Bhava/Feeling), Ra (Raga/Melody), and Ta (Taala/Rhythm). Remember: "A tune (raga) without feeling (bhava) is an infliction (roga)."</p>
-      <p style="margin-bottom: 10px; font-size: 14px; color: #555;"><strong>Unity in Unison:</strong> We strive to merge our individual voices into a single wave of vibration. When we sing in one voice and one beat, we create a powerful demonstration of oneness.</p>
-      <p style="margin-bottom: 10px; font-size: 14px; color: #555;"><strong>Global Purification:</strong> Sacred sound waves act as spiritual "antibiotics," destroying negative thoughts in the air and purifying the environment for the welfare of the world.</p>
-      <p style="margin-bottom: 20px; font-size: 14px; color: #555;"><strong>Full-Throated Devotion:</strong> Sing with enthusiasm! Let your devotion resonate through full-throated participation.</p>
-        <div class="quote-author" style="margin-top: 20px; text-align: right; font-weight: 700; color: #e65100; font-size: 13px;">- Bhagwan Sri Sathya Sai Baba</div>
-
-      <h3 style="color: #e65100; margin-bottom: 15px; text-align: center; font-family: 'Playfair Display', serif;">📋 Singer's Code of Conduct</h3>
-      <div style="font-size: 14px; color: #555;">
+    <div class="sai-quote-card">
+      <h3 class="quote-header" style="margin-bottom: 12px;">🕉️ The Spirit of Bhajan</h3>
+      <p class="quote-text-para" style="margin-bottom: 8px; font-size: 14px;"><strong>BHARAT:</strong> The heart of singing lies in the union of Bha (Bhava/Feeling), Ra (Raga/Melody), and Ta (Taala/Rhythm). Remember: "A tune (raga) without feeling (bhava) is an infliction (roga)."</p>
+      <p class="quote-text-para" style="margin-bottom: 8px; font-size: 14px;"><strong>Unity in Unison:</strong> We strive to merge our individual voices into a single wave of vibration. When we sing in one voice and one beat, we create a powerful demonstration of oneness.</p>
+      <p class="quote-text-para" style="margin-bottom: 8px; font-size: 14px;"><strong>Global Purification:</strong> Sacred sound waves act as spiritual "antibiotics," destroying negative thoughts in the air and purifying the environment for the welfare of the world.</p>
+      <p class="quote-text-para" style="margin-bottom: 20px; font-size: 14px;"><strong>Full-Throated Devotion:</strong> Sing with enthusiasm! Let your devotion resonate through full-throated participation.</p>
+      
+      <h3 class="quote-header" style="margin-bottom: 12px; border-top: 1px solid #ffe066; padding-top: 20px;">📋 Singer's Code of Conduct</h3>
+      <div style="font-size: 14px; color: #555; margin-bottom: 16px;">
         <div style="margin-bottom: 8px;"><strong>⏳ Punctuality:</strong> Singers must be seated and ready before the Veda Recitation concludes.</div>
         <div style="margin-bottom: 8px;"><strong>🎹 Seating:</strong> All instrumentalists must sit together in the designated section to ensure perfect synchronization.</div>
         <div style="margin-bottom: 8px;"><strong>🎵 The Format:</strong>
-          <ul style="margin: 4px 0 8px 20px; padding: 0;">
+          <ul style="margin: 4px 0 8px 24px; padding: 0;">
             <li>1st Speed: Sing each line twice.</li>
             <li>2nd Speed: Sing lines once; repeat the last line twice.</li>
             <li>3rd Speed: (If applicable) Sing with increased tempo.</li>
@@ -538,37 +606,51 @@ function generateDashboardHtml() {
         <div style="margin-bottom: 8px;"><strong>👏 Hand Claps:</strong> Clap in rhythm! This act removes negative instincts from within and recharges us with divine energy.</div>
         <div style="margin-bottom: 8px;"><strong>🔕 Silence:</strong> Mobile phones must be on Silent Mode to maintain the sanctity of the atmosphere.</div>
       </div>
+      <div class="quote-author" style="text-align: right; font-style: normal; font-weight: 700; color: #e65100; font-size: 14px;">- Bhagwan Sri Sathya Sai Baba</div>
     </div>
 
     <div class="menu-grid">
       <a href="/submit-form" class="menu-card card-pink">
         <div class="card-icon">🎤</div>
         <div class="card-content">
-          <div class="card-title">Singer Login</div>
-          <div class="card-desc">Book your slot</div>
+          <div class="card-title">Singer's zone</div>
+          <div class="card-desc">Mark your Bhajans</div>
         </div>
       </a>
 
-      <a href="/database" class="menu-card card-blue">
+      <a href="/master-bank" class="menu-card card-blue">
+        <div class="card-icon">📖</div>
+        <div class="card-content">
+          <div class="card-title">Bhajan Database</div>
+          <div class="card-desc">Prashanthi Mandir Bhajans</div>
+        </div>
+      </a>
+      
+      <a href="/database" class="menu-card card-green">
         <div class="card-icon">🗃️</div>
         <div class="card-content">
-          <div class="card-title">Bhajan Bank</div>
-          <div class="card-desc">View full records</div>
+          <div class="card-title">History</div>
+          <div class="card-desc">Records - Gandhinagar Bhajan schedules</div>
         </div>
       </a>
 
       <a href="/admin-login" class="menu-card card-yellow">
         <div class="card-icon">🔐</div>
         <div class="card-content">
-          <div class="card-title">Office Bearer</div>
-          <div class="card-desc">Admin controls</div>
+          <div class="card-title">Administration</div>
+          <div class="card-desc">Schedular - Control Tower</div>
         </div>
       </a>
     </div>
 
     <div class="shanti-footer">
-      <div class="motto">"Love All - Serve All"</div>
-      <div class="prayer">Samastha Lokah Sukhino Bhavantus</div>
+      <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; margin-bottom:12px; border-bottom:1px solid #ffe066; padding-bottom:16px; text-align:center;">
+        <div class="motto" style="margin-bottom:4px; font-size:17px;">"Love All - Serve All"</div>
+        <div style="font-size:14px; font-style:italic; color:#666; line-height:1.5; max-width: 600px;">
+          "Bhajan must spread good-will, love, ecstasy; it must cleanse the polluted atmosphere; it must invite all to share in the joy and peace" - Baba
+        </div>
+      </div>
+      <div class="prayer">Samastha Loka Sukhino Bhavantu</div>
     </div>
 
   </div>
@@ -610,13 +692,13 @@ function generateDatabaseHtml(submissions) {
       <table id="dbTable">
         <thead>
           <tr>
-            <th><input type="text" class="filter-input" onkeyup="filterTable(0)" placeholder="Singer..."></th>
-            <th><input type="text" class="filter-input" onkeyup="filterTable(1)" placeholder="Partner..."></th>
-            <th><input type="text" class="filter-input" onkeyup="filterTable(2)" placeholder="Date..."></th>
-            <th><input type="text" class="filter-input" onkeyup="filterTable(3)" placeholder="Deity..."></th>
-            <th><input type="text" class="filter-input" onkeyup="filterTable(4)" placeholder="Bhajan..."></th>
-            <th><input type="text" class="filter-input" onkeyup="filterTable(5)" placeholder="Tempo..."></th>
-            <th><input type="text" class="filter-input" onkeyup="filterTable(6)" placeholder="Scale..."></th>
+            <th><input type="text" class="filter-input" onkeyup="filterTable()" placeholder="Singer..."></th>
+            <th><input type="text" class="filter-input" onkeyup="filterTable()" placeholder="Partner..."></th>
+            <th><input type="text" class="filter-input" onkeyup="filterTable()" placeholder="Date..."></th>
+            <th><input type="text" class="filter-input" onkeyup="filterTable()" placeholder="Deity..."></th>
+            <th><input type="text" class="filter-input" onkeyup="filterTable()" placeholder="Bhajan..."></th>
+            <th><input type="text" class="filter-input" onkeyup="filterTable()" placeholder="Tempo..."></th>
+            <th><input type="text" class="filter-input" onkeyup="filterTable()" placeholder="Scale..."></th>
           </tr>
           <tr>
             <th>Singer</th><th>Partner</th><th>Date</th><th>Deity</th><th>Bhajan</th><th>Tempo</th><th>Scale</th>
@@ -645,6 +727,91 @@ function generateAdminLoginHtml(error = "") {
   </div></body></html>`;
 }
 
+function generateMasterBankHtml(bhajans, isAdmin = false) {
+  const uniqueDeities = [...new Set(bhajans.map(b => b.deity).filter(Boolean))].sort();
+  const uniqueTempos = [...new Set(bhajans.map(b => b.tempo).filter(Boolean))].sort();
+  const uniqueRagas = [...new Set(bhajans.map(b => b.raga).filter(Boolean))].sort();
+
+  const rows = bhajans.map(b => `
+    <tr id="row-${b.id}">
+      <td data-label="Title" class="edit-cell" data-field="title">${b.title}</td>
+      <td data-label="Deity" class="edit-cell" data-field="deity">${b.deity || '-'}</td>
+      <td data-label="Tempo" class="edit-cell" data-field="tempo">${b.tempo || '-'}</td>
+      <td data-label="Raga" class="edit-cell" data-field="raga">${b.raga || '-'}</td>
+      <td data-label="Scale" class="edit-cell" data-field="shruti">${b.shruti || '-'}</td>
+      <td data-label="Level" class="edit-cell" data-field="level">${b.level || '-'}</td>
+      ${isAdmin ? `<td data-label="Actions" class="action-cell">
+        <button class="button" style="padding:6px 12px; font-size:12px; background:#4dabf7; border:none;" onclick="editMasterRow(${b.id})">✏️ Edit</button>
+      </td>` : ''}
+    </tr>
+  `).join('');
+
+  return `<!DOCTYPE html><html><head><meta charset="utf-8" /><title>Master Bhajan Bank</title><meta name="viewport" content="width=device-width, initial-scale=1" /><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="/style.css"></head><body>
+  <div class="container container-xl">
+    <div class="header"><h1>📖 Master Bhajan Bank</h1><p>Search and Learn</p></div>
+    <div style="margin-bottom: 20px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+      <a href="${isAdmin ? '/admin' : '/'}" class="button secondary">⬅️ Back</a>
+      ${isAdmin ? `<a href="/admin/export-master" class="button" style="background:#28a745; border:none; color:white;">⬇️ Download Clean JSON</a>` : ''}
+    </div>
+    
+    <div style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;">
+      <select id="filterBankDeity" class="filter-input" onchange="filterMasterBank()"><option value="">All Deities</option>${uniqueDeities.map(d=>`<option value="${d}">${d}</option>`).join('')}</select>
+      <select id="filterBankTempo" class="filter-input" onchange="filterMasterBank()"><option value="">All Tempos</option>${uniqueTempos.map(t=>`<option value="${t}">${t}</option>`).join('')}</select>
+      <select id="filterBankRaga" class="filter-input" onchange="filterMasterBank()"><option value="">All Ragas</option>${uniqueRagas.map(r=>`<option value="${r}">${r}</option>`).join('')}</select>
+      <input type="text" id="filterBankTitle" class="filter-input" onkeyup="filterMasterBank()" placeholder="Search by Title..." style="flex:1; min-width:200px;">
+    </div>
+    
+    <div class="table-container">
+      <table id="masterBankTable">
+        <thead><tr><th>Title</th><th>Deity</th><th>Tempo</th><th>Raga</th><th>Scale (Shruti)</th><th>Level</th>${isAdmin ? '<th>Actions</th>' : ''}</tr></thead>
+        <tbody>${rows.length > 0 ? rows : `<tr><td colspan="${isAdmin ? 7 : 6}" style="text-align:center;">No master bhajans found.</td></tr>`}</tbody>
+      </table>
+    </div></div><script src="/script.js"></script></body></html>`;
+}
+
+function generateAdminRulesHtml(rules, date) {
+  const title = date === 'default' ? '⚙️ Default Deity Rules' : `⚙️ Rules for ${date}`;
+  const subtitle = date === 'default' ? 'Set base limits for all future sessions' : 'Set custom limits for this specific session';
+  
+  const rows = rules.map(r => `
+    <tr>
+      <td>
+        <strong>${r.deity_name}</strong>
+        <input type="hidden" class="rule-deity" value="${r.deity_name}">
+      </td>
+      <td><input type="number" class="rule-min filter-input" value="${r.min_required}" min="0" max="9" style="width:80px; text-align:center;"></td>
+      <td><input type="number" class="rule-max filter-input" value="${r.max_allowed}" min="0" max="99" style="width:80px; text-align:center;"></td>
+    </tr>
+  `).join('');
+
+  return `<!DOCTYPE html><html><head><meta charset="utf-8" /><title>Manage Deity Rules</title><meta name="viewport" content="width=device-width, initial-scale=1" /><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="/style.css"></head><body>
+  <div class="container container-lg">
+    <div class="header">
+      <h1>${title}</h1>
+      <p>${subtitle}</p>
+    </div>
+    <div style="margin-bottom: 20px;">
+      <a href="${date === 'default' ? '/admin' : `/admin/date/${date}`}" class="button secondary">⬅️ Go Back</a>
+    </div>
+    <input type="hidden" id="ruleDate" value="${date}">
+    <div class="table-container">
+      <table id="rulesTable">
+        <thead>
+          <tr>
+            <th>Deity</th>
+            <th>Min Required</th>
+            <th>Max Allowed <br><small style="font-weight:normal">(0 = Blocked)</small></th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <div style="margin-top:20px; text-align:right;">
+      <button class="button" onclick="saveDeityRules()" style="background:#28a745; border:none;">💾 Save Rules</button>
+    </div>
+  </div><script src="/script.js"></script></body></html>`;
+}
+
 module.exports = {
   generateSubmitFormHtml,
   generatePlanViewHtml,
@@ -656,5 +823,7 @@ module.exports = {
   generateAdminSessionViewHtml,
   generateDashboardHtml,
   generateDatabaseHtml,
-  generateAdminLoginHtml
+  generateMasterBankHtml,
+  generateAdminLoginHtml,
+  generateAdminRulesHtml
 }
