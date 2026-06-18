@@ -19,7 +19,7 @@ function generateSubmitFormHtml(sessionDate, mandatoryFilled, totalMandatory, op
   <title>Bhajan Scheduler - Sai Centre Gandhinagar</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
   <div class="container">
@@ -192,7 +192,7 @@ function generateSubmitFormHtml(sessionDate, mandatoryFilled, totalMandatory, op
     </div>
   </div>
   
-  <script src="/script.js"></script>
+  <script src="/js/script.js"></script>
 </body>
 </html>`;
 }
@@ -205,7 +205,7 @@ function generatePlanViewHtml(sessionDate, rowsHtml, whatsappText, whatsappEncod
   <title>Bhajan Plan - ${sessionDate}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/css/style.css">
   <style>
     @media print {
       .no-print { display: none !important; }
@@ -277,7 +277,7 @@ function generatePlanViewHtml(sessionDate, rowsHtml, whatsappText, whatsappEncod
 }
 
 function generateErrorHtml(deity, existing, session_date) {
-  return `<!DOCTYPE html><html><head><meta charset="utf-8" /><title>Slot Taken</title><meta name="viewport" content="width=device-width, initial-scale=1" /><link rel="stylesheet" href="/style.css"></head><body><div class="container" style="text-align:center; padding:32px;"><div class="error-icon">⚠️</div><h2 style="color:#e03131;">Slot Already Taken</h2><p>Sorry, the <strong>${deity}</strong> deity slot has already been taken.</p><div class="info-box"><strong>Taken by:</strong> ${escapeHtml(existing.singer_name)}<br><strong>Bhajan:</strong> ${escapeHtml(existing.title)}<br><strong>Time:</strong> ${new Date(existing.created_at).toLocaleTimeString()}</div><a class="button" href="/submit-form?session_date=${session_date}">← Go Back</a></div></body></html>`;
+  return `<!DOCTYPE html><html><head><meta charset="utf-8" /><title>Slot Taken</title><meta name="viewport" content="width=device-width, initial-scale=1" /><link rel="stylesheet" href="/css/style.css"></head><body><div class="container" style="text-align:center; padding:32px;"><div class="error-icon">⚠️</div><h2 style="color:#e03131;">Slot Already Taken</h2><p>Sorry, the <strong>${deity}</strong> deity slot has already been taken.</p><div class="info-box"><strong>Taken by:</strong> ${escapeHtml(existing.singer_name)}<br><strong>Bhajan:</strong> ${escapeHtml(existing.title)}<br><strong>Time:</strong> ${new Date(existing.created_at).toLocaleTimeString()}</div><a class="button" href="/submit-form?session_date=${session_date}">← Go Back</a></div></body></html>`;
 }
 
 function generateSuccessHtml(singer_name, deity, title, speed, scale, session_date, isAdmin) {
@@ -293,11 +293,11 @@ function generateSuccessHtml(singer_name, deity, title, speed, scale, session_da
       <a class="button secondary" href="/plan-view?session_date=${session_date}">View Full Session Plan</a>
     `;
   }
-  return `<!DOCTYPE html><html><head><meta charset="utf-8" /><title>Success</title><meta name="viewport" content="width=device-width, initial-scale=1" /><link rel="stylesheet" href="/style.css"></head><body><div class="container" style="text-align:center; padding:32px;"><div class="success-icon">✅</div><h2 style="color:#2f9e44;">Bhajan Submitted!</h2><div style="font-size:20px; margin-bottom:24px;">🙏 Sai Ram, ${escapeHtml(singer_name)}!</div><div class="details-box" style="text-align:left;"><div><strong>Deity:</strong> ${deity}</div><div><strong>Bhajan:</strong> ${escapeHtml(title)}</div><div><strong>Speed:</strong> ${escapeHtml(speed)}</div><div><strong>Scale:</strong> ${escapeHtml(scale || 'Not specified')}</div><div><strong>Session:</strong> ${session_date}</div></div><p>Your bhajan has been recorded.</p><div style="display:flex; flex-direction:column; gap:12px; margin-top:24px;">${actionButtons}</div></div></body></html>`;
+  return `<!DOCTYPE html><html><head><meta charset="utf-8" /><title>Success</title><meta name="viewport" content="width=device-width, initial-scale=1" /><link rel="stylesheet" href="/css/style.css"></head><body><div class="container" style="text-align:center; padding:32px;"><div class="success-icon">✅</div><h2 style="color:#2f9e44;">Bhajan Submitted!</h2><div style="font-size:20px; margin-bottom:24px;">🙏 Sai Ram, ${escapeHtml(singer_name)}!</div><div class="details-box" style="text-align:left;"><div><strong>Deity:</strong> ${deity}</div><div><strong>Bhajan:</strong> ${escapeHtml(title)}</div><div><strong>Speed:</strong> ${escapeHtml(speed)}</div><div><strong>Scale:</strong> ${escapeHtml(scale || 'Not specified')}</div><div><strong>Session:</strong> ${session_date}</div></div><p>Your bhajan has been recorded.</p><div style="display:flex; flex-direction:column; gap:12px; margin-top:24px;">${actionButtons}</div></div></body></html>`;
 }
 
 function generateDatePickerHtml(today) {
-  return `<!DOCTYPE html><html><head><meta charset="utf-8" /><title>Select Date</title><meta name="viewport" content="width=device-width, initial-scale=1" /><link rel="stylesheet" href="/style.css"></head><body style="justify-content: center;"><div class="container" style="max-width:480px; padding:24px;"><h2 style="text-align: center; margin-bottom: 16px;">🕉️ View Bhajan Plan</h2><form method="get" action="/plan-view"><label style="display:block; margin-bottom:8px;">Bhajan Date</label><input type="date" name="session_date" value="${today}" required style="width:100%; padding:12px; margin-bottom:16px;" /><button type="submit" class="button" style="width:100%;">Show Plan</button></form></div></body></html>`;
+  return `<!DOCTYPE html><html><head><meta charset="utf-8" /><title>Select Date</title><meta name="viewport" content="width=device-width, initial-scale=1" /><link rel="stylesheet" href="/css/style.css"></head><body style="justify-content: center;"><div class="container" style="max-width:480px; padding:24px;"><h2 style="text-align: center; margin-bottom: 16px;">🕉️ View Bhajan Plan</h2><form method="get" action="/plan-view"><label style="display:block; margin-bottom:8px;">Bhajan Date</label><input type="date" name="session_date" value="${today}" required style="width:100%; padding:12px; margin-bottom:16px;" /><button type="submit" class="button" style="width:100%;">Show Plan</button></form></div></body></html>`;
 }
 
 function generateAdminSessionViewHtml(date, submissions, isLocked) {
@@ -328,7 +328,7 @@ function generateAdminSessionViewHtml(date, submissions, isLocked) {
   <meta charset="utf-8" />
   <title>Admin - Session Details</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
   <div class="container container-xl">
@@ -385,7 +385,7 @@ function generateAdminSessionViewHtml(date, submissions, isLocked) {
       </form>
     </div>
   </div>
-  <script src="/script.js"></script>
+  <script src="/js/script.js"></script>
 </body>
 </html>`;
 }
@@ -459,7 +459,7 @@ function generateAdminCalendarHtml(year, month, eventCounts, permissionMap = {},
   <meta charset="utf-8" />
   <title>Admin Calendar</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
   <div class="container container-xl">
@@ -567,13 +567,13 @@ function generateAdminCalendarHtml(year, month, eventCounts, permissionMap = {},
       </div>
     </div>
   </div>
-  <script src="/script.js"></script>
+  <script src="/js/script.js"></script>
 </body>
 </html>`;
 }
 
 function generateEditFormHtml(s) {
-  return `<!DOCTYPE html><html><head><meta charset="utf-8" /><title>Edit Bhajan</title><meta name="viewport" content="width=device-width, initial-scale=1" /><link rel="stylesheet" href="/style.css"></head><body>
+  return `<!DOCTYPE html><html><head><meta charset="utf-8" /><title>Edit Bhajan</title><meta name="viewport" content="width=device-width, initial-scale=1" /><link rel="stylesheet" href="/css/style.css"></head><body>
   <div class="container">
     <h2>✏️ Edit Bhajan Entry</h2>
     <form method="post" action="/admin/edit/${s.id}">
@@ -616,7 +616,7 @@ function generateAdminRulesHtml(rules, date) {
     </tr>
   `).join('');
 
-  return `<!DOCTYPE html><html><head><meta charset="utf-8" /><title>Manage Deity Rules</title><meta name="viewport" content="width=device-width, initial-scale=1" /><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="/style.css"></head><body>
+  return `<!DOCTYPE html><html><head><meta charset="utf-8" /><title>Manage Deity Rules</title><meta name="viewport" content="width=device-width, initial-scale=1" /><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="/css/style.css"></head><body>
   <div class="container container-lg">
     <div class="header">
       <h1>${title}</h1>
@@ -641,7 +641,7 @@ function generateAdminRulesHtml(rules, date) {
     <div style="margin-top:20px; text-align:right;">
       <button class="button" onclick="saveDeityRules()" style="background:#28a745; border:none;">💾 Save Rules</button>
     </div>
-  </div><script src="/script.js"></script></body></html>`;
+  </div><script src="/js/script.js"></script></body></html>`;
 }
 
 module.exports = {

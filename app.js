@@ -273,11 +273,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
 // Serve specific static files securely (instead of exposing the whole root directory)
-app.get('/style.css', (req, res) => res.sendFile(path.join(__dirname, 'style.css')));
-app.get('/script.js', (req, res) => res.sendFile(path.join(__dirname, 'script.js')));
-app.get('/logo.png', (req, res) => res.sendFile(path.join(__dirname, 'logo.png')));
-app.get('/baba_photo.png', (req, res) => res.sendFile(path.join(__dirname, 'baba_photo.png')));
-app.get('/logo_birthday.png', (req, res) => res.sendFile(path.join(__dirname, 'logo_birthday.png')));
+app.use(express.static("public"));
 
 // Session Setup
 app.use(session({
@@ -535,7 +531,7 @@ app.get('/submit-form', async (req, res) => {
         else btnStyle += ' background: linear-gradient(135deg, #ff9933 0%, #ff7700 100%); color:white;';
         optionsHtml += `<a href="/submit-form?session_date=${date}" class="button" style="${btnStyle}">${displayLabel}</a>`;
       });
-      return res.send(`<!DOCTYPE html><html><head><title>Select Session</title><meta name="viewport" content="width=device-width, initial-scale=1" /><link rel="stylesheet" href="/style.css"></head><body><div class="container" style="text-align:center; padding:40px; max-width:500px;"><h2 style="color:#e65100; margin-bottom:20px;">🗓️ Select Session</h2><p style="color:#555; margin-bottom:20px;">${msg}</p><div style="background:#f8f9fa; padding:20px; border-radius:12px; border:1px solid #eee;"><div style="display:flex; flex-direction:column; gap:10px;">${optionsHtml}</div></div><div style="margin-top:25px;"><a href="/" class="button secondary">🏠 Return Home</a></div></div></body></html>`);
+      return res.send(`<!DOCTYPE html><html><head><title>Select Session</title><meta name="viewport" content="width=device-width, initial-scale=1" /><link rel="stylesheet" href="/css/style.css"></head><body><div class="container" style="text-align:center; padding:40px; max-width:500px;"><h2 style="color:#e65100; margin-bottom:20px;">🗓️ Select Session</h2><p style="color:#555; margin-bottom:20px;">${msg}</p><div style="background:#f8f9fa; padding:20px; border-radius:12px; border:1px solid #eee;"><div style="display:flex; flex-direction:column; gap:10px;">${optionsHtml}</div></div><div style="margin-top:25px;"><a href="/" class="button secondary">🏠 Return Home</a></div></div></body></html>`);
     };
 
     // If no date provided, check if we should show selection screen
@@ -1259,7 +1255,7 @@ app.get('/admin/danger-reset-history', requireLogin, async (req, res) => {
     } catch (err) {}
 
     res.send(`
-      <!DOCTYPE html><html><head><link rel="stylesheet" href="/style.css"><title>Reset Complete</title></head>
+      <!DOCTYPE html><html><head><link rel="stylesheet" href="/css/style.css"><title>Reset Complete</title></head>
       <body style="text-align:center; padding:50px; background:#fff5f5;">
         <h1 style="color:#e03131; font-size:40px;">🚨 History Wiped!</h1>
         <p style="font-size:18px; margin-bottom:20px;">All past bhajan submissions and session locks have been permanently deleted.</p>
