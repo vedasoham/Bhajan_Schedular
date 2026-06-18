@@ -7,7 +7,8 @@ require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
 const fs = require('fs');
-const { Sequelize, DataTypes } = require('sequelize');
+const sequelize = require("./config/database");
+const { Sequelize, DataTypes } = require("sequelize");
 const path = require('path');
 const session = require('express-session');
 const { 
@@ -27,64 +28,8 @@ const {
 // DATABASE SETUP (SQLite)
 // ============================================================
 
-const sequelize = new Sequelize({
-  dialect: 'sqlite',
-  storage: 'bhajans.db',
-  logging: false
-});
-
 // Define BhajanSubmission Model
-const BhajanSubmission = sequelize.define('BhajanSubmission', {
-  id: {
-    type: DataTypes.INTEGER,
-    primaryKey: true,
-    autoIncrement: true
-  },
-  session_date: {
-    type: DataTypes.DATEONLY,
-    allowNull: false
-  },
-  singer_name: {
-    type: DataTypes.STRING,
-    allowNull: false
-  },
-  gender: {
-    type: DataTypes.STRING,
-    allowNull: true
-  },
-  partner_name: {
-    type: DataTypes.STRING,
-    allowNull: true
-  },
-  title: {
-    type: DataTypes.STRING,
-    allowNull: false
-  },
-  deity: {
-    type: DataTypes.STRING,
-    allowNull: false
-  },
-  scale: {
-    type: DataTypes.STRING,
-    allowNull: true
-  },
-  speed: {
-    type: DataTypes.STRING,
-    allowNull: false
-  },
-  list_order: { type: DataTypes.INTEGER, defaultValue: 0 },
-  raga: { type: DataTypes.STRING, allowNull: true },
-  level: { type: DataTypes.STRING, allowNull: true },
-  language: { type: DataTypes.STRING, allowNull: true },
-  created_at: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW
-  }
-}, {
-  tableName: 'bhajans_submitted_v2', // Changed to bypass SQLite's locked constraints
-  timestamps: false
-});
-
+const BhajanSubmission = require("./models/BhajanSubmission");
 // Define SessionPermission Model (For Special/Festival days)
 const SessionPermission = sequelize.define('SessionPermission', {
   date: {
