@@ -1,3 +1,13 @@
+function escapeHtml(unsafe) {
+  if (unsafe === null || unsafe === undefined) return '';
+  return String(unsafe)
+       .replace(/&/g, "&amp;")
+       .replace(/</g, "&lt;")
+       .replace(/>/g, "&gt;")
+       .replace(/"/g, "&quot;")
+       .replace(/'/g, "&#039;");
+}
+
 function generateSubmitFormHtml(sessionDate, mandatoryFilled, totalMandatory, optionalFilled, totalOptional, ganeshaCardHtml, otherDeitiesHtml, hanumanCard, isAdmin, showSuccess = false) {
   const dateAttr = isAdmin ? '' : 'readonly style="cursor:not-allowed; background:#f8f9fa;"';
   const dateMsg = isAdmin ? '<span style="color:#e03131; font-weight:bold;">Admin Mode: Select any date</span>' : 'This form is for the upcoming Thursday session';
@@ -42,12 +52,13 @@ function generateSubmitFormHtml(sessionDate, mandatoryFilled, totalMandatory, op
           <div class="form-row cols-3">
             <div class="form-group">
               <label>Singer Name <span class="required">*</span></label>
-              <input type="text" name="singer_name" id="singerName" required placeholder="Enter your full name" />
+              <input type="text" list="singerList" name="singer_name" id="singerName" required placeholder="Enter your full name" autocomplete="off" />
+              <datalist id="singerList"></datalist>
             </div>
             
             <div class="form-group">
               <label>Partner Name</label>
-              <input type="text" name="partner_name" id="partnerName" placeholder="Optional" />
+              <input type="text" list="singerList" name="partner_name" id="partnerName" placeholder="Optional" autocomplete="off" />
             </div>
 
             <div class="form-group">
@@ -200,6 +211,13 @@ function generatePlanViewHtml(sessionDate, rowsHtml, whatsappText, whatsappEncod
       .no-print { display: none !important; }
       .container { box-shadow: none; max-width: 100%; margin: 0; border-radius: 0; }
       body { background: white; padding: 0; }
+      table { border-collapse: collapse; width: 100%; font-family: 'Segoe UI', sans-serif; }
+      th { background-color: #f1f3f5 !important; color: #000 !important; -webkit-print-color-adjust: exact; border: 1px solid #ccc; padding: 12px; font-size: 14px; }
+      td { border: 1px solid #ccc; padding: 10px; font-size: 15px; color: #000; }
+      .deity-pill { background: transparent !important; color: #000 !important; font-weight: bold; border: none; padding: 0; }
+      h1 { font-size: 28px; color: #000; margin-bottom: 0; border-bottom: 2px solid #000; padding-bottom: 10px; }
+      .header p { font-size: 18px; color: #333; margin-top: 5px; }
+      .header { border-radius: 0; margin: 0 0 20px 0; background: none !important; padding: 0; text-align: left; }
     }
   </style>
 </head>
@@ -259,7 +277,7 @@ function generatePlanViewHtml(sessionDate, rowsHtml, whatsappText, whatsappEncod
 }
 
 function generateErrorHtml(deity, existing, session_date) {
-  return `<!DOCTYPE html><html><head><meta charset="utf-8" /><title>Slot Taken</title><meta name="viewport" content="width=device-width, initial-scale=1" /><link rel="stylesheet" href="/style.css"></head><body><div class="container" style="text-align:center; padding:32px;"><div class="error-icon">⚠️</div><h2 style="color:#e03131;">Slot Already Taken</h2><p>Sorry, the <strong>${deity}</strong> deity slot has already been taken.</p><div class="info-box"><strong>Taken by:</strong> ${existing.singer_name}<br><strong>Bhajan:</strong> ${existing.title}<br><strong>Time:</strong> ${new Date(existing.created_at).toLocaleTimeString()}</div><a class="button" href="/submit-form?session_date=${session_date}">← Go Back</a></div></body></html>`;
+  return `<!DOCTYPE html><html><head><meta charset="utf-8" /><title>Slot Taken</title><meta name="viewport" content="width=device-width, initial-scale=1" /><link rel="stylesheet" href="/style.css"></head><body><div class="container" style="text-align:center; padding:32px;"><div class="error-icon">⚠️</div><h2 style="color:#e03131;">Slot Already Taken</h2><p>Sorry, the <strong>${deity}</strong> deity slot has already been taken.</p><div class="info-box"><strong>Taken by:</strong> ${escapeHtml(existing.singer_name)}<br><strong>Bhajan:</strong> ${escapeHtml(existing.title)}<br><strong>Time:</strong> ${new Date(existing.created_at).toLocaleTimeString()}</div><a class="button" href="/submit-form?session_date=${session_date}">← Go Back</a></div></body></html>`;
 }
 
 function generateSuccessHtml(singer_name, deity, title, speed, scale, session_date, isAdmin) {
@@ -275,23 +293,24 @@ function generateSuccessHtml(singer_name, deity, title, speed, scale, session_da
       <a class="button secondary" href="/plan-view?session_date=${session_date}">View Full Session Plan</a>
     `;
   }
-  return `<!DOCTYPE html><html><head><meta charset="utf-8" /><title>Success</title><meta name="viewport" content="width=device-width, initial-scale=1" /><link rel="stylesheet" href="/style.css"></head><body><div class="container" style="text-align:center; padding:32px;"><div class="success-icon">✅</div><h2 style="color:#2f9e44;">Bhajan Submitted!</h2><div style="font-size:20px; margin-bottom:24px;">🙏 Sai Ram, ${singer_name}!</div><div class="details-box" style="text-align:left;"><div><strong>Deity:</strong> ${deity}</div><div><strong>Bhajan:</strong> ${title}</div><div><strong>Speed:</strong> ${speed}</div><div><strong>Scale:</strong> ${scale || 'Not specified'}</div><div><strong>Session:</strong> ${session_date}</div></div><p>Your bhajan has been recorded.</p><div style="display:flex; flex-direction:column; gap:12px; margin-top:24px;">${actionButtons}</div></div></body></html>`;
+  return `<!DOCTYPE html><html><head><meta charset="utf-8" /><title>Success</title><meta name="viewport" content="width=device-width, initial-scale=1" /><link rel="stylesheet" href="/style.css"></head><body><div class="container" style="text-align:center; padding:32px;"><div class="success-icon">✅</div><h2 style="color:#2f9e44;">Bhajan Submitted!</h2><div style="font-size:20px; margin-bottom:24px;">🙏 Sai Ram, ${escapeHtml(singer_name)}!</div><div class="details-box" style="text-align:left;"><div><strong>Deity:</strong> ${deity}</div><div><strong>Bhajan:</strong> ${escapeHtml(title)}</div><div><strong>Speed:</strong> ${escapeHtml(speed)}</div><div><strong>Scale:</strong> ${escapeHtml(scale || 'Not specified')}</div><div><strong>Session:</strong> ${session_date}</div></div><p>Your bhajan has been recorded.</p><div style="display:flex; flex-direction:column; gap:12px; margin-top:24px;">${actionButtons}</div></div></body></html>`;
 }
 
 function generateDatePickerHtml(today) {
   return `<!DOCTYPE html><html><head><meta charset="utf-8" /><title>Select Date</title><meta name="viewport" content="width=device-width, initial-scale=1" /><link rel="stylesheet" href="/style.css"></head><body style="justify-content: center;"><div class="container" style="max-width:480px; padding:24px;"><h2 style="text-align: center; margin-bottom: 16px;">🕉️ View Bhajan Plan</h2><form method="get" action="/plan-view"><label style="display:block; margin-bottom:8px;">Bhajan Date</label><input type="date" name="session_date" value="${today}" required style="width:100%; padding:12px; margin-bottom:16px;" /><button type="submit" class="button" style="width:100%;">Show Plan</button></form></div></body></html>`;
 }
 
-function generateAdminSessionViewHtml(date, submissions) {
+function generateAdminSessionViewHtml(date, submissions, isLocked) {
   const rows = submissions.map(s => `
-    <tr>
-      <td data-label="Singer(s)"><strong>${s.singer_name}</strong>${s.partner_name ? `<br><small>& ${s.partner_name}</small>` : ''}</td>
-      <td data-label="Gender">${s.gender || '-'}</td>
-      <td data-label="Deity"><span class="deity-pill">${s.deity}</span></td>
-      <td data-label="Title">${s.title}</td>
-      <td data-label="Tempo">${s.speed || '-'}</td>
-      <td data-label="Raag">${s.raga || '-'}</td>
-      <td data-label="Scale">${s.scale || '-'}</td>
+    <tr data-id="${s.id}" class="draggable-row" draggable="true" style="cursor: grab;">
+      <td style="color:#adb5bd; cursor:grab; font-size:18px;" class="drag-handle" title="Drag to reorder">☰</td>
+      <td data-label="Singer(s)"><strong>${escapeHtml(s.singer_name)}</strong>${s.partner_name ? `<br><small>& ${escapeHtml(s.partner_name)}</small>` : ''}</td>
+      <td data-label="Gender">${escapeHtml(s.gender || '-')}</td>
+      <td data-label="Deity"><span class="deity-pill">${escapeHtml(s.deity)}</span></td>
+      <td data-label="Title">${escapeHtml(s.title)}</td>
+      <td data-label="Tempo">${escapeHtml(s.speed || '-')}</td>
+      <td data-label="Raag">${escapeHtml(s.raga || '-')}</td>
+      <td data-label="Scale">${escapeHtml(s.scale || '-')}</td>
       <td data-label="Actions">
         <div style="display:flex; gap:8px; justify-content:flex-end;">
           <a href="/admin/edit/${s.id}" class="button" style="padding:6px 12px; font-size:13px; text-decoration:none;">Edit</a>
@@ -316,20 +335,30 @@ function generateAdminSessionViewHtml(date, submissions) {
     <div class="header">
       <h1>🛠️ Session Details</h1>
       <p>Date: ${date}</p>
+      ${isLocked ? `<span style="background:#e03131; color:white; padding:4px 12px; border-radius:12px; font-size:12px; font-weight:bold; margin-top:10px; display:inline-block;">🔒 SESSION LOCKED</span>` : ''}
     </div>
     
     <div style="margin-bottom: 24px; display:flex; gap:12px; flex-wrap:wrap; justify-content:center;">
       <a href="/admin" class="button secondary">⬅️ Back to Calendar</a>
       <a href="/submit-form?admin=true&session_date=${date}" class="button">➕ Add / Append to this Date</a>
       <a href="/admin/rules?date=${date}" class="button secondary">⚙️ Session Rules</a>
+      <button onclick="toggleSessionLock('${date}', ${!isLocked})" class="button" style="background:${isLocked ? '#28a745' : '#e03131'}; border:none;">${isLocked ? '🔓 Unlock Submissions' : '🔒 Lock Submissions'}</button>
       <a href="/plan-view" class="button secondary">📅 View Plans</a>
       <a href="/" class="button secondary">🏠 Home</a>
+    </div>
+    
+    <div style="background:#fff3cd; border:1px solid #ffe066; padding:15px; border-radius:12px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+      <div>
+        <strong>↕️ Reorder Sequence:</strong> Drag and drop the ☰ handle on rows to arrange the musical sequence.
+      </div>
+      <button id="saveOrderBtn" class="button" style="background:#28a745; border:none; display:none;" onclick="saveReorderSequence()">💾 Save New Sequence</button>
     </div>
 
     <div class="table-container">
       <table>
         <thead>
           <tr>
+            <th width="30"></th>
             <th>Singer(s)</th>
             <th>Gender</th>
             <th>Deity</th>
@@ -340,12 +369,23 @@ function generateAdminSessionViewHtml(date, submissions) {
             <th>Actions</th>
           </tr>
         </thead>
-        <tbody>
-          ${rows.length > 0 ? rows : '<tr><td colspan="8" style="padding:20px; text-align:center;">No records found for this date.</td></tr>'}
+        <tbody id="sortable-body">
+          ${rows.length > 0 ? rows : '<tr><td colspan="9" style="padding:20px; text-align:center;">No records found for this date.</td></tr>'}
         </tbody>
       </table>
     </div>
+    
+    <div style="margin-top:40px; background:#f8f9fa; padding:20px; border-radius:12px; border:1px solid #dee2e6;">
+      <h3 style="margin-bottom:10px; color:#495057;">🔄 Copy Previous Session</h3>
+      <p style="font-size:13px; color:#6c757d; margin-bottom:15px;">Duplicate the singer lineup from a past session directly into this date.</p>
+      <form action="/admin/copy-session" method="POST" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <input type="hidden" name="target_date" value="${date}">
+        <input type="date" name="source_date" required class="filter-input" style="max-width:200px;">
+        <button type="submit" class="button secondary" onclick="return confirm('Copy all entries? This will append to the current list.')">Copy Lineup</button>
+      </form>
+    </div>
   </div>
+  <script src="/script.js"></script>
 </body>
 </html>`;
 }
@@ -428,10 +468,14 @@ function generateAdminCalendarHtml(year, month, eventCounts, permissionMap = {},
       <p>Manage Sessions</p>
     </div>
     
-    <div style="margin-bottom: 20px; display:flex; gap:10px;">
+    <div style="margin-bottom: 20px; display:flex; gap:10px; flex-wrap:wrap;">
       <a href="/" class="button secondary">🏠 Home</a>
       <a href="/submit-form?admin=true" class="button secondary">➕ New Entry (Any Date)</a>
       <a href="/admin/rules" class="button secondary">⚙️ Default Deity Rules</a>
+      <a href="/admin/singers" class="button secondary" style="background:#e6fcf5; color:#099268; border-color:#c3fae8;">👤 Singer Directory</a>
+      <a href="/admin/singer-dictionary" class="button secondary" style="background:#e3f2fd; color:#0277bd; border-color:#90caf9;">📖 Singer Dictionary</a>
+      <a href="/master-bank" class="button secondary" style="background:#fff3cd; color:#e67700; border-color:#ffe066;">📚 Edit Master Bank</a>
+      <a href="/admin/analytics" class="button secondary" style="background:#f3f0ff; color:#6741d9; border-color:#e5dbff;">📈 Analytics</a>
     </div>
 
     <div class="calendar-header">
@@ -512,8 +556,9 @@ function generateAdminCalendarHtml(year, month, eventCounts, permissionMap = {},
           </select></div>
         <div><label style="font-size:12px; font-weight:600; color:#495057;">Raga</label>
           <input type="text" id="mbRaga" placeholder="e.g., Yaman Kalyani" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;"></div>
-        <div><label style="font-size:12px; font-weight:600; color:#495057;">Shruti (Scale)</label>
-          <input type="text" id="mbShruti" placeholder="e.g., C#" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;"></div>
+        <div><label style="font-size:12px; font-weight:600; color:#495057;">Shruti ( padding:8px; border:1px solid #ddd; border-radius:4px;"></div>
+        <div><label style="font-size:12px; font-weight:600; color:#495057;">Shruti (Female Scale)</label>
+          <input type="text" id="mbShrutiFemale" placeholder="e.g., G#" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;"></div>
         <div><label style="font-size:12px; font-weight:600; color:#495057;">Level</label>
           <select id="mbLevel" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;">
             <option value="">Unknown</option><option value="Easy">Easy</option><option value="Medium">Medium</option><option value="Advanced">Advanced</option>
@@ -537,12 +582,12 @@ function generateEditFormHtml(s) {
         <div class="form-group"><label>Deity</label><input type="text" name="deity" value="${s.deity}" required /></div>
       </div>
       <div class="form-row">
-        <div class="form-group"><label>Singer Name</label><input type="text" name="singer_name" value="${s.singer_name}" required /></div>
-        <div class="form-group"><label>Partner</label><input type="text" name="partner_name" value="${s.partner_name || ''}" /></div>
+        <div class="form-group"><label>Singer Name</label><input type="text" name="singer_name" value="${escapeHtml(s.singer_name)}" required /></div>
+        <div class="form-group"><label>Partner</label><input type="text" name="partner_name" value="${escapeHtml(s.partner_name || '')}" /></div>
       </div>
-      <div class="form-group"><label>Title</label><input type="text" name="title" value="${s.title}" required /></div>
+      <div class="form-group"><label>Title</label><input type="text" name="title" value="${escapeHtml(s.title)}" required /></div>
       <div class="form-row">
-      <div class="form-group"><label>Scale</label><input type="text" name="scale" value="${s.scale || ''}" /></div>
+      <div class="form-group"><label>Scale</label><input type="text" name="scale" value="${escapeHtml(s.scale || '')}" /></div>
       <div class="form-group"><label>Speed</label>
         <select name="speed" required>
           <option value="slow" ${s.speed === 'slow' ? 'selected' : ''}>Slow</option>
@@ -554,219 +599,6 @@ function generateEditFormHtml(s) {
       <div style="margin-top:20px; display:flex; gap:10px;"><button type="submit" class="button">Save Changes</button><a href="/admin" class="button secondary">Cancel</a></div>
     </form>
   </div></body></html>`;
-}
-
-function generateDashboardHtml() {
-  return `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <title>Bhajan Planner - Gandhinagar</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/style.css">
-</head>
-<body>
-  <div class="prasanthi-border"></div>
-
-  <div class="container dashboard-container">
-    
-    <div class="hero-banner">
-      <div class="hero-img-container">
-        <img src="/logo.png" alt="Bhagwan Baba" class="hero-image" onerror="this.src='/logo.png'">
-      </div>
-      <div class="hero-text">
-        <h2 class="hero-subtitle">Sri Sathya Sai Seva Organisations</h2>
-        <h1 class="hero-title">Bhajan Planner</h1>
-      </div>
-      <div class="hero-img-container">
-        <img src="/logo_birthday.png" alt="Logo" class="hero-image">
-      </div>
-    </div>
-
-    <div class="sai-quote-card">
-      <h3 class="quote-header" style="margin-bottom: 12px;">🕉️ The Spirit of Bhajan</h3>
-      <p class="quote-text-para" style="margin-bottom: 8px; font-size: 14px;"><strong>BHARAT:</strong> The heart of singing lies in the union of Bha (Bhava/Feeling), Ra (Raga/Melody), and Ta (Taala/Rhythm). Remember: "A tune (raga) without feeling (bhava) is an infliction (roga)."</p>
-      <p class="quote-text-para" style="margin-bottom: 8px; font-size: 14px;"><strong>Unity in Unison:</strong> We strive to merge our individual voices into a single wave of vibration. When we sing in one voice and one beat, we create a powerful demonstration of oneness.</p>
-      <p class="quote-text-para" style="margin-bottom: 8px; font-size: 14px;"><strong>Global Purification:</strong> Sacred sound waves act as spiritual "antibiotics," destroying negative thoughts in the air and purifying the environment for the welfare of the world.</p>
-      <p class="quote-text-para" style="margin-bottom: 20px; font-size: 14px;"><strong>Full-Throated Devotion:</strong> Sing with enthusiasm! Let your devotion resonate through full-throated participation.</p>
-      
-      <h3 class="quote-header" style="margin-bottom: 12px; border-top: 1px solid #ffe066; padding-top: 20px;">📋 Singer's Code of Conduct</h3>
-      <div style="font-size: 14px; color: #555; margin-bottom: 16px;">
-        <div style="margin-bottom: 8px;"><strong>⏳ Punctuality:</strong> Singers must be seated and ready before the Veda Recitation concludes.</div>
-        <div style="margin-bottom: 8px;"><strong>🎹 Seating:</strong> All instrumentalists must sit together in the designated section to ensure perfect synchronization.</div>
-        <div style="margin-bottom: 8px;"><strong>🎵 The Format:</strong>
-          <ul style="margin: 4px 0 8px 24px; padding: 0;">
-            <li>1st Speed: Sing each line twice.</li>
-            <li>2nd Speed: Sing lines once; repeat the last line twice.</li>
-            <li>3rd Speed: (If applicable) Sing with increased tempo.</li>
-          </ul>
-        </div>
-        <div style="margin-bottom: 8px;"><strong>🔉 Pitch (Sruti):</strong> Select a pitch that is comfortable for your range. Avoid straining your voice on high or low notes to maintain sweetness.</div>
-        <div style="margin-bottom: 8px;"><strong>👏 Hand Claps:</strong> Clap in rhythm! This act removes negative instincts from within and recharges us with divine energy.</div>
-        <div style="margin-bottom: 8px;"><strong>🔕 Silence:</strong> Mobile phones must be on Silent Mode to maintain the sanctity of the atmosphere.</div>
-      </div>
-      <div class="quote-author" style="text-align: right; font-style: normal; font-weight: 700; color: #e65100; font-size: 14px;">- Bhagwan Sri Sathya Sai Baba</div>
-    </div>
-
-    <div class="menu-grid">
-      <a href="/submit-form" class="menu-card card-pink">
-        <div class="card-icon">🎤</div>
-        <div class="card-content">
-          <div class="card-title">Singer's zone</div>
-          <div class="card-desc">Mark your Bhajans</div>
-        </div>
-      </a>
-
-      <a href="/master-bank" class="menu-card card-blue">
-        <div class="card-icon">📖</div>
-        <div class="card-content">
-          <div class="card-title">Bhajan Database</div>
-          <div class="card-desc">Prashanthi Mandir Bhajans</div>
-        </div>
-      </a>
-      
-      <a href="/database" class="menu-card card-green">
-        <div class="card-icon">🗃️</div>
-        <div class="card-content">
-          <div class="card-title">History</div>
-          <div class="card-desc">Records - Gandhinagar Bhajan schedules</div>
-        </div>
-      </a>
-
-      <a href="/admin-login" class="menu-card card-yellow">
-        <div class="card-icon">🔐</div>
-        <div class="card-content">
-          <div class="card-title">Administration</div>
-          <div class="card-desc">Schedular - Control Tower</div>
-        </div>
-      </a>
-    </div>
-
-    <div class="shanti-footer">
-      <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; margin-bottom:12px; border-bottom:1px solid #ffe066; padding-bottom:16px; text-align:center;">
-        <div class="motto" style="margin-bottom:4px; font-size:17px;">"Love All - Serve All"</div>
-        <div style="font-size:14px; font-style:italic; color:#666; line-height:1.5; max-width: 600px;">
-          "Bhajan must spread good-will, love, ecstasy; it must cleanse the polluted atmosphere; it must invite all to share in the joy and peace" - Baba
-        </div>
-      </div>
-      <div class="prayer">Samastha Loka Sukhino Bhavantu</div>
-    </div>
-
-  </div>
-</body>
-</html>`;
-}
-
-function generateDatabaseHtml(submissions) {
-  const rows = submissions.map(s => `
-    <tr>
-      <td>${s.singer_name}</td>
-      <td>${s.partner_name || '-'}</td>
-      <td>${s.session_date}</td>
-      <td>${s.deity}</td>
-      <td>${s.title}</td>
-      <td>${s.speed}</td>
-      <td>${s.scale || '-'}</td>
-    </tr>
-  `).join('');
-
-  return `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <title>Bhajan Database</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/style.css">
-</head>
-<body>
-  <div class="container container-xl">
-    <div class="header">
-      <h1>🗃️ Bhajan Database</h1>
-      <p>Full Records</p>
-    </div>
-    <div style="margin-bottom: 20px;"><a href="/" class="button secondary">🏠 Home</a></div>
-    
-    <div class="table-container">
-      <table id="dbTable">
-        <thead>
-          <tr>
-            <th><input type="text" class="filter-input" onkeyup="filterTable()" placeholder="Singer..."></th>
-            <th><input type="text" class="filter-input" onkeyup="filterTable()" placeholder="Partner..."></th>
-            <th><input type="text" class="filter-input" onkeyup="filterTable()" placeholder="Date..."></th>
-            <th><input type="text" class="filter-input" onkeyup="filterTable()" placeholder="Deity..."></th>
-            <th><input type="text" class="filter-input" onkeyup="filterTable()" placeholder="Bhajan..."></th>
-            <th><input type="text" class="filter-input" onkeyup="filterTable()" placeholder="Tempo..."></th>
-            <th><input type="text" class="filter-input" onkeyup="filterTable()" placeholder="Scale..."></th>
-          </tr>
-          <tr>
-            <th>Singer</th><th>Partner</th><th>Date</th><th>Deity</th><th>Bhajan</th><th>Tempo</th><th>Scale</th>
-          </tr>
-        </thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </div>
-  </div>
-  <script src="/script.js"></script>
-</body>
-</html>`;
-}
-
-function generateAdminLoginHtml(error = "") {
-  return `<!DOCTYPE html><html><head><meta charset="utf-8" /><title>Admin Login</title><meta name="viewport" content="width=device-width, initial-scale=1" /><link rel="stylesheet" href="/style.css"></head><body>
-  <div class="container" style="max-width: 400px; padding: 40px;">
-    <h2 style="text-align: center; color: #C2185B; margin-bottom: 24px;">🔐 Admin Login</h2>
-    ${error ? `<div style="background:#ffe3e3; color:#c92a2a; padding:10px; border-radius:8px; margin-bottom:16px; text-align:center;">${error}</div>` : ''}
-    <form method="post" action="/admin-login">
-      <div class="form-group"><label>User ID</label><input type="text" name="username" required /></div>
-      <div class="form-group"><label>Password</label><input type="password" name="password" required /></div>
-      <button type="submit" class="submit-btn">Login</button>
-    </form>
-    <div style="text-align:center; margin-top:20px;"><a href="/" style="color:#868e96; text-decoration:none;">← Back to Home</a></div>
-  </div></body></html>`;
-}
-
-function generateMasterBankHtml(bhajans, isAdmin = false) {
-  const uniqueDeities = [...new Set(bhajans.map(b => b.deity).filter(Boolean))].sort();
-  const uniqueTempos = [...new Set(bhajans.map(b => b.tempo).filter(Boolean))].sort();
-  const uniqueRagas = [...new Set(bhajans.map(b => b.raga).filter(Boolean))].sort();
-
-  const rows = bhajans.map(b => `
-    <tr id="row-${b.id}">
-      <td data-label="Title" class="edit-cell" data-field="title">${b.title}</td>
-      <td data-label="Deity" class="edit-cell" data-field="deity">${b.deity || '-'}</td>
-      <td data-label="Tempo" class="edit-cell" data-field="tempo">${b.tempo || '-'}</td>
-      <td data-label="Raga" class="edit-cell" data-field="raga">${b.raga || '-'}</td>
-      <td data-label="Scale" class="edit-cell" data-field="shruti">${b.shruti || '-'}</td>
-      <td data-label="Level" class="edit-cell" data-field="level">${b.level || '-'}</td>
-      ${isAdmin ? `<td data-label="Actions" class="action-cell">
-        <button class="button" style="padding:6px 12px; font-size:12px; background:#4dabf7; border:none;" onclick="editMasterRow(${b.id})">✏️ Edit</button>
-      </td>` : ''}
-    </tr>
-  `).join('');
-
-  return `<!DOCTYPE html><html><head><meta charset="utf-8" /><title>Master Bhajan Bank</title><meta name="viewport" content="width=device-width, initial-scale=1" /><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="/style.css"></head><body>
-  <div class="container container-xl">
-    <div class="header"><h1>📖 Master Bhajan Bank</h1><p>Search and Learn</p></div>
-    <div style="margin-bottom: 20px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px;">
-      <a href="${isAdmin ? '/admin' : '/'}" class="button secondary">⬅️ Back</a>
-      ${isAdmin ? `<a href="/admin/export-master" class="button" style="background:#28a745; border:none; color:white;">⬇️ Download Clean JSON</a>` : ''}
-    </div>
-    
-    <div style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;">
-      <select id="filterBankDeity" class="filter-input" onchange="filterMasterBank()"><option value="">All Deities</option>${uniqueDeities.map(d=>`<option value="${d}">${d}</option>`).join('')}</select>
-      <select id="filterBankTempo" class="filter-input" onchange="filterMasterBank()"><option value="">All Tempos</option>${uniqueTempos.map(t=>`<option value="${t}">${t}</option>`).join('')}</select>
-      <select id="filterBankRaga" class="filter-input" onchange="filterMasterBank()"><option value="">All Ragas</option>${uniqueRagas.map(r=>`<option value="${r}">${r}</option>`).join('')}</select>
-      <input type="text" id="filterBankTitle" class="filter-input" onkeyup="filterMasterBank()" placeholder="Search by Title..." style="flex:1; min-width:200px;">
-    </div>
-    
-    <div class="table-container">
-      <table id="masterBankTable">
-        <thead><tr><th>Title</th><th>Deity</th><th>Tempo</th><th>Raga</th><th>Scale (Shruti)</th><th>Level</th>${isAdmin ? '<th>Actions</th>' : ''}</tr></thead>
-        <tbody>${rows.length > 0 ? rows : `<tr><td colspan="${isAdmin ? 7 : 6}" style="text-align:center;">No master bhajans found.</td></tr>`}</tbody>
-      </table>
-    </div></div><script src="/script.js"></script></body></html>`;
 }
 
 function generateAdminRulesHtml(rules, date) {
@@ -813,6 +645,7 @@ function generateAdminRulesHtml(rules, date) {
 }
 
 module.exports = {
+  escapeHtml,
   generateSubmitFormHtml,
   generatePlanViewHtml,
   generateErrorHtml,
@@ -821,9 +654,5 @@ module.exports = {
   generateEditFormHtml,
   generateAdminCalendarHtml,
   generateAdminSessionViewHtml,
-  generateDashboardHtml,
-  generateDatabaseHtml,
-  generateMasterBankHtml,
-  generateAdminLoginHtml,
   generateAdminRulesHtml
 }

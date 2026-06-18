@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Singer Directory</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="container container-lg">
+    <div class="header">
+      <h1>👤 Singer Directory</h1>
+      <p>Devotee Participation Stats</p>
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+      <a href="/admin" class="button secondary">⬅️ Back to Admin</a>
+    </div>
+
+    <div class="table-container">
+      <table id="singerTable">
+        <thead>
+          <tr>
+            <th onclick="sortTable(0, 'singerTable')" style="cursor:pointer; background:#c3fae8; color:#087f5b;">Singer Name ↕</th>
+            <th onclick="sortTable(1, 'singerTable')" style="cursor:pointer; background:#c3fae8; color:#087f5b; text-align:center;">Total Bhajans Sung ↕</th>
+            <th onclick="sortTable(2, 'singerTable')" style="cursor:pointer; background:#c3fae8; color:#087f5b;">Last Sung Date ↕</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% singers.forEach(s => { %>
+            <tr>
+              <td><strong><%= s.singer_name %></strong></td>
+              <td style="text-align:center;"><span style="background:#20c997; color:white; padding:4px 10px; border-radius:20px; font-weight:bold; font-size:12px;"><%= s.total_sung %></span></td>
+              <td data-sort="<%= s.last_sung %>"><%= s.formattedDate %> <br><small style="color:#868e96;"><%= s.lastSungHuman %></small></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <script src="/script.js"></script>
+</body>
+</html>

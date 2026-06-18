@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Admin Login</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="container" style="max-width: 400px; padding: 40px;">
+    <h2 style="text-align: center; color: #C2185B; margin-bottom: 24px;">🔐 Admin Login</h2>
+    <% if (error) { %>
+      <div style="background:#ffe3e3; color:#c92a2a; padding:10px; border-radius:8px; margin-bottom:16px; text-align:center;"><%= error %></div>
+    <% } %>
+    <form method="post" action="/admin-login">
+      <div class="form-group"><label>User ID</label><input type="text" name="username" required /></div>
+      <div class="form-group"><label>Password</label><input type="password" name="password" required /></div>
+      <button type="submit" class="submit-btn">Login</button>
+    </form>
+    <div style="text-align:center; margin-top:20px;">
+      <a href="/" style="color:#868e96; text-decoration:none;">← Back to Home</a>
+    </div>
+  </div>
+</body>
+</html>

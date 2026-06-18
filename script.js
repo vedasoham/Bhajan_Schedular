@@ -34,6 +34,20 @@ document.addEventListener('DOMContentLoaded', function() {
   const adminInput = document.querySelector('input[name="admin"]');
   const isAdmin = adminInput && adminInput.value === 'true';
 
+  // Fetch Singer Dictionary for Autocomplete
+  const singerList = document.getElementById('singerList');
+  if (singerList) {
+    fetch('/api/singers')
+      .then(res => res.json())
+      .then(data => {
+        data.forEach(singer => {
+          const option = document.createElement('option');
+          option.value = singer.name;
+          singerList.appendChild(option);
+        });
+      }).catch(err => console.error('Failed to load singer dictionary'));
+  }
+
   // 1. Load saved details only if not in admin mode
   if (!isAdmin) {
     const savedName = localStorage.getItem('bj_singer_name');
@@ -101,8 +115,11 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   // MAGIC AUTO-FILL LOGIC: Listen for when they select a title
+  let searchTimeout;
   document.getElementById('bhajanTitleInput').addEventListener('input', function(e) {
-    const selectedTitle = e.target.value;
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+      const selectedTitle = e.target.value;
     
     // Find the bhajan in our downloaded master list
     const matchedBhajan = currentMasterBhajans.find(b => b.title === selectedTitle);
@@ -126,7 +143,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (matchedBhajan) {
       // 1. Auto-fill visible inputs
-      document.getElementById('scaleInput').value = (matchedBhajan.shruti && matchedBhajan.shruti !== '#N/A') ? matchedBhajan.shruti : '';
+      const genderSelect = document.getElementById('gender');
+      const gender = genderSelect ? genderSelect.value : '';
+      let scaleToUse = '';
+      if (gender === 'Female' && matchedBhajan.shruti_female && matchedBhajan.shruti_female !== '#N/A') {
+        scaleToUse = matchedBhajan.shruti_female;
+      } else if (matchedBhajan.shruti && matchedBhajan.shruti !== '#N/A') {
+        scaleToUse = matchedBhajan.shruti;
+      }
+      document.getElementById('scaleInput').value = scaleToUse;
       document.getElementById('speedInput').value = cleanValue(matchedBhajan.tempo);
       
       // 2. Auto-fill other inputs to send to database
@@ -149,6 +174,25 @@ document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('ragaInput').value = 'Not specified';
       document.getElementById('hiddenLevel').value = '';
       document.getElementById('hiddenLanguage').value = '';
+    }
+    }, 300);
+  });
+  
+  // Instantly swap scale if they change gender AFTER picking a bhajan
+  document.getElementById('gender')?.addEventListener('change', function(e) {
+    const selectedTitle = document.getElementById('bhajanTitleInput').value;
+    if (selectedTitle && currentMasterBhajans) {
+      const matchedBhajan = currentMasterBhajans.find(b => b.title === selectedTitle);
+      if (matchedBhajan) {
+        const gender = e.target.value;
+        let scaleToUse = '';
+        if (gender === 'Female' && matchedBhajan.shruti_female && matchedBhajan.shruti_female !== '#N/A') {
+          scaleToUse = matchedBhajan.shruti_female;
+        } else if (matchedBhajan.shruti && matchedBhajan.shruti !== '#N/A') {
+          scaleToUse = matchedBhajan.shruti;
+        }
+        document.getElementById('scaleInput').value = scaleToUse;
+      }
     }
   });
 
@@ -213,55 +257,64 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
+let filterTableTimeout;
 function filterTable() {
-  const inputs = document.querySelectorAll('.filter-input');
-  const table = document.getElementById("dbTable");
-  const tr = table.getElementsByTagName("tr");
+  clearTimeout(filterTableTimeout);
+  filterTableTimeout = setTimeout(() => {
+    const inputs = document.querySelectorAll('#dbTable .filter-input');
+    const table = document.getElementById("dbTable");
+    if (!table) return;
+    const tr = table.getElementsByTagName("tr");
 
-  // Start from 2 because row 0 is inputs, row 1 is headers
-  for (let i = 2; i < tr.length; i++) {
-    let rowVisible = true;
-    for (let j = 0; j < inputs.length; j++) {
-      const filter = inputs[j].value.toUpperCase();
-      const td = tr[i].getElementsByTagName("td")[j];
-      if (td) {
-        const txtValue = td.textContent || td.innerText;
-        if (txtValue.toUpperCase().indexOf(filter) === -1) {
-          rowVisible = false;
-          break;
+    // Start from 2 because row 0 is inputs, row 1 is headers
+    for (let i = 2; i < tr.length; i++) {
+      let rowVisible = true;
+      for (let j = 0; j < inputs.length; j++) {
+        const filter = inputs[j].value.toUpperCase();
+        const td = tr[i].getElementsByTagName("td")[j];
+        if (td) {
+          const txtValue = td.textContent || td.innerText;
+          if (txtValue.toUpperCase().indexOf(filter) === -1) {
+            rowVisible = false;
+            break;
+          }
         }
       }
+      tr[i].style.display = rowVisible ? "" : "none";
     }
-    tr[i].style.display = rowVisible ? "" : "none";
-  }
+  }, 250);
 }
 
+let filterMasterBankTimeout;
 function filterMasterBank() {
-  const titleFilter = (document.getElementById('filterBankTitle')?.value || '').toUpperCase();
-  const deityFilter = (document.getElementById('filterBankDeity')?.value || '').toUpperCase();
-  const tempoFilter = (document.getElementById('filterBankTempo')?.value || '').toUpperCase();
-  const ragaFilter = (document.getElementById('filterBankRaga')?.value || '').toUpperCase();
-  
-  const table = document.getElementById('masterBankTable');
-  if (!table) return;
-  const tr = table.getElementsByTagName('tr');
-  
-  for (let i = 1; i < tr.length; i++) { // Skip header
-    const tds = tr[i].getElementsByTagName('td');
-    if (tds.length > 3) {
-      const txtTitle = (tds[0].textContent || tds[0].innerText).toUpperCase();
-      const txtDeity = (tds[1].textContent || tds[1].innerText).toUpperCase();
-      const txtTempo = (tds[2].textContent || tds[2].innerText).toUpperCase();
-      const txtRaga = (tds[3].textContent || tds[3].innerText).toUpperCase();
-      
-      const matchTitle = txtTitle.indexOf(titleFilter) > -1;
-      const matchDeity = deityFilter === "" || txtDeity === deityFilter;
-      const matchTempo = tempoFilter === "" || txtTempo === tempoFilter;
-      const matchRaga = ragaFilter === "" || txtRaga === ragaFilter;
-      
-      tr[i].style.display = (matchTitle && matchDeity && matchTempo && matchRaga) ? "" : "none";
+  clearTimeout(filterMasterBankTimeout);
+  filterMasterBankTimeout = setTimeout(() => {
+    const titleFilter = (document.getElementById('filterBankTitle')?.value || '').toUpperCase();
+    const deityFilter = (document.getElementById('filterBankDeity')?.value || '').toUpperCase();
+    const tempoFilter = (document.getElementById('filterBankTempo')?.value || '').toUpperCase();
+    const ragaFilter = (document.getElementById('filterBankRaga')?.value || '').toUpperCase();
+    
+    const table = document.getElementById('masterBankTable');
+    if (!table) return;
+    const tr = table.getElementsByTagName('tr');
+    
+    for (let i = 1; i < tr.length; i++) { // Skip header
+      const tds = tr[i].getElementsByTagName('td');
+      if (tds.length > 3) {
+        const txtTitle = (tds[0].textContent || tds[0].innerText).toUpperCase();
+        const txtDeity = (tds[1].textContent || tds[1].innerText).toUpperCase();
+        const txtTempo = (tds[2].textContent || tds[2].innerText).toUpperCase();
+        const txtRaga = (tds[3].textContent || tds[3].innerText).toUpperCase();
+        
+        const matchTitle = txtTitle.indexOf(titleFilter) > -1;
+        const matchDeity = deityFilter === "" || txtDeity === deityFilter;
+        const matchTempo = tempoFilter === "" || txtTempo === tempoFilter;
+        const matchRaga = ragaFilter === "" || txtRaga === ragaFilter;
+        
+        tr[i].style.display = (matchTitle && matchDeity && matchTempo && matchRaga) ? "" : "none";
+      }
     }
-  }
+  }, 250);
 }
 
 // Admin Calendar Modal Logic
@@ -311,6 +364,7 @@ function openMissingBhajanModal(title) {
   document.getElementById('mbTempo').value = 'Medium';
   document.getElementById('mbRaga').value = '';
   document.getElementById('mbShruti').value = '';
+  document.getElementById('mbShrutiFemale').value = '';
   document.getElementById('mbLevel').value = '';
   document.getElementById('missingBhajanModal').classList.add('show');
 }
@@ -324,6 +378,7 @@ function saveMissingBhajan() {
     tempo: document.getElementById('mbTempo').value,
     raga: document.getElementById('mbRaga').value,
     shruti: document.getElementById('mbShruti').value,
+    shruti_female: document.getElementById('mbShrutiFemale').value,
     level: document.getElementById('mbLevel').value
   };
   fetch('/api/add-master-bhajan', {
@@ -366,6 +421,17 @@ function saveDeityRules() {
   });
 }
 
+function getWesternScale(indianScale) {
+  if (!indianScale || indianScale === '-' || indianScale === 'Not specified') return '-';
+  const match = indianScale.toString().trim().match(/^([\d\.]+)\s*([PMpm])?.*$/);
+  if (!match) return '-';
+  const numMap = {'1':0, '1.5':1, '2':2, '2.5':3, '3':4, '4':5, '4.5':6, '5':7, '5.5':8, '6':9, '6.5':10, '7':11};
+  if (numMap[match[1]] === undefined) return '-';
+  let index = numMap[match[1]];
+  if ((match[2] || '').toUpperCase() === 'M') index = (index + 5) % 12;
+  return ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"][index];
+}
+
 // Master Bhajan Inline Edit
 function editMasterRow(id) {
   const row = document.getElementById(`row-${id}`);
@@ -392,6 +458,7 @@ function saveMasterRow(id) {
     tempo: document.getElementById(`input-${id}-tempo`)?.value.trim() || '',
     raga: document.getElementById(`input-${id}-raga`)?.value.trim() || '',
     shruti: document.getElementById(`input-${id}-shruti`)?.value.trim() || '',
+    shruti_female: document.getElementById(`input-${id}-shruti_female`)?.value.trim() || '',
     level: document.getElementById(`input-${id}-level`)?.value.trim() || ''
   };
 
@@ -409,13 +476,158 @@ function saveMasterRow(id) {
         const fieldName = cell.getAttribute('data-field');
         cell.textContent = updatedData[fieldName] || '-';
       });
+      
+      // Update western scale display dynamically
+      const westM = document.getElementById(`west-m-${id}`);
+      const westF = document.getElementById(`west-f-${id}`);
+      if (westM) westM.textContent = getWesternScale(updatedData.shruti);
+      if (westF) westF.textContent = getWesternScale(updatedData.shruti_female);
+
       const actionCell = row.querySelector('.action-cell');
       if (actionCell) {
-        actionCell.innerHTML = `<button class="button" style="padding:6px 12px; font-size:12px; background:#4dabf7; border:none;" onclick="editMasterRow(${id})">✏️ Edit</button>`;
+        actionCell.innerHTML = `<button class="button" style="padding:6px 12px; font-size:12px; background:#4dabf7; border:none; margin-right:4px;" onclick="editMasterRow(${id})">✏️ Edit</button><button class="button" style="padding:6px 12px; font-size:12px; background:#e03131; border:none;" onclick="deleteMasterRow(${id})">❌ Del</button>`;
       }
     } else {
       alert('Error: ' + response.error);
     }
   })
   .catch(err => { alert('Failed to save changes.'); console.error(err); });
+}
+
+function deleteMasterRow(id) {
+  if (!confirm('🚨 Are you sure you want to permanently delete this bhajan from the Master Database?')) return;
+  fetch(`/api/admin/delete-master-bhajan/${id}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' }
+  })
+  .then(res => res.json())
+  .then(response => {
+    if(response.success) {
+      const row = document.getElementById(`row-${id}`);
+      if (row) row.remove();
+    } else {
+      alert('Error: ' + response.error);
+    }
+  })
+  .catch(err => { alert('Failed to delete.'); console.error(err); });
+}
+
+function sortTable(n, tableId) {
+  const table = document.getElementById(tableId);
+  if (!table) return;
+  // Target the tbody to avoid sorting table headers
+  const tbody = table.getElementsByTagName("TBODY")[0] || table;
+  let rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
+  switching = true;
+  dir = "asc"; 
+  
+  while (switching) {
+    switching = false;
+    rows = tbody.getElementsByTagName("TR");
+    
+    for (i = 0; i < (rows.length - 1); i++) {
+      shouldSwitch = false;
+      x = rows[i].getElementsByTagName("TD")[n];
+      y = rows[i + 1].getElementsByTagName("TD")[n];
+      if (!x || !y) continue;
+
+      // Use data-sort attribute if present (for accurate Date sorting), else text
+      let valX = x.getAttribute("data-sort") || x.innerHTML.replace(/(<([^>]+)>)/gi, "").trim();
+      let valY = y.getAttribute("data-sort") || y.innerHTML.replace(/(<([^>]+)>)/gi, "").trim();
+
+      valX = valX.toLowerCase();
+      valY = valY.toLowerCase();
+
+      if (dir === "asc") {
+        if (valX > valY) {
+          shouldSwitch = true;
+          break;
+        }
+      } else if (dir === "desc") {
+        if (valX < valY) {
+          shouldSwitch = true;
+          break;
+        }
+      }
+    }
+    if (shouldSwitch) {
+      rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+      switching = true;
+      switchcount++;      
+    } else {
+      if (switchcount === 0 && dir === "asc") {
+        dir = "desc";
+        switching = true;
+      }
+    }
+  }
+}
+
+// ==========================================
+// Drag & Drop Sequence Reordering
+// ==========================================
+document.addEventListener('DOMContentLoaded', () => {
+  const sortableBody = document.getElementById('sortable-body');
+  if (!sortableBody) return;
+
+  let draggedRow = null;
+  
+  sortableBody.addEventListener('dragstart', (e) => {
+    draggedRow = e.target.closest('tr');
+    e.dataTransfer.effectAllowed = 'move';
+    setTimeout(() => draggedRow.style.opacity = '0.5', 0);
+  });
+
+  sortableBody.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    const targetRow = e.target.closest('tr');
+    if (targetRow && targetRow !== draggedRow) {
+      const rect = targetRow.getBoundingClientRect();
+      const next = (e.clientY - rect.top) / (rect.bottom - rect.top) > 0.5;
+      sortableBody.insertBefore(draggedRow, next ? targetRow.nextSibling : targetRow);
+      document.getElementById('saveOrderBtn').style.display = 'block';
+    }
+  });
+
+  sortableBody.addEventListener('dragend', () => {
+    if(draggedRow) draggedRow.style.opacity = '1';
+  });
+});
+
+function saveReorderSequence() {
+  const rows = document.querySelectorAll('#sortable-body tr[data-id]');
+  const orderData = Array.from(rows).map((row, index) => ({
+    id: parseInt(row.getAttribute('data-id')),
+    order: index + 1
+  }));
+  
+  fetch('/api/admin/reorder', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ orderData })
+  }).then(res => res.json()).then(data => {
+    if(data.success) location.reload();
+    else alert('Error saving sequence');
+  });
+}
+
+function toggleSessionLock(date, isLocked) {
+  fetch('/api/admin/toggle-lock', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ date, is_locked: isLocked })
+  }).then(res => res.json()).then(data => {
+    if(data.success) location.reload();
+  });
+}
+
+// ==========================================
+// Edit Singer Dictionary
+// ==========================================
+function editSinger(id, currentName) {
+  const newName = prompt("Edit Singer Name:", currentName);
+  if (newName !== null && newName.trim() !== "" && newName !== currentName) {
+    document.getElementById('edit-input-' + id).value = newName.trim();
+    document.getElementById('edit-form-' + id).submit();
+  }
 }

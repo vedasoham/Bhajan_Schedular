@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Master Bhajan Bank</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <% 
+    const uniqueDeities = [...new Set(bhajans.map(b => b.deity).filter(Boolean))].sort();
+    const uniqueTempos = [...new Set(bhajans.map(b => b.tempo).filter(Boolean))].sort();
+    const uniqueRagas = [...new Set(bhajans.map(b => b.raga).filter(Boolean))].sort();
+    
+    function getWesternScale(indianScale) {
+      if (!indianScale || indianScale === '-' || indianScale === 'Not specified') return '-';
+      const match = indianScale.toString().trim().match(/^([\d\.]+)\s*([PMpm])?.*$/);
+      if (!match) return '-';
+      const numMap = {'1':0, '1.5':1, '2':2, '2.5':3, '3':4, '4':5, '4.5':6, '5':7, '5.5':8, '6':9, '6.5':10, '7':11};
+      if (numMap[match[1]] === undefined) return '-';
+      let index = numMap[match[1]];
+      if ((match[2] || '').toUpperCase() === 'M') index = (index + 5) % 12; // 4th note mapping
+      return ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"][index];
+    }
+  %>
+  <div class="container container-xl">
+    <div class="header"><h1>📖 Master Bhajan Bank</h1><p>Search and Learn</p></div>
+    <div style="margin-bottom: 20px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+      <a href="<%= isAdmin ? '/admin' : '/' %>" class="button secondary">⬅️ Back</a>
+      <% if (isAdmin) { %>
+        <a href="/admin/export-master" class="button" style="background:#28a745; border:none; color:white;">⬇️ Download Clean JSON</a>
+      <% } %>
+    </div>
+    
+    <div style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;">
+      <select id="filterBankDeity" class="filter-input" onchange="filterMasterBank()"><option value="">All Deities</option><% uniqueDeities.forEach(d => { %><option value="<%= d %>"><%= d %></option><% }) %></select>
+      <select id="filterBankTempo" class="filter-input" onchange="filterMasterBank()"><option value="">All Tempos</option><% uniqueTempos.forEach(t => { %><option value="<%= t %>"><%= t %></option><% }) %></select>
+      <select id="filterBankRaga" class="filter-input" onchange="filterMasterBank()"><option value="">All Ragas</option><% uniqueRagas.forEach(r => { %><option value="<%= r %>"><%= r %></option><% }) %></select>
+      <input type="text" id="filterBankTitle" class="filter-input" onkeyup="filterMasterBank()" placeholder="Search by Title..." style="flex:1; min-width:200px;">
+    </div>
+    
+    <div class="table-container">
+      <table id="masterBankTable">
+        <thead>
+          <tr>
+            <th onclick="sortTable(0, 'masterBankTable')" style="cursor:pointer;" title="Click to sort">Title ↕</th>
+            <th onclick="sortTable(1, 'masterBankTable')" style="cursor:pointer;" title="Click to sort">Deity ↕</th>
+            <th onclick="sortTable(2, 'masterBankTable')" style="cursor:pointer;" title="Click to sort">Tempo ↕</th>
+            <th onclick="sortTable(3, 'masterBankTable')" style="cursor:pointer;" title="Click to sort">Raga ↕</th>
+            <th onclick="sortTable(4, 'masterBankTable')" style="cursor:pointer;" title="Click to sort">Scale (Male) ↕</th>
+            <th onclick="sortTable(5, 'masterBankTable')" style="cursor:pointer;" title="Click to sort">West (M) ↕</th>
+            <th onclick="sortTable(6, 'masterBankTable')" style="cursor:pointer;" title="Click to sort">Scale (Female) ↕</th>
+            <th onclick="sortTable(7, 'masterBankTable')" style="cursor:pointer;" title="Click to sort">West (F) ↕</th>
+            <th onclick="sortTable(8, 'masterBankTable')" style="cursor:pointer;" title="Click to sort">Level ↕</th>
+            <% if (isAdmin) { %><th>Actions</th><% } %>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (bhajans.length > 0) { %>
+            <% bhajans.forEach(b => { %>
+              <tr id="row-<%= b.id %>">
+                <td data-label="Title" class="<%= isAdmin ? 'edit-cell' : '' %>" data-field="title"><%= b.title %></td>
+                <td data-label="Deity" class="<%= isAdmin ? 'edit-cell' : '' %>" data-field="deity"><%= b.deity || '-' %></td>
+                <td data-label="Tempo" class="<%= isAdmin ? 'edit-cell' : '' %>" data-field="tempo"><%= b.tempo || '-' %></td>
+                <td data-label="Raga" class="<%= isAdmin ? 'edit-cell' : '' %>" data-field="raga"><%= b.raga || '-' %></td>
+                <td data-label="Scale (M)" class="<%= isAdmin ? 'edit-cell' : '' %>" data-field="shruti"><%= b.shruti || '-' %></td>
+                <td data-label="West (M)" id="west-m-<%= b.id %>" style="color:#868e96; font-weight:600;"><%= getWesternScale(b.shruti) %></td>
+                <td data-label="Scale (F)" class="<%= isAdmin ? 'edit-cell' : '' %>" data-field="shruti_female"><%= b.shruti_female || '-' %></td>
+                <td data-label="West (F)" id="west-f-<%= b.id %>" style="color:#868e96; font-weight:600;"><%= getWesternScale(b.shruti_female) %></td>
+                <td data-label="Level" class="<%= isAdmin ? 'edit-cell' : '' %>" data-field="level"><%= b.level || '-' %></td>
+                <% if (isAdmin) { %>
+                  <td data-label="Actions" class="action-cell" style="white-space: nowrap;">
+                    <button class="button" style="padding:6px 12px; font-size:12px; background:#4dabf7; border:none; margin-right:4px;" onclick="editMasterRow(<%= b.id %>)">✏️ Edit</button>
+                    <button class="button" style="padding:6px 12px; font-size:12px; background:#e03131; border:none;" onclick="deleteMasterRow(<%= b.id %>)">❌ Del</button>
+                  </td>
+                <% } %>
+              </tr>
+            <% }) %>
+          <% } else { %>
+            <tr><td colspan="<%= isAdmin ? 10 : 9 %>" style="text-align:center;">No master bhajans found.</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <script src="/script.js"></script>
+</body>
+</html>

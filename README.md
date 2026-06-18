@@ -24,6 +24,9 @@ $ npm install
 | Step 6: Run your App
 $ node main.js
 
+| To remove the bhajan history
+| Login to admin and run
+$ http://localhost:8000/admin/danger-reset-history
 
 # Admin
 admin

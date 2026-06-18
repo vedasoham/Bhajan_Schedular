@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Bhajan Database</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="container container-xl">
+    <div class="header">
+      <h1>🗃️ Bhajan Database</h1>
+      <p>Full Records</p>
+    </div>
+    <div style="margin-bottom: 20px;"><a href="/" class="button secondary">🏠 Home</a></div>
+    
+    <div class="table-container">
+      <table id="dbTable">
+        <thead>
+          <tr>
+            <th><input type="text" class="filter-input" onkeyup="filterTable()" placeholder="Bhajan..."></th>
+            <th><input type="text" class="filter-input" onkeyup="filterTable()" placeholder="Deity..."></th>
+            <th><input type="text" class="filter-input" onkeyup="filterTable()" placeholder="Scale..."></th>
+            <th><input type="text" class="filter-input" onkeyup="filterTable()" placeholder="Tempo..."></th>
+            <th><input type="text" class="filter-input" onkeyup="filterTable()" placeholder="Last Sung..."></th>
+            <th><input type="text" class="filter-input" onkeyup="filterTable()" placeholder="Date..."></th>
+            <th><input type="text" class="filter-input" onkeyup="filterTable()" placeholder="Singer..."></th>
+            <th><input type="text" class="filter-input" onkeyup="filterTable()" placeholder="Partner..."></th>
+          </tr>
+          <tr>
+            <th onclick="sortTable(0, 'dbTable')" style="cursor:pointer;" title="Click to sort">Bhajan Title ↕</th>
+            <th onclick="sortTable(1, 'dbTable')" style="cursor:pointer;" title="Click to sort">Deity ↕</th>
+            <th onclick="sortTable(2, 'dbTable')" style="cursor:pointer;" title="Click to sort">Scale ↕</th>
+            <th onclick="sortTable(3, 'dbTable')" style="cursor:pointer;" title="Click to sort">Tempo ↕</th>
+            <th onclick="sortTable(4, 'dbTable')" style="cursor:pointer;" title="Click to sort">Last Sung ↕</th>
+            <th onclick="sortTable(5, 'dbTable')" style="cursor:pointer;" title="Click to sort">Date ↕</th>
+            <th onclick="sortTable(6, 'dbTable')" style="cursor:pointer;" title="Click to sort">Singer ↕</th>
+            <th onclick="sortTable(7, 'dbTable')" style="cursor:pointer;" title="Click to sort">Partner ↕</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% submissions.forEach(s => { %>
+            <% const highlightClass = (s.lastSung === 'Today' || s.lastSung === 'Yesterday') ? 'highlight-recent' : ''; %>
+            <tr class="<%= highlightClass %>">
+              <td><%= s.title %></td>
+              <td><span class="deity-pill"><%= s.deity %></span></td>
+              <td><%= s.scale || '-' %></td>
+              <td><%= s.speed %></td>
+              <td data-sort="<%= s.session_date %>"><%= s.lastSung %></td>
+              <td data-sort="<%= s.session_date %>"><%= s.formattedDate %></td>
+              <td><%= s.singer_name %></td>
+              <td><%= s.partner_name || '-' %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <script src="/script.js"></script>
+</body>
+</html>

@@ -439,6 +439,19 @@ tr:hover td {
   background-color: #f8f9fa;
 }
 
+.highlight-recent td {
+  background-color: #fff3cd !important;
+}
+
+.highlight-recent:hover td {
+  background-color: #ffe066 !important;
+}
+
+#masterBankTable th,
+#masterBankTable td {
+  text-align: center;
+}
+
 .deity-pill {
   display: inline-block;
   padding: 4px 10px;
