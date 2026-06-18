@@ -287,13 +287,7 @@ app.use(session({
 }));
 
 // Authentication Middleware (The Guard)
-function requireLogin(req, res, next) {
-  if (req.session && req.session.isAdmin) {
-    next(); // User is logged in, proceed
-  } else {
-    res.redirect('/admin-login'); // Kick them out to login page
-  }
-}
+const requireLogin = require("./middleware/authMiddleware");
 
 // ============================================================
 // HELPER FUNCTIONS
