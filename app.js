@@ -31,83 +31,15 @@ const {
 // Define BhajanSubmission Model
 const BhajanSubmission = require("./models/BhajanSubmission");
 // Define SessionPermission Model (For Special/Festival days)
-const SessionPermission = sequelize.define('SessionPermission', {
-  date: {
-    type: DataTypes.DATEONLY,
-    primaryKey: true
-  },
-  type: {
-    type: DataTypes.STRING // 'special' or 'festival'
-  },
-  description: {
-    type: DataTypes.STRING,
-    allowNull: true
-  }
-}, { tableName: 'session_permissions', timestamps: false });
-
+const SessionPermission = require("./models/SessionPermission");
 // Define SessionMeta Model (For Locking Sessions)
-const SessionMeta = sequelize.define('SessionMeta', {
-  session_date: { type: DataTypes.DATEONLY, primaryKey: true },
-  is_locked: { type: DataTypes.BOOLEAN, defaultValue: false }
-}, { 
-  tableName: 'session_meta', 
-  timestamps: false 
-});
-
+const SessionMeta = require("./models/SessionMeta");
 // Define Singer Dictionary Model
-const Singer = sequelize.define('Singer', {
-  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-  name: { type: DataTypes.STRING, allowNull: false, unique: true }
-}, {
-  tableName: 'singer_dictionary',
-  timestamps: false
-});
-
+const Singer = require("./models/Singer");
 // Define MasterBhajan Model
-const MasterBhajan = sequelize.define('MasterBhajan', {
-  title: { type: DataTypes.STRING, allowNull: false },
-  deity: { type: DataTypes.STRING, allowNull: false },
-  level: { type: DataTypes.STRING, allowNull: true },
-  tempo: { type: DataTypes.STRING, allowNull: true },
-  language: { type: DataTypes.STRING, allowNull: true },
-  raga: { type: DataTypes.STRING, allowNull: true },
-  shruti: { type: DataTypes.STRING, allowNull: true },
-  shruti_female: { type: DataTypes.STRING, allowNull: true }
-}, {
-  tableName: 'master_bhajans',
-  timestamps: false
-});
-
+const MasterBhajan = require("./models/MasterBhajan");
 // Define Deity Rule Model
-const DeityRule = sequelize.define('DeityRule', {
-  id: {
-    type: DataTypes.INTEGER,
-    primaryKey: true,
-    autoIncrement: true
-  },
-  session_date: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    defaultValue: 'default',
-    unique: 'session_deity_unique'
-  },
-  deity_name: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    unique: 'session_deity_unique'
-  },
-  min_required: {
-    type: DataTypes.INTEGER,
-    defaultValue: 0
-  },
-  max_allowed: {
-    type: DataTypes.INTEGER,
-    defaultValue: 99
-  }
-}, {
-  tableName: 'deity_rules_v4',
-  timestamps: false
-});
+const DeityRule = require("./models/DeityRule");
 
 // Load Master Bhajans from JSON to Database if empty
 async function loadMasterBhajans() {
