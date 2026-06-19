@@ -183,7 +183,9 @@ const {
 // ============================================================
 // ROUTES
 // ============================================================
+const apiRoutes = require("./routes/api");
 
+app.use("/", apiRoutes);
 // Root endpoint
 app.get('/', (req, res) => {
   res.render('dashboard');
@@ -254,42 +256,6 @@ app.post('/admin/update-rules', requireLogin, async (req, res) => {
 // API: GET /api/master-bhajans/:deity
 // ============================================================
 
-app.get('/api/master-bhajans/:deity', async (req, res) => {
-  try {
-    const bhajans = await MasterBhajan.findAll({
-      where: { deity: req.params.deity },
-      order: [['title', 'ASC']]
-    });
-    res.json(bhajans);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// ============================================================
-// API: GET /api/check-cooldown
-// ============================================================
-app.get('/api/check-cooldown', async (req, res) => {
-  try {
-    const { title } = req.query;
-    if (!title) return res.json(null);
-    
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    
-    const recentSubmission = await BhajanSubmission.findOne({
-      where: {
-        title: { [Sequelize.Op.like]: title },
-        session_date: { [Sequelize.Op.gte]: thirtyDaysAgo.toISOString().split('T')[0] }
-      },
-      order: [['session_date', 'DESC']]
-    });
-    
-    res.json(recentSubmission);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
 
 // ============================================================
 // WEB VIEW: GET /plan-view
@@ -298,32 +264,8 @@ app.get('/api/check-cooldown', async (req, res) => {
 // ============================================================
 // ADMIN ROUTES
 // ============================================================
-
-app.get('/admin-login', (req, res) => {
-  res.render('admin-login', { error: null });
-});
-
-app.post('/admin-login', (req, res) => {
-  const { username, password } = req.body;
-  
-  const adminUser = (process.env.ADMIN_USER || 'admin').trim().toLowerCase();
-  const adminPass = (process.env.ADMIN_PASS || 'sairam').trim();
-
-  if ((username || '').trim().toLowerCase() === adminUser && (password || '').trim() === adminPass) {
-    req.session.isAdmin = true; // <--- SAVE LOGIN STATE
-    req.session.save(() => {
-      res.redirect('/admin');
-    });
-  } else {
-    res.render('admin-login', { error: "Invalid ID or Password" });
-  }
-});
-
-app.get('/logout', (req, res) => {
-  req.session.destroy(() => {
-    res.redirect('/');
-  });
-});
+const authRoutes = require("./routes/auth");
+app.use("/", authRoutes);
 
 app.get('/database', async (req, res) => {
   try {
@@ -363,11 +305,7 @@ app.get('/master-bank', async (req, res) => {
 // API: GET /api/singers (For Frontend Autocomplete)
 // ============================================================
 app.get('/api/singers', async (req, res) => {
-  try {
-    const singers = await Singer.findAll({ order: [['name', 'ASC']] });
-    res.json(singers);
-  } catch (error) { res.status(500).json({ error: error.message }); }
-});
+  });
 
 app.get('/admin/analytics', requireLogin, async (req, res) => {
   try {
