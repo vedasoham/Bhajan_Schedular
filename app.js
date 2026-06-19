@@ -267,6 +267,9 @@ app.post('/admin/update-rules', requireLogin, async (req, res) => {
 const authRoutes = require("./routes/auth");
 app.use("/", authRoutes);
 
+const adminRoutes = require("./routes/admin");
+app.use("/", adminRoutes);
+
 app.get('/database', async (req, res) => {
   try {
     const rawSubmissions = await BhajanSubmission.findAll({
@@ -393,63 +396,6 @@ app.get('/admin/rules', requireLogin, async (req, res) => {
       rules = await DeityRule.findAll({ where: { session_date: 'default' }, order: [['deity_name', 'ASC']] });
     }
     res.send(generateAdminRulesHtml(rules, date));
-  } catch (error) {
-    res.status(500).send(`<h1>Error</h1><p>${error.message}</p>`);
-  }
-});
-
-app.get('/admin', requireLogin, async (req, res) => {
-  try {
-    const today = new Date();
-    const year = parseInt(req.query.year) || today.getFullYear();
-    const month = parseInt(req.query.month) || (today.getMonth() + 1);
-
-    // Calculate start and end of month strings manually to avoid timezone issues
-    const startDateStr = `${year}-${String(month).padStart(2, '0')}-01`;
-    const lastDay = new Date(year, month, 0).getDate();
-    const endDateStr = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-    
-    // Fetch submissions for this month to count events
-    const submissions = await BhajanSubmission.findAll({
-      where: {
-        session_date: {
-          [Sequelize.Op.between]: [startDateStr, endDateStr]
-        }
-      }
-    });
-
-    // Fetch permissions for this month
-    const permissions = await SessionPermission.findAll({
-      where: {
-        date: { [Sequelize.Op.between]: [startDateStr, endDateStr] }
-      }
-    });
-    const permissionMap = {};
-    const descriptionMap = {};
-    permissions.forEach(p => {
-      permissionMap[p.date] = p.type;
-      descriptionMap[p.date] = p.description;
-    });
-
-    // Count events per date
-    const eventCounts = {};
-    submissions.forEach(s => {
-      eventCounts[s.session_date] = (eventCounts[s.session_date] || 0) + 1;
-    });
-
-    // Compute Missing Bhajans Catcher
-    const submittedTitles = await BhajanSubmission.findAll({
-      attributes: [[Sequelize.fn('DISTINCT', Sequelize.col('title')), 'title']],
-      raw: true
-    });
-    const masterTitles = await MasterBhajan.findAll({
-      attributes: [[Sequelize.fn('DISTINCT', Sequelize.col('title')), 'title']],
-      raw: true
-    });
-    const masterSet = new Set(masterTitles.map(m => (m.title || '').trim().toLowerCase()));
-    const missingBhajans = submittedTitles.map(s => (s.title || '').trim()).filter(title => title && !masterSet.has(title.toLowerCase()));
-
-    res.send(generateAdminCalendarHtml(year, month, eventCounts, permissionMap, descriptionMap, missingBhajans));
   } catch (error) {
     res.status(500).send(`<h1>Error</h1><p>${error.message}</p>`);
   }
