@@ -24,7 +24,7 @@ const {
     generateErrorHtml,
     escapeHtml
 } = require("../templates");
-const requireLogin = require("../middleware/authMiddleware");
+const requireLogin = require("../middleware/auth");
 
 exports.dashboard = async (req, res) => {
     try {

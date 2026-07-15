@@ -10,6 +10,10 @@ const fs = require('fs');
 const sequelize = require("./config/database");
 const { Sequelize, DataTypes } = require("sequelize");
 const path = require('path');
+const {
+  requireLogin,
+  requireApiLogin
+} = require("./middleware/auth");
 const session = require('express-session');
 const { 
   generateSubmitFormHtml, 
@@ -104,29 +108,36 @@ async function initDeityRules() {
 }
 
 // Sync database
-sequelize.sync({ alter: process.env.NODE_ENV !== 'production' }).then(async () => {
+sequelize.sync().then(async () => {
   // Auto-Migrate data from the old constrained table to the new one
   BhajanSubmission.count().then(async (count) => {
     if (count === 0) {
       try {
-        const [oldData] = await sequelize.query('SELECT * FROM bhajan_submissions');
+        const [oldData] = await sequelize.query(
+          'SELECT * FROM bhajan_submissions'
+        );
+
         if (oldData && oldData.length > 0) {
           // Copy data over, but let the new table generate fresh IDs
           const mappedData = oldData.map(d => {
-            delete d.id; 
+            delete d.id;
             return d;
           });
+
           await BhajanSubmission.bulkCreate(mappedData);
-          console.log(`✅ Migrated ${oldData.length} records to the new unconstrained database table.`);
+
+          console.log(
+            `✅ Migrated ${oldData.length} records to the new unconstrained database table.`
+          );
         }
       } catch (err) {
         // Silently ignore if old table doesn't exist
       }
     }
   });
+
   await loadMasterBhajans();
   await initDeityRules();
-
   // Normalize 'Sarva dharma' to 'SarvaDharma'
   try {
     await MasterBhajan.update({ deity: 'SarvaDharma' }, { where: { deity: 'Sarva dharma' } });
@@ -167,9 +178,6 @@ app.use(session({
   }
   
 }));
-
-// Authentication Middleware (The Guard)
-const requireLogin = require("./middleware/authMiddleware");
 
 const {
     DEITY_ORDER,
@@ -248,109 +256,18 @@ app.use("/", authRoutes);
 
 const adminRoutes = require("./routes/admin");
 app.use("/", adminRoutes);
+//analytics route
+const analyticsRoutes = require("./routes/analytics");
+app.use("/", analyticsRoutes);
 
-app.get('/database', async (req, res) => {
-  try {
-    const rawSubmissions = await BhajanSubmission.findAll({
-      order: [
-        ['title', 'ASC'],
-        ['singer_name', 'ASC']
-      ],
-      raw: true
-    });
-    
-    const submissions = rawSubmissions.map(s => {
-      s.formattedDate = formatDateHuman(s.session_date);
-      s.lastSung = timeSince(s.session_date);
-      return s;
-    });
-    
-    res.render('database', { submissions });
-  } catch (error) {
-    res.status(500).send(`<h1>Error</h1><p>${error.message}</p>`);
-  }
-});
+//singer control routes
+const singerRoutes = require("./routes/singer");
+app.use("/", singerRoutes);
 
 // ============================================================
 // API: GET /api/singers (For Frontend Autocomplete)
 // ============================================================
-app.get('/api/singers', async (req, res) => {
-  });
 
-app.get('/admin/analytics', requireLogin, async (req, res) => {
-  try {
-    const topBhajans = await BhajanSubmission.findAll({
-      attributes: ['title', [sequelize.fn('COUNT', sequelize.col('title')), 'count']],
-      group: ['title'],
-      order: [[sequelize.fn('COUNT', sequelize.col('title')), 'DESC']],
-      limit: 15,
-      raw: true
-    });
-    res.render('analytics', { topBhajans });
-  } catch (error) { res.status(500).send(error.message); }
-});
-
-app.get('/admin/singers', requireLogin, async (req, res) => {
-  try {
-    const singers = await BhajanSubmission.findAll({
-      attributes: [
-        'singer_name', 
-        [sequelize.fn('COUNT', sequelize.col('id')), 'total_sung'],
-        [sequelize.fn('MAX', sequelize.col('session_date')), 'last_sung']
-      ],
-      group: ['singer_name'],
-      order: [[sequelize.col('singer_name'), 'ASC']],
-      raw: true
-    });
-    
-    const mapped = singers.map(s => {
-      s.lastSungHuman = timeSince(s.last_sung);
-      s.formattedDate = formatDateHuman(s.last_sung);
-      return s;
-    });
-    res.render('singers', { singers: mapped });
-  } catch (error) { res.status(500).send(error.message); }
-});
-
-app.get('/admin/singer-dictionary', requireLogin, async (req, res) => {
-  try {
-    const singers = await Singer.findAll({ order: [['name', 'ASC']] });
-    res.render('singer-dictionary', { singers });
-  } catch (error) { res.status(500).send(error.message); }
-});
-
-app.post('/api/admin/add-singer', requireLogin, async (req, res) => {
-  try {
-    const { name } = req.body;
-    if (name && name.trim()) {
-      await Singer.findOrCreate({ where: { name: name.trim() } });
-    }
-    res.redirect('/admin/singer-dictionary');
-  } catch (error) {
-    res.status(500).send(`<h1>Error adding singer</h1><p>${error.message}</p><a href="/admin/singer-dictionary">Back</a>`);
-  }
-});
-
-app.post('/api/admin/edit-singer/:id', requireLogin, async (req, res) => {
-  try {
-    const { name } = req.body;
-    if (name && name.trim()) {
-      await Singer.update({ name: name.trim() }, { where: { id: req.params.id } });
-    }
-    res.redirect('/admin/singer-dictionary');
-  } catch (error) {
-    res.status(500).send(`<h1>Error editing singer</h1><p>${error.message}</p><a href="/admin/singer-dictionary">Back</a>`);
-  }
-});
-
-app.post('/api/admin/delete-singer/:id', requireLogin, async (req, res) => {
-  try {
-    await Singer.destroy({ where: { id: req.params.id } });
-    res.redirect('/admin/singer-dictionary');
-  } catch (error) {
-    res.status(500).send(error.message);
-  }
-});
 
 // ============================================================
 // API: POST /api/admin/update-master-bhajan/:id
@@ -363,9 +280,6 @@ app.post('/api/admin/delete-singer/:id', requireLogin, async (req, res) => {
 // ============================================================
 // API: GET /admin/export-master
 // ============================================================
-app.get('/admin/export-master', requireLogin, async (req, res) => {
-  
-});
 
 // ============================================================
 // API: GET /admin/danger-reset-history (HIDDEN FACTORY RESET)
