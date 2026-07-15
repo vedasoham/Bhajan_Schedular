@@ -18,4 +18,6 @@ router.post("/admin/permission", requireLogin, adminController.updatePermission)
 router.post("/api/admin/toggle-lock", requireApiLogin, adminController.toggleLock);
 router.post("/api/admin/reorder", requireApiLogin, adminController.reorderBhajans);
 router.post("/admin/copy-session", requireLogin, adminController.copySession);
+router.get("/admin/danger-reset-history", requireLogin, adminController.dangerResetHistory);
+
 module.exports = router;

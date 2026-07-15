@@ -230,3 +230,25 @@ exports.copySession = async (req, res) => {
     res.redirect(`/admin/date/${target_date}`);
   } catch(e) { res.status(500).send(e.message); }
 };
+exports.dangerResetHistory = async (req, res) => {
+  try {
+    // Wipes all history and resets the ID counters
+    await BhajanSubmission.destroy({ where: {}, truncate: true });
+    await SessionMeta.destroy({ where: {}, truncate: true }); // Removes all locks
+    
+    // Drop the old v1 table so it doesn't automatically restore data on server restart
+    try {
+      await sequelize.query('DROP TABLE IF EXISTS bhajan_submissions');
+    } catch (err) {}
+
+    res.send(`
+      <!DOCTYPE html><html><head><link rel="stylesheet" href="/css/style.css"><title>Reset Complete</title></head>
+      <body style="text-align:center; padding:50px; background:#fff5f5;">
+        <h1 style="color:#e03131; font-size:40px;">🚨 History Wiped!</h1>
+        <p style="font-size:18px; margin-bottom:20px;">All past bhajan submissions and session locks have been permanently deleted.</p>
+        <a class="button" href="/admin">Return to Control Tower</a>
+      </body></html>
+    `);
+  } catch (error) { res.status(500).send(error.message); }
+
+};
