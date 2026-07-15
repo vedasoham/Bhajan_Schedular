@@ -10,5 +10,8 @@ router.post("/admin/edit/:id", adminController.updateSubmission);
 router.post("/admin/delete/:id", adminController.deleteSubmission);
 router.get("/admin/rules", adminController.showRules);
 router.post("/admin/update-rules", adminController.updateRules);
-
+router.post("/admin/permission", adminController.updatePermission);
+router.post("/api/admin/toggle-lock", adminController.toggleLock);
+router.post("/api/admin/reorder", adminController.reorderBhajans);
+router.post("/admin/copy-session", adminController.copySession);
 module.exports = router;

@@ -185,3 +185,48 @@ exports.updateRules = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+exports.updatePermission = async (req, res) => {
+  try {
+    const { date, type, description } = req.body;
+    if (type === 'clear') {
+      await SessionPermission.destroy({ where: { date } });
+    } else {
+      await SessionPermission.upsert({ date, type, description });
+    }
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+exports.toggleLock = async (req, res) =>{
+try {
+    const { date, is_locked } = req.body;
+    await SessionMeta.upsert({ session_date: date, is_locked });
+    res.json({ success: true });
+  } catch (error) { res.status(500).json({ error: error.message }); }
+};
+exports.reorderBhajans =async (req, res) => {
+  try {
+    const { orderData } = req.body; // Array of { id, order }
+    for (let item of orderData) {
+      await BhajanSubmission.update({ list_order: item.order }, { where: { id: item.id } });
+    }
+    res.json({ success: true });
+  } catch (error) { res.status(500).json({ error: error.message }); }
+};
+exports.copySession = async (req, res) => {
+  try {
+    const { source_date, target_date } = req.body;
+    const sourceSubs = await BhajanSubmission.findAll({ where: { session_date: source_date }, raw: true });
+    
+    const newSubs = sourceSubs.map(s => {
+      delete s.id;
+      s.session_date = target_date;
+      s.list_order = 0; // Reset order for new session
+      s.created_at = new Date();
+      return s;
+    });
+    await BhajanSubmission.bulkCreate(newSubs);
+    res.redirect(`/admin/date/${target_date}`);
+  } catch(e) { res.status(500).send(e.message); }
+};
