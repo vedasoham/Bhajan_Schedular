@@ -24,6 +24,7 @@ const {
     generateErrorHtml,
     escapeHtml
 } = require("../templates");
+const requireLogin = require("../middleware/authMiddleware");
 
 exports.dashboard = async (req, res) => {
     try {
@@ -144,5 +145,43 @@ exports.deleteSubmission = async (req, res) => {
     }
   } catch (error) {
     res.status(500).send(`<h1>Error</h1><p>${error.message}</p>`);
+  }
+};
+exports.showRules = async (req, res) => {
+  try {
+    const date = req.query.date || 'default';
+    let rules = await DeityRule.findAll({
+      where: { session_date: date },
+      order: [['deity_name', 'ASC']]
+    });
+    if (rules.length === 0 && date !== 'default') {
+      rules = await DeityRule.findAll({ where: { session_date: 'default' }, order: [['deity_name', 'ASC']] });
+    }
+    res.send(generateAdminRulesHtml(rules, date));
+  } catch (error) {
+    res.status(500).send(`<h1>Error</h1><p>${error.message}</p>`);
+  }
+};
+
+exports.updateRules = async (req, res) => {
+  try {
+    const newRules = req.body.rules;
+    const date = req.body.date || 'default';
+    for (let rule of newRules) {
+      const existing = await DeityRule.findOne({ where: { session_date: date, deity_name: rule.deity_name } });
+      if (existing) {
+        await existing.update({ min_required: rule.min_required, max_allowed: rule.max_allowed });
+      } else {
+        await DeityRule.create({
+          session_date: date,
+          deity_name: rule.deity_name,
+          min_required: rule.min_required,
+          max_allowed: rule.max_allowed
+        });
+      }
+    }
+    res.json({ success: true, message: 'Rules successfully saved!' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 };
