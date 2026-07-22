@@ -2,22 +2,25 @@
   "name": "bhajan_planner",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
-"scripts": {
-  "start": "node app.js",
-  "dev": "nodemon app.js"
-},
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "body-parser": "^2.2.1",
+    "bcrypt": "^6.0.0",
+    "connect-session-sequelize": "^8.0.6",
     "csv-parser": "^3.2.0",
     "dotenv": "^16.4.7",
     "ejs": "^5.0.2",
     "express": "^5.2.1",
+    "express-ejs-layouts": "^2.5.1",
     "express-session": "^1.18.1",
+    "google-auth-library": "^10.9.0",
     "sequelize": "^6.37.7",
     "sqlite3": "^5.0.2",
     "xlsx": "^0.18.5"

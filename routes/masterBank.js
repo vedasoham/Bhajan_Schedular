@@ -6,7 +6,7 @@ const {
 } = require("../middleware/auth");
 
 const masterBankController = require("../controllers/masterBankController");
-router.get("/master-bank", requireLogin, masterBankController.showMasterBank);
+router.get("/master-bank", masterBankController.showMasterBank);
 router.post("/api/add-master-bhajan", requireApiLogin, masterBankController.addMasterBhajan);
 router.post("/api/admin/update-master-bhajan/:id", requireApiLogin, masterBankController.updateMasterBhajan);
 router.post("/api/admin/delete-master-bhajan/:id", requireApiLogin, masterBankController.deleteMasterBhajan);

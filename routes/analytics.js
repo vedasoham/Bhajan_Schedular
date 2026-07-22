@@ -6,6 +6,6 @@ const {
 
 const analyticsController = require("../controllers/analyticsController");
 
-router.get("/database", requireLogin, analyticsController.showDatabase);
+router.get("/database", analyticsController.showDatabase);
 router.get("/admin/analytics", requireLogin, analyticsController.showAnalytics);
 module.exports = router;

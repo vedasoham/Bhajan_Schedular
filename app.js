@@ -5,9 +5,9 @@
 
 require('dotenv').config();
 const express = require('express');
+const expressLayouts = require("express-ejs-layouts");
 const path = require('path');
 const session = require('express-session');
-
 const {initializeDatabase} = require("./services/databaseInitializer");
 
 // ============================================================
@@ -16,7 +16,9 @@ const {initializeDatabase} = require("./services/databaseInitializer");
 
 const app = express();
 const PORT = process.env.PORT || 8000;
-
+// configure layout
+app.use(expressLayouts);
+app.set("layout", "layouts/main")
 // Configure EJS Templating Engine
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
@@ -38,6 +40,23 @@ app.use(session({
     secure: process.env.NODE_ENV === "production"
   }
 }));
+app.use((req, res, next) => {
+
+    res.locals.currentAdmin = req.session.admin || null;
+
+    res.locals.page = "";
+
+    next();
+
+});
+app.use((req, res, next) => {
+
+    res.locals.currentAdmin =
+        req.session.admin || null;
+
+    next();
+
+});
 
 // ============================================================
 // ROUTES
@@ -51,6 +70,7 @@ const adminRoutes = require("./routes/admin");
 const masterBankRoutes = require("./routes/masterBank");
 const analyticsRoutes = require("./routes/analytics");
 const singerRoutes = require("./routes/singer");
+const adminUserRoutes = require("./routes/adminUsers");
 
 app.use("/", homeRoutes);
 app.use("/", plannerRoutes);
@@ -60,6 +80,8 @@ app.use("/", adminRoutes);
 app.use("/", masterBankRoutes);
 app.use("/", analyticsRoutes);
 app.use("/", singerRoutes);
+app.use("/", adminUserRoutes);
+
 // ============================================================
 // START SERVER
 // ============================================================

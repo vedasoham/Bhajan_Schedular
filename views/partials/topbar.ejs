@@ -1,0 +1,25 @@
+<header class="topbar">
+
+    <div class="page-title">
+        <%= pageTitle || "Dashboard" %>
+    </div>
+
+    <div class="admin-info">
+
+        <span class="admin-name">
+
+            <%= currentAdmin.full_name %>
+
+        </span>
+
+        <span class="role-badge">
+
+            <%= currentAdmin.role === "super_admin"
+                ? "Super Admin"
+                : "Admin" %>
+
+        </span>
+
+    </div>
+
+</header>

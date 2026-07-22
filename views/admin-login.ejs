@@ -7,19 +7,231 @@
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-  <div class="container" style="max-width: 400px; padding: 40px;">
-    <h2 style="text-align: center; color: #C2185B; margin-bottom: 24px;">🔐 Admin Login</h2>
-    <% if (error) { %>
-      <div style="background:#ffe3e3; color:#c92a2a; padding:10px; border-radius:8px; margin-bottom:16px; text-align:center;"><%= error %></div>
-    <% } %>
-    <form method="post" action="/admin-login">
-      <div class="form-group"><label>User ID</label><input type="text" name="username" required /></div>
-      <div class="form-group"><label>Password</label><input type="password" name="password" required /></div>
-      <button type="submit" class="submit-btn">Login</button>
-    </form>
-    <div style="text-align:center; margin-top:20px;">
-      <a href="/" style="color:#868e96; text-decoration:none;">← Back to Home</a>
+
+<style>
+.login-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 24px 0;
+  color: #777;
+  font-size: 14px;
+}
+
+.login-divider::before,
+.login-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: #ddd;
+}
+
+.login-divider span {
+  white-space: nowrap;
+}
+
+#google-signin-button {
+  display: flex;
+  justify-content: center;
+}
+
+.google-login-error {
+  min-height: 20px;
+  margin-top: 14px;
+  color: #c62828;
+  font-size: 14px;
+  text-align: center;
+}
+
+.forgot-password {
+  text-align: center;
+  margin-top: 14px;
+}
+
+.forgot-password a {
+  color: #1565c0;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.forgot-password a:hover {
+  text-decoration: underline;
+}
+</style>
+
+<div class="container" style="max-width: 400px; padding: 40px;">
+
+  <h2 style="text-align: center; color: #C2185B; margin-bottom: 24px;">
+    🔐 Admin Login
+  </h2>
+
+  <% if (error) { %>
+    <div style="background:#ffe3e3; color:#c92a2a; padding:10px; border-radius:8px; margin-bottom:16px; text-align:center;">
+      <%= error %>
     </div>
+  <% } %>
+
+  <form method="post" action="/admin-login">
+
+    <div class="form-group">
+      <label>User ID</label>
+      <input
+        type="text"
+        name="username"
+        required
+      />
+    </div>
+
+    <div class="form-group">
+      <label>Password</label>
+      <input
+        type="password"
+        name="password"
+        required
+      />
+    </div>
+
+    <button
+      type="submit"
+      class="submit-btn">
+      Login
+    </button>
+
+  </form>
+
+  <div class="forgot-password">
+    <a href="/forgot-password">
+      Forgot Password?
+    </a>
   </div>
+
+  <% if (googleClientId) { %>
+
+    <div class="login-divider">
+      <span>or</span>
+    </div>
+
+    <div id="google-signin-button"></div>
+
+    <p
+      id="google-login-error"
+      class="google-login-error">
+    </p>
+
+  <% } %>
+
+  <div style="text-align:center; margin-top:20px;">
+    <a
+      href="/"
+      style="color:#868e96; text-decoration:none;">
+      ← Back to Home
+    </a>
+  </div>
+
+</div>
+
+<% if (googleClientId) { %>
+
+<script>
+
+async function handleGoogleCredential(response) {
+
+  const errorElement =
+    document.getElementById(
+      "google-login-error"
+    );
+
+  errorElement.textContent = "";
+
+  try {
+
+    const result =
+      await fetch(
+        "/auth/google",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+          body: JSON.stringify({
+            credential:
+              response.credential
+          })
+        }
+      );
+
+    const data =
+      await result.json();
+
+    if (!result.ok || !data.success) {
+
+      errorElement.textContent =
+        data.error ||
+        "Google login failed.";
+
+      return;
+
+    }
+
+    window.location.href =
+      data.redirect || "/admin";
+
+  }
+
+  catch (error) {
+
+    console.error(error);
+
+    errorElement.textContent =
+      "Google login failed. Please try again.";
+
+  }
+
+}
+
+window.addEventListener("load", () => {
+
+  google.accounts.id.initialize({
+
+    client_id:
+      <%- JSON.stringify(googleClientId) %>,
+
+    callback:
+      handleGoogleCredential,
+
+    auto_select: false
+
+  });
+
+  google.accounts.id.renderButton(
+
+    document.getElementById(
+      "google-signin-button"
+    ),
+
+    {
+      type: "standard",
+      theme: "outline",
+      size: "large",
+      text: "signin_with",
+      shape: "rectangular",
+      width: 320
+    }
+
+  );
+
+});
+
+</script>
+
+<% } %>
+
+<script
+src="https://accounts.google.com/gsi/client"
+async
+defer>
+</script>
+
 </body>
 </html>

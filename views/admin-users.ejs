@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Admin Management</title>
+
+    <link rel="stylesheet" href="/css/style.css">
+
+</head>
+
+<body>
+
+<div class="admin-users-wrapper">
+
+    <div class="page-header">
+
+        <div>
+
+            <h1>
+                👥 Admin Management
+            </h1>
+
+            <p class="page-subtitle">
+                Manage administrator accounts, permissions and login access.
+            </p>
+
+        </div>
+
+        <a
+                href="/admin/admin-users/new"
+                class="button primary">
+
+            ➕ Create Admin
+
+        </a>
+
+    </div>
+
+
+    <div class="stats-grid">
+
+        <div class="stat-card">
+
+            <div class="stat-title">
+
+                Total Admins
+
+            </div>
+
+            <div class="stat-value">
+
+                <%= admins.length %>
+
+            </div>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <div class="stat-title">
+
+                Active
+
+            </div>
+
+            <div class="stat-value">
+
+                <%= admins.filter(a => a.is_active).length %>
+
+            </div>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <div class="stat-title">
+
+                Disabled
+
+            </div>
+
+            <div class="stat-value">
+
+                <%= admins.filter(a => !a.is_active).length %>
+
+            </div>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <div class="stat-title">
+
+                Google Linked
+
+            </div>
+
+            <div class="stat-value">
+
+                <%= admins.filter(a => a.google_sub).length %>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <div class="table-card">
+
+        <div class="table-header">
+
+            <div>
+
+                <h2>
+
+                    Administrator Accounts
+
+                </h2>
+
+                <p>
+
+                    <%= admins.length %> account(s)
+
+                </p>
+
+            </div>
+
+            <input
+
+                    type="text"
+
+                    class="search-box"
+
+                    placeholder="Search (coming soon)"
+
+                    disabled
+
+            >
+
+        </div>
+
+
+
+        <table class="admin-table">
+
+            <thead>
+
+            <tr>
+
+                <th>Name</th>
+
+                <th>Username</th>
+
+                <th>Role</th>
+
+                <th>Google</th>
+
+                <th>Status</th>
+
+                <th class="actions-column">
+
+                    Actions
+
+                </th>
+
+            </tr>
+
+            </thead>
+
+            <tbody>
+<% admins.forEach(admin => { %>
+<tr>
+
+    <td>
+
+        <div class="admin-user">
+
+            <div class="admin-avatar">
+
+                <%= admin.display_name
+                        ? admin.display_name.charAt(0).toUpperCase()
+                        : "A" %>
+
+            </div>
+
+            <div>
+
+                <div class="admin-name">
+
+                    <%= admin.display_name %>
+
+                </div>
+
+                <div class="admin-id">
+
+                    ID #<%= admin.id %>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </td>
+
+
+    <td>
+
+        <code>
+
+            <%= admin.username %>
+
+        </code>
+
+    </td>
+
+
+    <td>
+
+        <% if (
+            admin.role === "SUPER_ADMIN" ||
+            admin.role === "super_admin" ||
+            admin.role === "superadmin"
+        ){ %>
+
+            <span class="badge badge-purple">
+
+                Super Admin
+
+            </span>
+
+        <% } else { %>
+
+            <span class="badge badge-blue">
+
+                Admin
+
+            </span>
+
+        <% } %>
+
+    </td>
+
+
+
+    <td>
+
+        <% if(admin.google_sub){ %>
+
+            <span class="badge badge-green">
+
+                Linked
+
+            </span>
+
+        <% } else { %>
+
+            <span class="badge badge-gray">
+
+                Not Linked
+
+            </span>
+
+        <% } %>
+
+    </td>
+
+
+
+    <td>
+
+        <% if(admin.is_active){ %>
+
+            <span class="badge badge-green">
+
+                Active
+
+            </span>
+
+        <% } else { %>
+
+            <span class="badge badge-red">
+
+                Disabled
+
+            </span>
+
+        <% } %>
+
+    </td>
+
+
+
+    <td>
+
+        <div class="table-actions">
+
+            <a
+                href="/admin/admin-users/<%= admin.id %>/edit"
+                class="table-btn">
+
+                ✏ Edit
+
+            </a>
+
+            <a
+                href="/admin/admin-users/<%= admin.id %>/reset-password"
+                class="table-btn">
+
+                🔑 Reset
+
+            </a>
+
+            <form
+                method="POST"
+                action="/admin/admin-users/<%= admin.id %>/toggle-active">
+
+                <button
+                    type="submit"
+                    class="table-btn">
+
+                    <%= admin.is_active ? "Disable" : "Enable" %>
+
+                </button>
+
+            </form>
+
+        </div>
+
+    </td>
+
+</tr>
+<% }) %>
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+</body>
+
+</html>

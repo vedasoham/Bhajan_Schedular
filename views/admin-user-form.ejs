@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <title>Create Admin</title>
+</head>
+
+<body>
+
+<h1>
+<%= admin ? "Edit Admin" : "Create Admin" %>
+</h1>
+<% if (error) { %>
+    <p style="color:red">
+        <%= error %>
+    </p>
+<% } %>
+<form
+    method="POST"
+    action="<%= admin
+        ? '/admin/admin-users/' + admin.id
+        : '/admin/admin-users'
+    %>">
+
+<p>
+
+Display Name
+
+<br>
+
+<input
+    type="text"
+    name="display_name"
+    value="<%= admin ? admin.display_name : '' %>"
+    required
+>
+
+</p>
+
+<p>
+
+Username
+
+<br>
+
+<input
+    type="text"
+    name="username"
+    value="<%= admin ? admin.username : '' %>"
+    required
+>
+
+</p>
+
+<p>
+
+Temporary Password
+
+<br>
+
+<input
+    type="password"
+    name="password"
+    required
+>
+
+</p>
+
+<p>
+
+Google Email (optional)
+
+<br>
+
+<input
+    type="text"
+    name="google_email"
+    value="<%= admin ? admin.google_email : '' %>"
+    required
+>
+
+</p>
+
+<p>
+
+Role
+
+<br>
+
+<select name="role">
+
+<option value="admin">
+
+Admin
+
+</option>
+
+<option value="super_admin">
+
+Super Admin
+
+</option>
+
+</select>
+
+</p>
+
+<button>
+
+Create Admin
+
+</button>
+
+</form>
+
+</body>
+
+</html>

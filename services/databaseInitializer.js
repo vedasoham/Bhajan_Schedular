@@ -1,3 +1,45 @@
+const bcrypt = require("bcrypt");
+
+const AdminUser = require("../models/AdminUser");
+
+async function initializeSuperAdmin() {
+  const superAdminCount = await AdminUser.count({
+    where: {
+      role: "super_admin"
+    }
+  });
+
+  if (superAdminCount > 0) {
+    return;
+  }
+
+  const username = process.env.SUPER_ADMIN_USER;
+  const password = process.env.SUPER_ADMIN_PASS;
+  const displayName =
+    process.env.SUPER_ADMIN_DISPLAY_NAME || "Super Admin";
+
+  if (!username || !password) {
+    throw new Error(
+      "SUPER_ADMIN_USER and SUPER_ADMIN_PASS must be configured."
+    );
+  }
+
+  const passwordHash = await bcrypt.hash(password, 12);
+
+await AdminUser.create({
+  username: username.trim().toLowerCase(),
+  google_email: process.env.SUPER_ADMIN_GOOGLE_EMAIL
+    ? process.env.SUPER_ADMIN_GOOGLE_EMAIL.trim().toLowerCase()
+    : null,
+  display_name: displayName.trim(),
+  password_hash: passwordHash,
+  role: "super_admin",
+  is_active: true
+});
+
+  console.log("✅ Initial super admin account created.");
+};
+
 const fs = require("fs");
 const path = require("path");
 
@@ -246,6 +288,7 @@ async function initializeDatabase() {
   try {
     await sequelize.sync();
 
+    await initializeSuperAdmin();
     await migrateLegacySubmissions();
     await loadMasterBhajans();
     await initDeityRules();

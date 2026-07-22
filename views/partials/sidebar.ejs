@@ -1,0 +1,93 @@
+<aside class="sidebar">
+
+    <div class="sidebar-header">
+
+        <div class="logo">
+            🎵
+        </div>
+
+        <div>
+
+            <h2>Bhajan Planner</h2>
+
+            <small>Administration</small>
+
+        </div>
+
+    </div>
+
+    <nav class="sidebar-nav">
+
+        <a href="/admin"
+           class="<%= page === 'dashboard' ? 'active' : '' %>">
+
+            <span>🏠</span>
+
+            Dashboard
+
+        </a>
+
+        <a href="/admin/sessions"
+           class="<%= page === 'sessions' ? 'active' : '' %>">
+
+            <span>📅</span>
+
+            Sessions
+
+        </a>
+
+        <a href="/admin/bhajans"
+           class="<%= page === 'bhajans' ? 'active' : '' %>">
+
+            <span>🎼</span>
+
+            Bhajan Bank
+
+        </a>
+
+        <a href="/admin/singers"
+           class="<%= page === 'singers' ? 'active' : '' %>">
+
+            <span>👥</span>
+
+            Singers
+
+        </a>
+
+        <a href="/admin/analytics"
+           class="<%= page === 'analytics' ? 'active' : '' %>">
+
+            <span>📊</span>
+
+            Analytics
+
+        </a>
+
+        <% if(currentAdmin.role==="super_admin"){ %>
+
+        <a href="/admin/admin-users"
+           class="<%= page === 'admins' ? 'active' : '' %>">
+
+            <span>👨‍💼</span>
+
+            Administrators
+
+        </a>
+
+        <% } %>
+
+    </nav>
+
+    <div class="sidebar-footer">
+
+        <a href="/logout">
+
+            <span>🚪</span>
+
+            Logout
+
+        </a>
+
+    </div>
+
+</aside>

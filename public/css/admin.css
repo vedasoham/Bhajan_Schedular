@@ -1,0 +1,345 @@
+/* ===========================================================
+   ADMIN LAYOUT
+   =========================================================== */
+
+body.admin-page{
+    margin:0;
+    padding:0;
+    display:block;
+    background:#f3f4f6;
+    overflow:hidden;
+}
+
+body.admin-page::before,
+body.admin-page::after{
+    display:none;
+}
+
+body.admin-page .admin-layout{
+    display:flex;
+    width:100vw;
+    height:100vh;
+}
+
+body.admin-page .sidebar{
+    width:270px;
+    background:#1f2937;
+    color:#fff;
+    display:flex;
+    flex-direction:column;
+    flex-shrink:0;
+    padding:25px;
+    overflow-y:auto;
+}
+
+body.admin-page .sidebar-logo{
+    font-size:1.9rem;
+    font-weight:700;
+    margin-bottom:35px;
+}
+
+body.admin-page .sidebar nav{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+
+body.admin-page .sidebar a{
+    color:#fff;
+    text-decoration:none;
+    padding:14px 18px;
+    border-radius:10px;
+    transition:.2s;
+    font-weight:500;
+}
+
+body.admin-page .sidebar a:hover{
+    background:#374151;
+}
+
+body.admin-page .main-content{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    background:#f9fafb;
+    overflow:auto;
+}
+
+.topbar{
+
+    height:80px;
+
+    background:white;
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    padding:0 35px;
+
+    border-bottom:1px solid #eee;
+
+}
+
+.page-title{
+
+    font-family:"Playfair Display",serif;
+
+    color:#880E4F;
+
+    font-size:32px;
+
+}
+
+.admin-info{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:15px;
+
+}
+
+.role-badge{
+
+    background:#E1F5FE;
+
+    color:#0277BD;
+
+    padding:6px 14px;
+
+    border-radius:50px;
+
+    font-size:12px;
+
+    font-weight:700;
+
+}
+
+body.admin-page .page-title{
+    font-size:1.4rem;
+    font-weight:700;
+}
+
+body.admin-page .admin-info{
+    display:flex;
+    align-items:center;
+    gap:12px;
+}
+
+body.admin-page .role-badge{
+    background:#C2185B;
+    color:#fff;
+    padding:5px 12px;
+    border-radius:20px;
+    font-size:.8rem;
+    font-weight:600;
+}
+
+body.admin-page .page-body{
+    flex:1;
+    padding:35px;
+}
+.sidebar{
+    justify-content:space-between;
+}
+
+/* ===========================
+   SIDEBAR
+=========================== */
+
+.sidebar{
+
+    width:280px;
+
+    background:#ffffff;
+
+    border-right:1px solid #f1e6d7;
+
+    display:flex;
+
+    flex-direction:column;
+
+    padding:24px;
+
+    box-shadow:8px 0 30px rgba(255,153,51,.08);
+
+}
+
+.sidebar-header{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:15px;
+
+    margin-bottom:35px;
+
+}
+
+.logo{
+
+    width:58px;
+
+    height:58px;
+
+    border-radius:18px;
+
+    background:linear-gradient(135deg,#FFC1E3,#FFF9C4);
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    font-size:30px;
+
+}
+
+.sidebar-header h2{
+
+    margin:0;
+
+    color:#880E4F;
+
+    font-family:"Playfair Display",serif;
+
+}
+
+.sidebar-header small{
+
+    color:#777;
+
+}
+
+.sidebar-nav{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:8px;
+
+}
+
+.sidebar-nav a{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:14px;
+
+    padding:14px 18px;
+
+    text-decoration:none;
+
+    color:#555;
+
+    border-radius:16px;
+
+    transition:.25s;
+
+}
+
+.sidebar-nav a:hover{
+
+    background:#FFF4D6;
+
+    color:#C2185B;
+
+}
+
+.sidebar-nav a.active{
+
+    background:linear-gradient(135deg,#FFC1E3,#FFF9C4);
+
+    color:#880E4F;
+
+    font-weight:700;
+
+    box-shadow:0 8px 25px rgba(255,153,51,.15);
+
+}
+
+.sidebar-footer{
+
+    margin-top:auto;
+
+    padding-top:20px;
+
+    border-top:1px solid #eee;
+
+}
+.logo{
+    width:52px;
+    height:52px;
+    border-radius:14px;
+    background:#C2185B;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:1.5rem;
+}
+
+.sidebar-nav{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+}
+
+.sidebar-nav a,
+.sidebar-footer a{
+
+    display:flex;
+    align-items:center;
+    gap:14px;
+
+    color:#d1d5db;
+    text-decoration:none;
+
+    padding:14px 18px;
+
+    border-radius:12px;
+
+    transition:.25s;
+}
+
+.sidebar-nav a:hover,
+.sidebar-footer a:hover{
+
+    background:#374151;
+
+    color:white;
+}
+
+.sidebar-nav a.active{
+
+    background:#C2185B;
+
+    color:white;
+
+    font-weight:600;
+
+    box-shadow:0 8px 20px rgba(194,24,91,.25);
+}
+
+.sidebar-nav span,
+.sidebar-footer span{
+
+    width:22px;
+
+    text-align:center;
+}
+
+.sidebar-footer{
+
+    border-top:1px solid #374151;
+
+    padding-top:20px;
+}

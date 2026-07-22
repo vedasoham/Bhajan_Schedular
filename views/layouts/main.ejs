@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>
+    <%= typeof pageTitle !== "undefined"
+        ? pageTitle
+        : "Bhajan Planner" %>
+</title>
+    <!-- Global CSS -->
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/loading.css">
+
+    <!-- Optional page-specific CSS -->
+    <% if (typeof pageCSS !== "undefined") { %>
+        <link rel="stylesheet" href="/css/<%= pageCSS %>">
+    <% } %>
+
+</head>
+
+<body>
+
+    <%- include("../partials/loading") %>
+
+    <%- body %>
+
+    <!-- Global JS -->
+    <script src="/js/script.js"></script>
+    <script src="/js/loading.js"></script>
+
+    <!-- Optional page-specific JS -->
+    <% if (typeof pageJS !== "undefined") { %>
+        <script src="/js/<%= pageJS %>"></script>
+    <% } %>
+
+</body>
+</html>
