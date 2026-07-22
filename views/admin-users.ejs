@@ -1,18 +1,96 @@
-<!DOCTYPE html>
-<html lang="en">
+<div class="admin-users-wrapper">
 
-<head>
+    <div class="page-header">
 
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <div>
 
-    <title>Admin Management</title>
+            <h1>
+                👥 Admin Management
+            </h1>
 
-    <link rel="stylesheet" href="/css/style.css">
+            <p class="page-subtitle">
+                Manage administrator accounts, permissions and login access.
+            </p>
 
-</head>
+        </div>
 
-<body>
+        <a
+                href="/admin/admin-users/new"
+                class="button primary">
+
+            ➕ Create Admin
+
+        </a>
+
+    </div>
+
+
+    <div class="stats-grid">
+
+        <div class="stat-card">
+
+            <div class="stat-title">
+
+                Total Admins
+
+            </div>
+
+            <div class="stat-value">
+
+                <%= admins.length %>
+
+            </div>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <div class="stat-title">
+
+                Active
+
+            </div>
+
+            <div class="stat-value">
+
+                <%= admins.filter(a => a.is_active).length %>
+
+            </div>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <div class="stat-title">
+
+                Disabled
+
+            </div>
+
+            <div class="stat-value">
+
+                <%= admins.filter(a => !a.is_active).length %>
+
+            </div>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <div class="stat-title">
+
+                Google Linked
+
+            </div>
+
+            <div class="stat-value">
+
+                <%= admins.filter(a => a.google_sub).length %>
+
+            </div>
 
 <div class="admin-users-wrapper">
 
@@ -128,35 +206,30 @@
 
                 <p>
 
-                    <%= admins.length %> account(s)
+                    <%= admins.length %> account(s) registered
 
                 </p>
 
             </div>
 
             <input
-
-                    type="text"
-
-                    class="search-box"
-
-                    placeholder="Search (coming soon)"
-
-                    disabled
-
+                type="text"
+                class="search-box"
+                id="adminUserSearchInput"
+                placeholder="Search admin name, title or username..."
+                onkeyup="filterAdminUsersTable()"
+                style="padding:8px 14px; border:1px solid #ddd; border-radius:8px; width:260px;"
             >
 
         </div>
 
-
-
-        <table class="admin-table">
+        <table class="admin-table" id="adminUsersTable">
 
             <thead>
 
             <tr>
 
-                <th>Name</th>
+                <th>Name &amp; Title</th>
 
                 <th>Username</th>
 
@@ -166,11 +239,7 @@
 
                 <th>Status</th>
 
-                <th class="actions-column">
-
-                    Actions
-
-                </th>
+                <th class="actions-column">Actions</th>
 
             </tr>
 
@@ -182,7 +251,7 @@
 
     <td>
 
-        <div class="admin-user">
+        <div class="admin-user" style="display:flex; align-items:center; gap:10px;">
 
             <div class="admin-avatar">
 
@@ -194,15 +263,18 @@
 
             <div>
 
-                <div class="admin-name">
+                <div class="admin-name" style="font-weight:600;">
 
                     <%= admin.display_name %>
+                    <% if (admin.title) { %>
+                        <span class="badge badge-optional" style="font-size:10px; padding:2px 8px; margin-left:4px; background:#fff3cd; color:#d97706; border:1px solid #fcd34d; font-weight:700;"><%= admin.title %></span>
+                    <% } %>
 
                 </div>
 
-                <div class="admin-id">
+                <div class="admin-id" style="font-size:12px; color:#888;">
 
-                    ID #<%= admin.id %>
+                    ID #<%= admin.id %> <%= admin.title ? '• ' + admin.title : '' %>
 
                 </div>
 
@@ -215,11 +287,7 @@
 
     <td>
 
-        <code>
-
-            <%= admin.username %>
-
-        </code>
+        <code><%= admin.username %></code>
 
     </td>
 
@@ -232,72 +300,45 @@
             admin.role === "superadmin"
         ){ %>
 
-            <span class="badge badge-purple">
-
-                Super Admin
-
-            </span>
+            <span class="badge badge-purple">Super Admin</span>
 
         <% } else { %>
 
-            <span class="badge badge-blue">
-
-                Admin
-
-            </span>
+            <span class="badge badge-blue">Admin</span>
 
         <% } %>
 
     </td>
-
 
 
     <td>
 
         <% if(admin.google_sub){ %>
 
-            <span class="badge badge-green">
-
-                Linked
-
-            </span>
+            <span class="badge badge-green">Linked</span>
 
         <% } else { %>
 
-            <span class="badge badge-gray">
-
-                Not Linked
-
-            </span>
+            <span class="badge badge-gray">Not Linked</span>
 
         <% } %>
 
     </td>
-
 
 
     <td>
 
         <% if(admin.is_active){ %>
 
-            <span class="badge badge-green">
-
-                Active
-
-            </span>
+            <span class="badge badge-green">Active</span>
 
         <% } else { %>
 
-            <span class="badge badge-red">
-
-                Disabled
-
-            </span>
+            <span class="badge badge-red">Disabled</span>
 
         <% } %>
 
     </td>
-
 
 
     <td>
@@ -348,6 +389,13 @@
 
 </div>
 
-</body>
-
-</html>
+<script>
+function filterAdminUsersTable() {
+  const q = (document.getElementById('adminUserSearchInput')?.value || '').toLowerCase();
+  const rows = document.querySelectorAll('#adminUsersTable tbody tr');
+  rows.forEach(r => {
+    const text = r.innerText.toLowerCase();
+    r.style.display = text.includes(q) ? '' : 'none';
+  });
+}
+</script>

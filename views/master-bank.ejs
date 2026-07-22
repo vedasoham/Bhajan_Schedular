@@ -1,18 +1,8 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <title>Master Bhajan Bank</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css">
-</head>
-<body>
-  <% 
+<%
     const uniqueDeities = [...new Set(bhajans.map(b => b.deity).filter(Boolean))].sort();
     const uniqueTempos = [...new Set(bhajans.map(b => b.tempo).filter(Boolean))].sort();
     const uniqueRagas = [...new Set(bhajans.map(b => b.raga).filter(Boolean))].sort();
-    
+
     function getWesternScale(indianScale) {
       if (!indianScale || indianScale === '-' || indianScale === 'Not specified') return '-';
       const match = indianScale.toString().trim().match(/^([\d\.]+)\s*([PMpm])?.*$/);
@@ -26,21 +16,94 @@
   %>
   <div class="container container-xl">
     <div class="header"><h1>📖 Master Bhajan Bank</h1><p>Search and Learn</p></div>
-    <div style="margin-bottom: 20px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px;">
-      <a href="<%= isAdmin ? '/admin' : '/' %>" class="button secondary">⬅️ Back</a>
-      <% if (isAdmin) { %>
-        <a href="/admin/export-master" class="button" style="background:#28a745; border:none; color:white;">⬇️ Download Clean JSON</a>
-      <% } %>
+
+    <div class="bank-body">
+
+      <!-- Page toolbar: title context + primary actions, separated from search/filters -->
+      <div class="page-toolbar">
+        <div class="toolbar-heading">
+          <h1><%= bhajans.length %> Bhajans</h1>
+          <p>Browse the full Prashanthi Mandir bhajan database</p>
+        </div>
+        <div class="toolbar-actions">
+          <a href="<%= isAdmin ? '/admin' : '/' %>" class="button secondary">⬅️ Back</a>
+          <% if (isAdmin) { %>
+            <a href="/admin/export-master" class="button">⬇️ Download Clean JSON</a>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- Search: its own prominent field, not sharing a row with the filters -->
+      <div class="search-field">
+        <span class="search-icon">🔍</span>
+        <input
+          type="text"
+          id="filterBankTitle"
+          onkeyup="filterMasterBank()"
+          placeholder="Search by title…"
+          autocomplete="off"
+        >
+      </div>
+
+      <!-- Filters: a distinct strip below search with interactive searchable dropdowns -->
+      <div class="filter-bar" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <span class="filter-bar-label">Filter:</span>
+        
+        <!-- Searchable Deity Dropdown -->
+        <input type="hidden" id="filterBankDeity" value="" onchange="filterMasterBank()">
+        <div class="searchable-dropdown" id="dd-deity" style="position:relative; inline-block;">
+          <button type="button" class="filter-chip dd-toggle" onclick="toggleSearchDropdown('dd-deity')" style="background:#fff; border:1px solid #cbd5e1; border-radius:20px; padding:6px 14px; font-size:13px; font-weight:600; cursor:pointer; color:#334155; display:inline-flex; align-items:center; gap:6px;">
+            <span class="dd-label">All Deities</span> ▾
+          </button>
+          <div class="dd-menu" style="display:none; position:absolute; top:110%; left:0; z-index:100; background:#ffffff; border:1px solid #cbd5e1; border-radius:10px; box-shadow:0 10px 25px rgba(0,0,0,0.15); width:220px; padding:8px;">
+            <input type="text" class="dd-search" placeholder="🔍 Search deity..." onkeyup="filterDropdownOptions('dd-deity')" style="width:100%; padding:6px 10px; border:1px solid #e2e8f0; border-radius:6px; font-size:12px; margin-bottom:6px; box-sizing:border-box;">
+            <div class="dd-options" style="max-height:180px; overflow-y:auto;">
+              <div class="dd-option selected" data-val="" onclick="selectDropdownOption('dd-deity', '', 'All Deities')" style="padding:6px 10px; font-size:13px; border-radius:4px; cursor:pointer;">All Deities</div>
+              <% uniqueDeities.forEach(d => { %>
+                <div class="dd-option" data-val="<%= d %>" onclick="selectDropdownOption('dd-deity', '<%= d.replace(/'/g, "\\'") %>', '<%= d.replace(/'/g, "\\'") %>')" style="padding:6px 10px; font-size:13px; border-radius:4px; cursor:pointer;"><%= d %></div>
+              <% }) %>
+            </div>
+          </div>
+        </div>
+
+        <!-- Searchable Tempo Dropdown -->
+        <input type="hidden" id="filterBankTempo" value="" onchange="filterMasterBank()">
+        <div class="searchable-dropdown" id="dd-tempo" style="position:relative; inline-block;">
+          <button type="button" class="filter-chip dd-toggle" onclick="toggleSearchDropdown('dd-tempo')" style="background:#fff; border:1px solid #cbd5e1; border-radius:20px; padding:6px 14px; font-size:13px; font-weight:600; cursor:pointer; color:#334155; display:inline-flex; align-items:center; gap:6px;">
+            <span class="dd-label">All Tempos</span> ▾
+          </button>
+          <div class="dd-menu" style="display:none; position:absolute; top:110%; left:0; z-index:100; background:#ffffff; border:1px solid #cbd5e1; border-radius:10px; box-shadow:0 10px 25px rgba(0,0,0,0.15); width:200px; padding:8px;">
+            <input type="text" class="dd-search" placeholder="🔍 Search tempo..." onkeyup="filterDropdownOptions('dd-tempo')" style="width:100%; padding:6px 10px; border:1px solid #e2e8f0; border-radius:6px; font-size:12px; margin-bottom:6px; box-sizing:border-box;">
+            <div class="dd-options" style="max-height:180px; overflow-y:auto;">
+              <div class="dd-option selected" data-val="" onclick="selectDropdownOption('dd-tempo', '', 'All Tempos')" style="padding:6px 10px; font-size:13px; border-radius:4px; cursor:pointer;">All Tempos</div>
+              <% uniqueTempos.forEach(t => { %>
+                <div class="dd-option" data-val="<%= t %>" onclick="selectDropdownOption('dd-tempo', '<%= t.replace(/'/g, "\\'") %>', '<%= t.replace(/'/g, "\\'") %>')" style="padding:6px 10px; font-size:13px; border-radius:4px; cursor:pointer;"><%= t %></div>
+              <% }) %>
+            </div>
+          </div>
+        </div>
+
+        <!-- Searchable Raga Dropdown -->
+        <input type="hidden" id="filterBankRaga" value="" onchange="filterMasterBank()">
+        <div class="searchable-dropdown" id="dd-raga" style="position:relative; inline-block;">
+          <button type="button" class="filter-chip dd-toggle" onclick="toggleSearchDropdown('dd-raga')" style="background:#fff; border:1px solid #cbd5e1; border-radius:20px; padding:6px 14px; font-size:13px; font-weight:600; cursor:pointer; color:#334155; display:inline-flex; align-items:center; gap:6px;">
+            <span class="dd-label">All Ragas</span> ▾
+          </button>
+          <div class="dd-menu" style="display:none; position:absolute; top:110%; left:0; z-index:100; background:#ffffff; border:1px solid #cbd5e1; border-radius:10px; box-shadow:0 10px 25px rgba(0,0,0,0.15); width:240px; padding:8px;">
+            <input type="text" class="dd-search" placeholder="🔍 Search raga..." onkeyup="filterDropdownOptions('dd-raga')" style="width:100%; padding:6px 10px; border:1px solid #e2e8f0; border-radius:6px; font-size:12px; margin-bottom:6px; box-sizing:border-box;">
+            <div class="dd-options" style="max-height:180px; overflow-y:auto;">
+              <div class="dd-option selected" data-val="" onclick="selectDropdownOption('dd-raga', '', 'All Ragas')" style="padding:6px 10px; font-size:13px; border-radius:4px; cursor:pointer;">All Ragas</div>
+              <% uniqueRagas.forEach(r => { %>
+                <div class="dd-option" data-val="<%= r %>" onclick="selectDropdownOption('dd-raga', '<%= r.replace(/'/g, "\\'") %>', '<%= r.replace(/'/g, "\\'") %>')" style="padding:6px 10px; font-size:13px; border-radius:4px; cursor:pointer;"><%= r %></div>
+              <% }) %>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
-    
-    <div style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;">
-      <select id="filterBankDeity" class="filter-input" onchange="filterMasterBank()"><option value="">All Deities</option><% uniqueDeities.forEach(d => { %><option value="<%= d %>"><%= d %></option><% }) %></select>
-      <select id="filterBankTempo" class="filter-input" onchange="filterMasterBank()"><option value="">All Tempos</option><% uniqueTempos.forEach(t => { %><option value="<%= t %>"><%= t %></option><% }) %></select>
-      <select id="filterBankRaga" class="filter-input" onchange="filterMasterBank()"><option value="">All Ragas</option><% uniqueRagas.forEach(r => { %><option value="<%= r %>"><%= r %></option><% }) %></select>
-      <input type="text" id="filterBankTitle" class="filter-input" onkeyup="filterMasterBank()" placeholder="Search by Title..." style="flex:1; min-width:200px;">
-    </div>
-    
-    <div class="table-container">
+
+    <div class="table-container bank-table">
       <table id="masterBankTable">
         <thead>
           <tr>
@@ -65,14 +128,14 @@
                 <td data-label="Tempo" class="<%= isAdmin ? 'edit-cell' : '' %>" data-field="tempo"><%= b.tempo || '-' %></td>
                 <td data-label="Raga" class="<%= isAdmin ? 'edit-cell' : '' %>" data-field="raga"><%= b.raga || '-' %></td>
                 <td data-label="Scale (M)" class="<%= isAdmin ? 'edit-cell' : '' %>" data-field="shruti"><%= b.shruti || '-' %></td>
-                <td data-label="West (M)" id="west-m-<%= b.id %>" style="color:#868e96; font-weight:600;"><%= getWesternScale(b.shruti) %></td>
+                <td data-label="West (M)" id="west-m-<%= b.id %>" style="color:#8b8394; font-weight:600;"><%= getWesternScale(b.shruti) %></td>
                 <td data-label="Scale (F)" class="<%= isAdmin ? 'edit-cell' : '' %>" data-field="shruti_female"><%= b.shruti_female || '-' %></td>
-                <td data-label="West (F)" id="west-f-<%= b.id %>" style="color:#868e96; font-weight:600;"><%= getWesternScale(b.shruti_female) %></td>
+                <td data-label="West (F)" id="west-f-<%= b.id %>" style="color:#8b8394; font-weight:600;"><%= getWesternScale(b.shruti_female) %></td>
                 <td data-label="Level" class="<%= isAdmin ? 'edit-cell' : '' %>" data-field="level"><%= b.level || '-' %></td>
                 <% if (isAdmin) { %>
                   <td data-label="Actions" class="action-cell" style="white-space: nowrap;">
-                    <button class="button" style="padding:6px 12px; font-size:12px; background:#4dabf7; border:none; margin-right:4px;" onclick="editMasterRow(<%= b.id %>)">✏️ Edit</button>
-                    <button class="button" style="padding:6px 12px; font-size:12px; background:#e03131; border:none;" onclick="deleteMasterRow(<%= b.id %>)">❌ Del</button>
+                    <button class="button" style="padding:6px 12px; font-size:12px; background:#2e6f86; border:none; margin-right:4px;" onclick="editMasterRow(<%= b.id %>)">✏️ Edit</button>
+                    <button class="button" style="padding:6px 12px; font-size:12px; background:#b23b32; border:none;" onclick="deleteMasterRow(<%= b.id %>)">❌ Del</button>
                   </td>
                 <% } %>
               </tr>
@@ -84,6 +147,3 @@
       </table>
     </div>
   </div>
-  <script src="/js/script.js"></script>
-</body>
-</html>

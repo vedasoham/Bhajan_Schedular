@@ -5,7 +5,11 @@
 
     <meta charset="UTF-8">
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#fbf8f2">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
 <title>
     <%= typeof pageTitle !== "undefined"
@@ -13,21 +17,34 @@
         : "Bhajan Planner" %>
 </title>
     <!-- Global CSS -->
-    <link rel="stylesheet" href="/css/style.css">
-    <link rel="stylesheet" href="/css/loading.css">
+<link rel="stylesheet" href="/css/style.css">
+<link rel="stylesheet" href="/css/loading.css">
 
-    <!-- Optional page-specific CSS -->
-    <% if (typeof pageCSS !== "undefined") { %>
-        <link rel="stylesheet" href="/css/<%= pageCSS %>">
-    <% } %>
+<% if (typeof isAdminPage !== "undefined" && isAdminPage) { %>
+<link rel="stylesheet" href="/css/admin.css">
+<% } %>
 
+<!-- Optional page-specific CSS -->
+<% if (pageCSS) { %>
+<link rel="stylesheet" href="/css/<%= pageCSS %>">
+<% } %>
 </head>
 
-<body>
+<body class="<%= currentAdmin ? 'admin-page' : '' %>">
 
     <%- include("../partials/loading") %>
 
-    <%- body %>
+    <% if (currentAdmin) { %>
+      <div class="admin-layout">
+        <%- include('../partials/sidebar') %>
+        <main class="main-content">
+          <%- include('../partials/topbar') %>
+          <div class="page-body"><%- body %></div>
+        </main>
+      </div>
+    <% } else { %>
+      <%- body %>
+    <% } %>
 
     <!-- Global JS -->
     <script src="/js/script.js"></script>

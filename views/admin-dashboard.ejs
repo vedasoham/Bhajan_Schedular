@@ -1,5 +1,4 @@
-
-   <meta charset="utf-8" />
+<meta charset="utf-8" />
     <title>Admin Calendar</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" href="/css/style.css">
@@ -12,7 +11,7 @@
         <p>Manage Sessions</p>
     </div>
 
-    <div style="margin-bottom:20px; display:flex; gap:10px; flex-wrap:wrap;">
+    <nav class="admin-dashboard-actions" aria-label="Admin actions" style="display:none;">
 
         <a href="/" class="button secondary">
             🏠 Home
@@ -58,7 +57,7 @@
             📈 Analytics
         </a>
 
-    </div>
+    </nav>
 
 
     <div class="calendar-header">
@@ -85,28 +84,13 @@
 
 
     <div class="calendar-legend">
-
-        <div class="legend-item">
-            <span class="legend-color day-none"></span>
-            No Bhajans
-        </div>
-
-        <div class="legend-item">
-            <span class="legend-color day-thursday"></span>
-            Thursday
-        </div>
-
-        <div class="legend-item">
-            <span class="legend-color day-special"></span>
-            Special
-        </div>
-
-        <div class="legend-item">
-            <span class="legend-color day-festival-perm"></span>
-            Festival
-        </div>
-
-    </div>
+    <div class="legend-item"><span class="legend-color day-none"></span>No Session</div>
+    <div class="legend-item"><span class="legend-color day-thursday-upcoming"></span>Upcoming Thursday</div>
+    <div class="legend-item"><span class="legend-color day-thursday"></span>Thursday (Submitted)</div>
+    <div class="legend-item"><span class="legend-color day-thursday-missed"></span>Missed Thursday</div>
+    <div class="legend-item"><span class="legend-color day-special"></span>Special</div>
+    <div class="legend-item"><span class="legend-color day-festival-perm"></span>Festival</div>
+</div>
 
 
     <div class="calendar-grid">
@@ -115,9 +99,7 @@
     <%- calendarCells %>
 
 </div>
-
-<h2 style="margin-top:35px;">🛡️ Super Admin Controls</h2>
-
+</div>
 <div class="admin-control-grid">
 
     <a href="/admin/admin-users" class="admin-card">
@@ -125,15 +107,15 @@
         <p>Manage administrator accounts and roles.</p>
     </a>
 
-    <a href="/admin/permissions" class="admin-card">
-        <h3>🔐 Permissions</h3>
-        <p>Submission and special permissions.</p>
-    </a>
+    <div class="admin-card info">
+    <h3>🔐 Permissions</h3>
+    <p>Click any date on the calendar above to mark it Special or Festival.</p>
+</div>
 
-    <a href="/admin/copy-session" class="admin-card">
-        <h3>📋 Copy Session</h3>
-        <p>Copy a previous bhajan session.</p>
-    </a>
+<a href="javascript:void(0)" class="admin-card" onclick="openCopySessionModal()">
+    <h3>📋 Copy Session</h3>
+    <p>Copy a previous bhajan session's line-up onto a new date.</p>
+</a>
 
     <a href="/admin/danger-reset-history" class="admin-card danger">
         <h3>🗑️ Reset History</h3>
@@ -576,5 +558,28 @@
 
     </div>
 
+</div>
+<!-- ===========================
+     COPY SESSION MODAL
+=========================== -->
+<div id="copySessionModal" class="modal">
+  <div class="modal-content" style="max-width:400px;">
+    <div class="modal-header">
+      <h3>📋 Copy Session</h3>
+      <button class="close-btn" onclick="closeCopySessionModal()">&times;</button>
+    </div>
+    <div class="modal-field">
+      <label>Copy FROM date</label>
+      <input type="date" id="copySourceDate">
+    </div>
+    <div class="modal-field">
+      <label>Copy TO date</label>
+      <input type="date" id="copyTargetDate">
+    </div>
+    <div class="modal-actions">
+      <button class="button" onclick="submitCopySession()">Copy Bhajans</button>
+      <button class="button secondary" onclick="closeCopySessionModal()">Cancel</button>
+    </div>
+  </div>
 </div>
 <script src="/script.js"></script>

@@ -6,6 +6,8 @@
             🎵
         </div>
 
+        <button type="button" id="sidebarToggle" class="sidebar-toggle" aria-label="Collapse sidebar">☰</button>
+
         <div>
 
             <h2>Bhajan Planner</h2>
@@ -27,21 +29,21 @@
 
         </a>
 
-        <a href="/admin/sessions"
-           class="<%= page === 'sessions' ? 'active' : '' %>">
+        <a href="/submit-form?admin=true">
 
             <span>📅</span>
 
-            Sessions
+            New Entry
 
         </a>
 
-        <a href="/admin/bhajans"
-           class="<%= page === 'bhajans' ? 'active' : '' %>">
+        <a href="/admin/rules"
+           class="<%= page === 'rules' ? 'active' : '' %>">
+
 
             <span>🎼</span>
 
-            Bhajan Bank
+            Deity Rules
 
         </a>
 
@@ -54,6 +56,15 @@
 
         </a>
 
+        <a href="/admin/singer-dictionary"
+           class="<%= page === 'singer-dict' ? 'active' : '' %>">
+
+            <span>📖</span>
+
+            Singer Dictionary
+
+        </a>
+
         <a href="/admin/analytics"
            class="<%= page === 'analytics' ? 'active' : '' %>">
 
@@ -62,6 +73,14 @@
             Analytics
 
         </a>
+
+        <a href="/master-bank" class="<%= page === 'bank' ? 'active' : '' %>">
+            <span>📚</span>
+            Master Bank
+        </a>
+
+        <a href="/admin?copy=true"><span>📋</span>Copy Session</a>
+        <a href="/plan-view"><span>📤</span>Plan &amp; Share</a>
 
         <% if(currentAdmin.role==="super_admin"){ %>
 
@@ -74,6 +93,20 @@
 
         </a>
 
+        <a href="/admin/activity-logs"
+           class="<%= page === 'activity' ? 'active' : '' %>">
+
+            <span>🕵️</span>
+
+            Activity Monitor
+
+        </a>
+
+        <% } %>
+
+        <% if(currentAdmin.role === "super_admin"){ %>
+        <a href="/admin#calendar"><span>🔐</span>Permissions</a>
+        <a href="/admin/danger-reset-history"><span>⚠️</span>Reset History</a>
         <% } %>
 
     </nav>

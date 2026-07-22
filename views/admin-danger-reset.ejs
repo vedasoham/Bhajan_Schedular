@@ -1,0 +1,13 @@
+<div class="admin-form-wrapper">
+  <div class="admin-page-header">
+    <div><h1>Reset session history</h1><p>This action is permanent and cannot be reversed.</p></div>
+    <a class="back-btn" href="/admin">← Back to dashboard</a>
+  </div>
+  <div class="admin-error">
+    <strong>Warning: irreversible deletion.</strong><br>
+    This permanently deletes every submitted bhajan and all session locks. The master bhajan bank and administrator accounts are not affected.
+  </div>
+  <form method="POST" action="/admin/danger-reset-history" onsubmit="return confirm('Final confirmation: permanently delete all session history? This cannot be undone.');">
+    <div class="admin-actions"><a class="secondary-btn" href="/admin">Cancel</a><button class="primary-btn" style="background:#b23b32;" type="submit">Permanently wipe history</button></div>
+  </form>
+</div>

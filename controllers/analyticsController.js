@@ -3,7 +3,7 @@ const { Sequelize } = require("sequelize");
 const BhajanSubmission = require("../models/BhajanSubmission");
 const MasterBhajan = require("../models/MasterBhajan");
 const Singer = require("../models/Singer");
-const {formatDateHuman} = require("../services/helpers");
+const {formatDateHuman, timeSince} = require("../services/helpers");
 const {escapeHtml, generateDatabaseHtml} = require ("../templates");
 
 exports.showDatabase = async (req, res) => {

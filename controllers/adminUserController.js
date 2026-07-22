@@ -22,6 +22,7 @@ exports.listAdmins = async (req, res) => {
 };
 exports.showCreateForm = (req, res) => {
     res.render("admin-user-form", {
+        pageTitle: "Create Administrator",
         admin: null,
         error: null
     });

@@ -1,17 +1,34 @@
 function escapeHtml(unsafe) {
-  if (unsafe === null || unsafe === undefined) return '';
+  if (unsafe === null || unsafe === undefined) return "";
   return String(unsafe)
-       .replace(/&/g, "&amp;")
-       .replace(/</g, "&lt;")
-       .replace(/>/g, "&gt;")
-       .replace(/"/g, "&quot;")
-       .replace(/'/g, "&#039;");
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
-function generateSubmitFormHtml(sessionDate, mandatoryFilled, totalMandatory, optionalFilled, totalOptional, ganeshaCardHtml, otherDeitiesHtml, hanumanCard, isAdmin, showSuccess = false) {
-  const dateAttr = isAdmin ? '' : 'readonly style="cursor:not-allowed; background:#f8f9fa;"';
-  const dateMsg = isAdmin ? '<span style="color:#e03131; font-weight:bold;">Admin Mode: Select any date</span>' : 'This form is for the upcoming Thursday session';
-  
+function generateSubmitFormHtml(
+  sessionDate,
+  mandatoryFilled,
+  totalMandatory,
+  optionalFilled,
+  totalOptional,
+  ganeshaCardHtml,
+  otherDeitiesHtml,
+  hanumanCard,
+  isAdmin,
+  showSuccess = false,
+  submissionRowsHtml = "",
+  submissionCount = 0,
+) {
+  const dateAttr = isAdmin
+    ? ""
+    : 'readonly style="cursor:not-allowed; background:#f8f9fa;"';
+  const dateMsg = isAdmin
+    ? '<span style="color:#e03131; font-weight:bold;">Admin Mode: Select any date</span>'
+    : "This form is for the upcoming Thursday session";
+
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -25,6 +42,7 @@ function generateSubmitFormHtml(sessionDate, mandatoryFilled, totalMandatory, op
   <div class="container">
     
     <div class="header">
+      <a href="/" class="home-btn" title="Return to Homepage">🏠 Home</a>
       <h1>📋 Bhajan Scheduler</h1>
       <p>Sri Sathya Sai Seva Organisation - Gandhinagar</p>
     </div>
@@ -36,7 +54,7 @@ function generateSubmitFormHtml(sessionDate, mandatoryFilled, totalMandatory, op
           <span>${mandatoryFilled}/${totalMandatory} Mandatory | ${optionalFilled}/${totalOptional} Optional</span>
         </div>
         <div class="progress-bar">
-          <div class="progress-fill" style="width: ${totalMandatory > 0 ? (mandatoryFilled/totalMandatory)*100 : 100}%"></div>
+          <div class="progress-fill" style="width: ${totalMandatory > 0 ? (mandatoryFilled / totalMandatory) * 100 : 100}%"></div>
         </div>
       </div>
       
@@ -52,7 +70,10 @@ function generateSubmitFormHtml(sessionDate, mandatoryFilled, totalMandatory, op
           <div class="form-row cols-3">
             <div class="form-group">
               <label>Singer Name <span class="required">*</span></label>
-              <input type="text" list="singerList" name="singer_name" id="singerName" required placeholder="Enter your full name" autocomplete="off" />
+              <div class="singer-autocomplete">
+                <input type="text" name="singer_name" id="singerName" required placeholder="Enter your full name" autocomplete="off" aria-autocomplete="list" aria-controls="singerSuggestions" aria-expanded="false" />
+                <div id="singerSuggestions" class="bhajan-suggestions" role="listbox" aria-label="Singer suggestions"></div>
+              </div>
               <datalist id="singerList"></datalist>
             </div>
             
@@ -69,6 +90,7 @@ function generateSubmitFormHtml(sessionDate, mandatoryFilled, totalMandatory, op
                 <option value="Female">Female</option>
                 <option value="Other">Other</option>
               </select>
+              <input type="hidden" name="locked_gender" id="lockedGender" />
             </div>
           </div>
         </div>
@@ -77,7 +99,7 @@ function generateSubmitFormHtml(sessionDate, mandatoryFilled, totalMandatory, op
           ✨ Choose Deity <span class="required">*</span>
         </div>
         <div style="font-size:12px; color:#868e96; margin-bottom:16px; font-style:italic;">
-          Tap available (grey) to select • Tap taken (green) to view details
+          Tile color shows submission count • Tap available tile to select • Tap taken tile to view details
         </div>
         
         <div class="deity-grid ganesha-row">
@@ -102,8 +124,10 @@ function generateSubmitFormHtml(sessionDate, mandatoryFilled, totalMandatory, op
           <div class="form-row">
             <div class="form-group" style="flex: 2;">
               <label>Bhajan Title <span class="required">*</span></label>
-              <input list="bhajanList" name="title" id="bhajanTitleInput" required placeholder="Select Deity to search..." autocomplete="off" />
-              <datalist id="bhajanList"></datalist>
+              <div class="bhajan-autocomplete">
+                <input name="title" id="bhajanTitleInput" required placeholder="Select Deity to search..." autocomplete="off" aria-autocomplete="list" aria-controls="bhajanSuggestions" aria-expanded="false" />
+                <div id="bhajanSuggestions" class="bhajan-suggestions" role="listbox" aria-label="Bhajan suggestions"></div>
+              </div>
               
               <div id="masterDataBadge" style="display:none; color:#28a745; font-size:12px; margin-top:4px; font-weight:600;">
                 ✅ Master DB Synced <span id="badgeDetails"></span>
@@ -135,6 +159,23 @@ function generateSubmitFormHtml(sessionDate, mandatoryFilled, totalMandatory, op
           <button type="button" id="preSubmitBtn" class="submit-btn">Submit Form</button>
         </div>
       </form>
+
+      <section class="submitted-bhajans" aria-labelledby="submittedBhajansHeading">
+        <div class="submitted-bhajans-heading">
+          <div>
+            <h3 id="submittedBhajansHeading">Bhajans already submitted</h3>
+            <p>${submissionCount} bhajan${submissionCount === 1 ? "" : "s"} added for this session. Please avoid duplicate titles.</p>
+          </div>
+        </div>
+        ${submissionCount > 0 ? `
+          <div class="table-container">
+            <table>
+              <thead><tr><th>#</th><th>Singer</th><th>Deity</th><th>Bhajan</th><th>Speed</th><th>Scale</th></tr></thead>
+              <tbody>${submissionRowsHtml}</tbody>
+            </table>
+          </div>
+        ` : '<p class="submitted-bhajans-empty">No bhajans have been submitted yet.</p>'}
+      </section>
     </div>
   </div>
   
@@ -197,7 +238,12 @@ function generateSubmitFormHtml(sessionDate, mandatoryFilled, totalMandatory, op
 </html>`;
 }
 
-function generatePlanViewHtml(sessionDate, rowsHtml, whatsappText, whatsappEncoded) {
+function generatePlanViewHtml(
+  sessionDate,
+  rowsHtml,
+  whatsappText,
+  whatsappEncoded,
+) {
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -280,7 +326,15 @@ function generateErrorHtml(deity, existing, session_date) {
   return `<!DOCTYPE html><html><head><meta charset="utf-8" /><title>Slot Taken</title><meta name="viewport" content="width=device-width, initial-scale=1" /><link rel="stylesheet" href="/css/style.css"></head><body><div class="container" style="text-align:center; padding:32px;"><div class="error-icon">⚠️</div><h2 style="color:#e03131;">Slot Already Taken</h2><p>Sorry, the <strong>${deity}</strong> deity slot has already been taken.</p><div class="info-box"><strong>Taken by:</strong> ${escapeHtml(existing.singer_name)}<br><strong>Bhajan:</strong> ${escapeHtml(existing.title)}<br><strong>Time:</strong> ${new Date(existing.created_at).toLocaleTimeString()}</div><a class="button" href="/submit-form?session_date=${session_date}">← Go Back</a></div></body></html>`;
 }
 
-function generateSuccessHtml(singer_name, deity, title, speed, scale, session_date, isAdmin) {
+function generateSuccessHtml(
+  singer_name,
+  deity,
+  title,
+  speed,
+  scale,
+  session_date,
+  isAdmin,
+) {
   let actionButtons;
   if (isAdmin) {
     actionButtons = `
@@ -293,7 +347,7 @@ function generateSuccessHtml(singer_name, deity, title, speed, scale, session_da
       <a class="button secondary" href="/plan-view?session_date=${session_date}">View Full Session Plan</a>
     `;
   }
-  return `<!DOCTYPE html><html><head><meta charset="utf-8" /><title>Success</title><meta name="viewport" content="width=device-width, initial-scale=1" /><link rel="stylesheet" href="/css/style.css"></head><body><div class="container" style="text-align:center; padding:32px;"><div class="success-icon">✅</div><h2 style="color:#2f9e44;">Bhajan Submitted!</h2><div style="font-size:20px; margin-bottom:24px;">🙏 Sai Ram, ${escapeHtml(singer_name)}!</div><div class="details-box" style="text-align:left;"><div><strong>Deity:</strong> ${deity}</div><div><strong>Bhajan:</strong> ${escapeHtml(title)}</div><div><strong>Speed:</strong> ${escapeHtml(speed)}</div><div><strong>Scale:</strong> ${escapeHtml(scale || 'Not specified')}</div><div><strong>Session:</strong> ${session_date}</div></div><p>Your bhajan has been recorded.</p><div style="display:flex; flex-direction:column; gap:12px; margin-top:24px;">${actionButtons}</div></div></body></html>`;
+  return `<!DOCTYPE html><html><head><meta charset="utf-8" /><title>Success</title><meta name="viewport" content="width=device-width, initial-scale=1" /><link rel="stylesheet" href="/css/style.css"></head><body><div class="container" style="text-align:center; padding:32px;"><div class="success-icon">✅</div><h2 style="color:#2f9e44;">Bhajan Submitted!</h2><div style="font-size:20px; margin-bottom:24px;">🙏 Sai Ram, ${escapeHtml(singer_name)}!</div><div class="details-box" style="text-align:left;"><div><strong>Deity:</strong> ${deity}</div><div><strong>Bhajan:</strong> ${escapeHtml(title)}</div><div><strong>Speed:</strong> ${escapeHtml(speed)}</div><div><strong>Scale:</strong> ${escapeHtml(scale || "Not specified")}</div><div><strong>Session:</strong> ${session_date}</div></div><p>Your bhajan has been recorded.</p><div style="display:flex; flex-direction:column; gap:12px; margin-top:24px;">${actionButtons}</div></div></body></html>`;
 }
 
 function generateDatePickerHtml(today) {
@@ -301,16 +355,18 @@ function generateDatePickerHtml(today) {
 }
 
 function generateAdminSessionViewHtml(date, submissions, isLocked) {
-  const rows = submissions.map(s => `
+  const rows = submissions
+    .map(
+      (s) => `
     <tr data-id="${s.id}" class="draggable-row" draggable="true" style="cursor: grab;">
       <td style="color:#adb5bd; cursor:grab; font-size:18px;" class="drag-handle" title="Drag to reorder">☰</td>
-      <td data-label="Singer(s)"><strong>${escapeHtml(s.singer_name)}</strong>${s.partner_name ? `<br><small>& ${escapeHtml(s.partner_name)}</small>` : ''}</td>
-      <td data-label="Gender">${escapeHtml(s.gender || '-')}</td>
+      <td data-label="Singer(s)"><strong>${escapeHtml(s.singer_name)}</strong>${s.partner_name ? `<br><small>& ${escapeHtml(s.partner_name)}</small>` : ""}</td>
+      <td data-label="Gender">${escapeHtml(s.gender || "-")}</td>
       <td data-label="Deity"><span class="deity-pill">${escapeHtml(s.deity)}</span></td>
       <td data-label="Title">${escapeHtml(s.title)}</td>
-      <td data-label="Tempo">${escapeHtml(s.speed || '-')}</td>
-      <td data-label="Raag">${escapeHtml(s.raga || '-')}</td>
-      <td data-label="Scale">${escapeHtml(s.scale || '-')}</td>
+      <td data-label="Tempo">${escapeHtml(s.speed || "-")}</td>
+      <td data-label="Raag">${escapeHtml(s.raga || "-")}</td>
+      <td data-label="Scale">${escapeHtml(s.scale || "-")}</td>
       <td data-label="Actions">
         <div style="display:flex; gap:8px; justify-content:flex-end;">
           <a href="/admin/edit/${s.id}" class="button" style="padding:6px 12px; font-size:13px; text-decoration:none;">Edit</a>
@@ -320,7 +376,9 @@ function generateAdminSessionViewHtml(date, submissions, isLocked) {
         </div>
       </td>
     </tr>
-  `).join('');
+  `,
+    )
+    .join("");
 
   return `<!DOCTYPE html>
 <html>
@@ -335,14 +393,14 @@ function generateAdminSessionViewHtml(date, submissions, isLocked) {
     <div class="header">
       <h1>🛠️ Session Details</h1>
       <p>Date: ${date}</p>
-      ${isLocked ? `<span style="background:#e03131; color:white; padding:4px 12px; border-radius:12px; font-size:12px; font-weight:bold; margin-top:10px; display:inline-block;">🔒 SESSION LOCKED</span>` : ''}
+      ${isLocked ? `<span style="background:#e03131; color:white; padding:4px 12px; border-radius:12px; font-size:12px; font-weight:bold; margin-top:10px; display:inline-block;">🔒 SESSION LOCKED</span>` : ""}
     </div>
     
     <div style="margin-bottom: 24px; display:flex; gap:12px; flex-wrap:wrap; justify-content:center;">
       <a href="/admin" class="button secondary">⬅️ Back to Calendar</a>
       <a href="/submit-form?admin=true&session_date=${date}" class="button">➕ Add / Append to this Date</a>
       <a href="/admin/rules?date=${date}" class="button secondary">⚙️ Session Rules</a>
-      <button onclick="toggleSessionLock('${date}', ${!isLocked})" class="button" style="background:${isLocked ? '#28a745' : '#e03131'}; border:none;">${isLocked ? '🔓 Unlock Submissions' : '🔒 Lock Submissions'}</button>
+      <button onclick="toggleSessionLock('${date}', ${!isLocked})" class="button" style="background:${isLocked ? "#28a745" : "#e03131"}; border:none;">${isLocked ? "🔓 Unlock Submissions" : "🔒 Lock Submissions"}</button>
       <a href="/plan-view" class="button secondary">📅 View Plans</a>
       <a href="/" class="button secondary">🏠 Home</a>
     </div>
@@ -390,58 +448,78 @@ function generateAdminSessionViewHtml(date, submissions, isLocked) {
 </html>`;
 }
 
-function generateAdminCalendarHtml(year, month, eventCounts, permissionMap = {}, descriptionMap = {}, missingBhajans = []) {
-  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+function generateAdminCalendarHtml(
+  year,
+  month,
+  eventCounts,
+  permissionMap = {},
+  descriptionMap = {},
+  missingBhajans = [],
+) {
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
   const currentMonthName = monthNames[month - 1];
-  
+
   // Calendar Logic
   const daysInMonth = new Date(year, month, 0).getDate();
   const firstDayIndex = new Date(year, month - 1, 1).getDay(); // 0 = Sunday
-  
+
   let calendarCells = "";
-  
+
   // Empty cells for previous month
   for (let i = 0; i < firstDayIndex; i++) {
     calendarCells += `<div class="calendar-day empty"></div>`;
   }
-  
+
   // Days
   const today = new Date();
-  const isCurrentMonth = today.getFullYear() === year && (today.getMonth() + 1) === month;
-  
+  const isCurrentMonth =
+    today.getFullYear() === year && today.getMonth() + 1 === month;
+
   for (let day = 1; day <= daysInMonth; day++) {
-    const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
     const count = eventCounts[dateStr] || 0;
     const perm = permissionMap[dateStr];
-    const desc = descriptionMap[dateStr] || '';
-    
+    const desc = descriptionMap[dateStr] || "";
+
     // Determine Color Logic
     const dateObj = new Date(year, month - 1, day);
     const dayOfWeek = dateObj.getDay(); // 0=Sun, 4=Thu
     const isToday = isCurrentMonth && today.getDate() === day;
-    
-    let colorClass = "day-none"; // Grey (Default)
-    if (perm === 'special') {
+
+    let colorClass = "day-none";
+
+    if (perm === "special") {
       colorClass = "day-special";
-    } else if (perm === 'festival') {
+    } else if (perm === "festival") {
       colorClass = "day-festival-perm";
+    } else if (dayOfWeek === 4) {
+      colorClass = "day-thursday";
     } else if (count > 0) {
-      if (dayOfWeek === 4) {
-        colorClass = "day-thursday"; // Lilac
-      } else {
-        colorClass = "day-festival"; // Lime
-      }
+      colorClass = "day-festival";
     }
     
-    const dayClass = `calendar-day ${colorClass} ${isToday ? 'today' : ''}`;
-    
+    const dayClass = `calendar-day ${colorClass} ${isToday ? "today" : ""}`;
+
     // Changed from <a> to <div onclick> for popup
     calendarCells += `
-      <div class="${dayClass}" onclick="openAdminDateModal('${dateStr}', '${perm || ''}', '${desc.replace(/'/g, "&apos;")}')" style="cursor:pointer;">
+      <div class="${dayClass}" onclick="openAdminDateModal('${dateStr}', '${perm || ""}', '${desc.replace(/'/g, "&apos;")}')" style="cursor:pointer;">
         <div class="calendar-date-num">${day}</div>
         <div class="calendar-actions">
-          ${count > 0 ? `<div class="event-pill">${count} Bhajans</div>` : ''}
-          ${perm ? `<div class="perm-pill">${perm.toUpperCase()}</div>` : ''}
+          ${count > 0 ? `<div class="event-pill">${count} Bhajans</div>` : ""}
+          ${perm ? `<div class="perm-pill">${perm.toUpperCase()}</div>` : ""}
         </div>
       </div>
     `;
@@ -503,13 +581,20 @@ function generateAdminCalendarHtml(year, month, eventCounts, permissionMap = {},
       <h2 style="color: #d9480f; margin-bottom: 15px;">🚨 Missing Bhajan Catcher</h2>
       <p style="font-size:14px; margin-bottom:15px; color:#555;">The following bhajans have been sung in sessions but are missing from the Master Database.</p>
       <ul style="list-style:none; padding:0; display:flex; flex-direction:column; gap:10px;">
-        ${missingBhajans.length === 0 ? '<li style="color:#2b8a3e; font-weight:bold;">✅ All sung bhajans are safely in the Master Database!</li>' : 
-          missingBhajans.map(b => `
+        ${
+          missingBhajans.length === 0
+            ? '<li style="color:#2b8a3e; font-weight:bold;">✅ All sung bhajans are safely in the Master Database!</li>'
+            : missingBhajans
+                .map(
+                  (b) => `
           <li style="display:flex; justify-content:space-between; align-items:center; background:#fff; padding:10px 15px; border-radius:8px; border:1px solid #ffd43b;">
             <strong>${b}</strong>
             <button class="button" style="padding:6px 12px; font-size:12px; background:#4dabf7; border:none;" onclick="openMissingBhajanModal('${b.replace(/'/g, "\\'")}')">➕ Add to Master</button>
           </li>
-        `).join('')}
+        `,
+                )
+                .join("")
+        }
       </ul>
     </div>
 
@@ -583,16 +668,16 @@ function generateEditFormHtml(s) {
       </div>
       <div class="form-row">
         <div class="form-group"><label>Singer Name</label><input type="text" name="singer_name" value="${escapeHtml(s.singer_name)}" required /></div>
-        <div class="form-group"><label>Partner</label><input type="text" name="partner_name" value="${escapeHtml(s.partner_name || '')}" /></div>
+        <div class="form-group"><label>Partner</label><input type="text" name="partner_name" value="${escapeHtml(s.partner_name || "")}" /></div>
       </div>
       <div class="form-group"><label>Title</label><input type="text" name="title" value="${escapeHtml(s.title)}" required /></div>
       <div class="form-row">
-      <div class="form-group"><label>Scale</label><input type="text" name="scale" value="${escapeHtml(s.scale || '')}" /></div>
+      <div class="form-group"><label>Scale</label><input type="text" name="scale" value="${escapeHtml(s.scale || "")}" /></div>
       <div class="form-group"><label>Speed</label>
         <select name="speed" required>
-          <option value="slow" ${s.speed === 'slow' ? 'selected' : ''}>Slow</option>
-          <option value="medium" ${s.speed === 'medium' ? 'selected' : ''}>Medium</option>
-          <option value="fast" ${s.speed === 'fast' ? 'selected' : ''}>Fast</option>
+          <option value="slow" ${s.speed === "slow" ? "selected" : ""}>Slow</option>
+          <option value="medium" ${s.speed === "medium" ? "selected" : ""}>Medium</option>
+          <option value="fast" ${s.speed === "fast" ? "selected" : ""}>Fast</option>
         </select>
       </div>
       </div>
@@ -602,10 +687,16 @@ function generateEditFormHtml(s) {
 }
 
 function generateAdminRulesHtml(rules, date) {
-  const title = date === 'default' ? '⚙️ Default Deity Rules' : `⚙️ Rules for ${date}`;
-  const subtitle = date === 'default' ? 'Set base limits for all future sessions' : 'Set custom limits for this specific session';
-  
-  const rows = rules.map(r => `
+  const title =
+    date === "default" ? "⚙️ Default Deity Rules" : `⚙️ Rules for ${date}`;
+  const subtitle =
+    date === "default"
+      ? "Set base limits for all future sessions"
+      : "Set custom limits for this specific session";
+
+  const rows = rules
+    .map(
+      (r) => `
     <tr>
       <td>
         <strong>${r.deity_name}</strong>
@@ -614,7 +705,9 @@ function generateAdminRulesHtml(rules, date) {
       <td><input type="number" class="rule-min filter-input" value="${r.min_required}" min="0" max="9" style="width:80px; text-align:center;"></td>
       <td><input type="number" class="rule-max filter-input" value="${r.max_allowed}" min="0" max="99" style="width:80px; text-align:center;"></td>
     </tr>
-  `).join('');
+  `,
+    )
+    .join("");
 
   return `<!DOCTYPE html><html><head><meta charset="utf-8" /><title>Manage Deity Rules</title><meta name="viewport" content="width=device-width, initial-scale=1" /><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="/css/style.css"></head><body>
   <div class="container container-lg">
@@ -623,7 +716,7 @@ function generateAdminRulesHtml(rules, date) {
       <p>${subtitle}</p>
     </div>
     <div style="margin-bottom: 20px;">
-      <a href="${date === 'default' ? '/admin' : `/admin/date/${date}`}" class="button secondary">⬅️ Go Back</a>
+      <a href="${date === "default" ? "/admin" : `/admin/date/${date}`}" class="button secondary">⬅️ Go Back</a>
     </div>
     <input type="hidden" id="ruleDate" value="${date}">
     <div class="table-container">
@@ -654,5 +747,5 @@ module.exports = {
   generateEditFormHtml,
   generateAdminCalendarHtml,
   generateAdminSessionViewHtml,
-  generateAdminRulesHtml
-}
+  generateAdminRulesHtml,
+};

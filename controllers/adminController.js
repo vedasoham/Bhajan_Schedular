@@ -1,4 +1,5 @@
 const { Sequelize } = require("sequelize");
+const sequelize = require("../config/database"); // <-- add this line
 const activityService = require("../services/activityService");
 const BhajanSubmission = require("../models/BhajanSubmission");
 const SessionPermission = require("../models/SessionPermission");
@@ -139,37 +140,50 @@ exports.dashboard = async (req, res) => {
     }
 
     const todayDate = new Date();
-    const isCurrentMonth =
-      todayDate.getFullYear() === year && todayDate.getMonth() + 1 === month;
+const isCurrentMonth =
+  todayDate.getFullYear() === year && todayDate.getMonth() + 1 === month;
+const todayStrGlobal = `${todayDate.getFullYear()}-${String(todayDate.getMonth() + 1).padStart(2, "0")}-${String(todayDate.getDate()).padStart(2, "0")}`;
 
-    for (let day = 1; day <= daysInMonth; day++) {
-      const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+for (let day = 1; day <= daysInMonth; day++) {
+  const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 
-      const count = eventCounts[dateStr] || 0;
-      const perm = permissionMap[dateStr];
-      const desc = descriptionMap[dateStr] || "";
+  const count = eventCounts[dateStr] || 0;
+  const perm = permissionMap[dateStr];
+  const desc = descriptionMap[dateStr] || "";
 
-      const dow = new Date(year, month - 1, day).getDay();
+  const dow = new Date(year, month - 1, day).getDay();
+  const isThursday = dow === 4;
+  const isPast = dateStr < todayStrGlobal;
 
-      let colorClass = "day-none";
+  let colorClass = "day-none";
+  let pillHtml = count ? `<div class="event-pill">${count} Bhajans</div>` : "";
 
-      if (perm === "special") colorClass = "day-special";
-      else if (perm === "festival") colorClass = "day-festival-perm";
-      else if (count > 0)
-        colorClass = dow === 4 ? "day-thursday" : "day-festival";
+  if (perm === "special") {
+    colorClass = "day-special";
+  } else if (perm === "festival") {
+    colorClass = "day-festival-perm";
+  } else if (count > 0) {
+    colorClass = isThursday ? "day-thursday" : "day-festival";
+  } else if (isThursday && !isPast) {
+    colorClass = "day-thursday-upcoming";
+    pillHtml = `<div class="event-pill pill-muted">Regular Session</div>`;
+  } else if (isThursday && isPast) {
+    colorClass = "day-thursday-missed";
+    pillHtml = `<div class="event-pill pill-missed">Missed Session</div>`;
+  }
 
-      const isToday = isCurrentMonth && todayDate.getDate() === day;
+  const isToday = isCurrentMonth && todayDate.getDate() === day;
 
-      calendarCells += `
+  calendarCells += `
 <div class="calendar-day ${colorClass} ${isToday ? "today" : ""}"
 onclick="openAdminDateModal('${dateStr}','${perm || ""}','${desc.replace(/'/g, "&apos;")}')">
 <div class="calendar-date-num">${day}</div>
 <div class="calendar-actions">
-${count ? `<div class="event-pill">${count} Bhajans</div>` : ""}
+${pillHtml}
 ${perm ? `<div class="perm-pill">${perm.toUpperCase()}</div>` : ""}
 </div>
 </div>`;
-    }
+}
 
     const prevMonth = month === 1 ? 12 : month - 1;
     const prevYear = month === 1 ? year - 1 : year;
@@ -395,6 +409,10 @@ exports.copySession = async (req, res) => {
     res.status(500).send(e.message);
   }
 };
+exports.showDangerResetHistory = (req, res) => {
+  res.render("admin-danger-reset", { page: "danger", pageTitle: "Reset History" });
+};
+
 exports.dangerResetHistory = async (req, res) => {
   try {
     // Wipes all history and resets the ID counters

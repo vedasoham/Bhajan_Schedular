@@ -3,16 +3,17 @@ const express = require("express");
 const router = express.Router();
 
 const authController = require("../controllers/authController");
+const { authLimit, recoveryLimit } = require("../middleware/security");
 
 router.get("/admin-login", authController.showLogin);
-router.post("/admin-login", authController.login);
-router.post("/auth/google", authController.googleLogin);
+router.post("/admin-login", authLimit, authController.login);
+router.post("/auth/google", authLimit, authController.googleLogin);
 router.get("/logout", authController.logout);
 router.get("/forgot-password",authController.showForgotPassword);
-router.post("/forgot-password",authController.checkForgotPassword);
+router.post("/forgot-password", recoveryLimit, authController.checkForgotPassword);
 router.get("/forgot-password/google/:id",authController.showGoogleRecovery);
-router.post("/auth/google/recovery",authController.googleRecovery);
+router.post("/auth/google/recovery", recoveryLimit, authController.googleRecovery);
 router.get("/forgot-password/reset",authController.showPasswordReset);
-router.post("/forgot-password/reset",authController.resetForgotPassword);
+router.post("/forgot-password/reset", recoveryLimit, authController.resetForgotPassword);
 
 module.exports = router;

@@ -34,6 +34,12 @@ const AdminUser = sequelize.define(
       allowNull: false
     },
 
+    title: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: ""
+    },
+
     password_hash: {
       type: DataTypes.STRING,
       allowNull: false

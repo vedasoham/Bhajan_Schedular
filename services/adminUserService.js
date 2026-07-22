@@ -8,6 +8,7 @@ class AdminUserService {
 
     let {
         display_name,
+        title,
         username,
         password,
         google_email,
@@ -15,6 +16,7 @@ class AdminUserService {
     } = data;
 
     display_name = (display_name || "").trim();
+    title = (title || "").trim();
     username = (username || "").trim().toLowerCase();
     password = (password || "").trim();
     google_email = (google_email || "").trim().toLowerCase();
@@ -30,6 +32,7 @@ class AdminUserService {
 
     return {
         display_name,
+        title,
         username,
         password,
         google_email,
@@ -109,6 +112,9 @@ async hashPassword(password) {
         display_name:
             admin.display_name,
 
+        title:
+            admin.title || "",
+
         username:
             admin.username,
 
@@ -132,12 +138,14 @@ async updateAdmin(id, data) {
 
     let {
         display_name,
+        title,
         username,
         google_email,
         role
     } = data;
 
     display_name = (display_name || "").trim();
+    title = (title || "").trim();
     username = (username || "").trim().toLowerCase();
     google_email = (google_email || "").trim().toLowerCase();
     role = (role || "admin").trim();
@@ -173,6 +181,7 @@ async updateAdmin(id, data) {
     }
 
     admin.display_name = display_name;
+    admin.title = title;
     admin.username = username;
     admin.google_email = google_email || null;
     admin.role = role;

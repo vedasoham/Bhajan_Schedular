@@ -1,0 +1,370 @@
+<div class="container container-xl">
+  <div class="header" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: #f8fafc; border-radius: 16px; padding: 28px 32px; margin-bottom: 28px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+      <div>
+        <h1 style="color: #f8fafc; margin: 0; font-size: 26px; font-weight: 700; display: flex; align-items: center; gap: 10px;">
+          🕵️ Superadmin Activity &amp; Live Monitor
+        </h1>
+        <p style="color: #94a3b8; margin-top: 4px; margin-bottom: 0; font-size: 14px;">
+          Real-time tracking of administrator &amp; user presence, page surfing, section durations, and system actions.
+        </p>
+      </div>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+        <span style="display: inline-flex; align-items: center; gap: 6px; background: #064e3b; color: #34d399; border: 1px solid #059669; padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 700;">
+          <span style="width: 8px; height: 8px; background: #34d399; border-radius: 50%; box-shadow: 0 0 8px #34d399; animation: pulse 2s infinite;"></span>
+          Live Stream Active (Auto-updating)
+        </span>
+        <button onclick="purgeOldActivityLogs()" class="button" style="background: #ef4444; border: none; color: #fff; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer;">
+          🗑️ Purge Logs (&gt;30 Days)
+        </button>
+        <a href="/admin" class="button secondary" style="background: #334155; color: #f8fafc; border: 1px solid #475569; padding: 8px 16px; border-radius: 8px; text-decoration: none;">
+          ⬅️ Back to Admin
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary Cards -->
+  <% 
+    const totalDurationSeconds = sectionStats.reduce((acc, curr) => acc + parseInt(curr.total_duration || 0, 10), 0);
+    const totalHours = (totalDurationSeconds / 3600).toFixed(1);
+  %>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 28px;">
+    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+      <div style="font-size: 13px; color: #64748b; font-weight: 600; text-transform: uppercase;">Online Admins</div>
+      <div id="cardOnlineAdmins" style="font-size: 28px; font-weight: 700; color: #16a34a; margin-top: 6px; display: flex; align-items: center; gap: 8px;">
+        <span style="display: inline-block; width: 12px; height: 12px; background: #22c55e; border-radius: 50%; box-shadow: 0 0 8px #22c55e;"></span>
+        <span><%= onlineAdminsCount %> Active</span>
+      </div>
+      <div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">Currently logged into admin area</div>
+    </div>
+
+    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+      <div style="font-size: 13px; color: #64748b; font-weight: 600; text-transform: uppercase;">Online Public Users</div>
+      <div id="cardOnlineUsers" style="font-size: 28px; font-weight: 700; color: #0284c7; margin-top: 6px; display: flex; align-items: center; gap: 8px;">
+        <span style="display: inline-block; width: 12px; height: 12px; background: #38bdf8; border-radius: 50%;"></span>
+        <span><%= onlineUsersCount %> Surfing</span>
+      </div>
+      <div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">Visiting submit form or master bank</div>
+    </div>
+
+    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+      <div style="font-size: 13px; color: #64748b; font-weight: 600; text-transform: uppercase;">Total App Activity Logs</div>
+      <div id="cardTotalLogs" style="font-size: 28px; font-weight: 700; color: #475569; margin-top: 6px;">
+        <%= totalLogs %> Records
+      </div>
+      <div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">Recorded user and admin steps</div>
+    </div>
+
+    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+      <div style="font-size: 13px; color: #64748b; font-weight: 600; text-transform: uppercase;">Logged Surfing Duration</div>
+      <div id="cardTotalHours" style="font-size: 28px; font-weight: 700; color: #8b5cf6; margin-top: 6px;">
+        <%= totalHours %> Hours
+      </div>
+      <div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">Active time spent across sections</div>
+    </div>
+  </div>
+
+  <!-- Live Online / Offline Presence Directory -->
+  <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; margin-bottom: 32px; box-shadow: 0 2px 4px rgba(0,0,0,0.04);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
+      <h2 style="margin: 0; font-size: 18px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+        📡 Live Presence Tracker (Online / Offline Status)
+      </h2>
+      <span style="font-size: 12px; color: #059669; background: #ecfdf5; padding: 4px 10px; border-radius: 20px; border: 1px solid #a7f3d0; font-weight: 600;">🟢 Live Real-time Feed</span>
+    </div>
+
+    <div class="table-container" style="overflow-x: auto;">
+      <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+        <thead>
+          <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #475569; font-weight: 600;">
+            <th style="padding: 12px 16px;">Status</th>
+            <th style="padding: 12px 16px;">User / Administrator</th>
+            <th style="padding: 12px 16px;">Type</th>
+            <th style="padding: 12px 16px;">Current Section</th>
+            <th style="padding: 12px 16px;">Current Page URL</th>
+            <th style="padding: 12px 16px;">IP Address</th>
+            <th style="padding: 12px 16px;">Last Active</th>
+          </tr>
+        </thead>
+        <tbody id="presenceTableBody">
+          <% if (presenceList.length > 0) { %>
+            <% presenceList.forEach(p => { %>
+              <tr style="border-bottom: 1px solid #f1f5f9;">
+                <td style="padding: 12px 16px; white-space: nowrap;">
+                  <% if (p.isOnline) { %>
+                    <span style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; background: #dcfce7; color: #15803d; border: 1px solid #86efac; border-radius: 20px; font-weight: 700; font-size: 11px;">
+                      <span style="width: 8px; height: 8px; background: #16a34a; border-radius: 50%;"></span> ONLINE 🟢
+                    </span>
+                  <% } else { %>
+                    <span style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; border-radius: 20px; font-weight: 600; font-size: 11px;">
+                      <span style="width: 8px; height: 8px; background: #94a3b8; border-radius: 50%;"></span> OFFLINE 🔴
+                    </span>
+                  <% } %>
+                </td>
+                <td style="padding: 12px 16px;">
+                  <strong style="color: #0f172a; font-size: 14px;"><%= p.username %></strong>
+                </td>
+                <td style="padding: 12px 16px;">
+                  <% if (p.user_type === 'super_admin') { %>
+                    <span style="background: #f3e8ff; color: #7e22ce; padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 11px;">Super Admin</span>
+                  <% } else if (p.user_type === 'admin') { %>
+                    <span style="background: #dbeafe; color: #1d4ed8; padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 11px;">Admin</span>
+                  <% } else { %>
+                    <span style="background: #f1f5f9; color: #475569; padding: 2px 8px; border-radius: 6px; font-weight: 600; font-size: 11px;">Visitor</span>
+                  <% } %>
+                </td>
+                <td style="padding: 12px 16px; font-weight: 600; color: #334155;">
+                  <%= p.last_section || 'General' %>
+                </td>
+                <td style="padding: 12px 16px; font-family: monospace; font-size: 12px; color: #475569;">
+                  <%= p.current_page %>
+                </td>
+                <td style="padding: 12px 16px; font-family: monospace; color: #64748b;">
+                  <%= p.ip_address || '127.0.0.1' %>
+                </td>
+                <td style="padding: 12px 16px; color: #64748b; white-space: nowrap;">
+                  <% if (p.timeAgo < 60) { %>
+                    <%= p.timeAgo %> sec ago
+                  <% } else { %>
+                    <%= Math.round(p.timeAgo / 60) %> min ago
+                  <% } %>
+                </td>
+              </tr>
+            <% }) %>
+          <% } else { %>
+            <tr><td colspan="7" style="text-align: center; padding: 20px; color: #94a3b8;">No presence data recorded yet.</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Section Surfing Breakdown -->
+  <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; margin-bottom: 32px; box-shadow: 0 2px 4px rgba(0,0,0,0.04);">
+    <h2 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 700; color: #0f172a;">
+      📊 App Section Surfing &amp; Duration Breakdown
+    </h2>
+    <div id="sectionStatsContainer" style="display: flex; flex-wrap: wrap; gap: 12px;">
+      <% sectionStats.forEach(stat => { %>
+        <% 
+          const secs = parseInt(stat.total_duration || 0, 10);
+          const mins = Math.round(secs / 60);
+        %>
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 18px; flex: 1; min-width: 200px;">
+          <div style="font-weight: 700; color: #1e293b; font-size: 14px;"><%= stat.section %></div>
+          <div style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 12px; color: #64748b;">
+            <span>Visits: <strong style="color: #0f172a;"><%= stat.visit_count %></strong></span>
+            <span>Duration: <strong style="color: #6d28d9;"><%= mins > 0 ? mins + ' min' : secs + ' sec' %></strong></span>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+
+  <!-- Detailed Step-by-Step Activity Log Table -->
+  <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.04);">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; border-bottom: 1px solid #f1f5f9; padding-bottom: 14px;">
+      <h2 style="margin: 0; font-size: 18px; font-weight: 700; color: #0f172a;">
+        📜 Historical Trajectory &amp; Action Log
+      </h2>
+      <input
+        type="text"
+        id="activityFilterInput"
+        onkeyup="filterActivityTable()"
+        placeholder="Filter log by user, section, or action..."
+        style="padding: 8px 16px; border: 1px solid #cbd5e1; border-radius: 8px; width: 320px; font-size: 13px;"
+      />
+    </div>
+
+    <div class="table-container" style="overflow-x: auto;">
+      <table id="activityLogTable" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+        <thead>
+          <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #475569; font-weight: 600;">
+            <th style="padding: 12px 14px;">Timestamp</th>
+            <th style="padding: 12px 14px;">User / Admin</th>
+            <th style="padding: 12px 14px;">Action Type</th>
+            <th style="padding: 12px 14px;">Section</th>
+            <th style="padding: 12px 14px;">URL Path</th>
+            <th style="padding: 12px 14px;">Method</th>
+            <th style="padding: 12px 14px;">IP Address</th>
+            <th style="padding: 12px 14px;">Details</th>
+          </tr>
+        </thead>
+        <tbody id="activityLogBody">
+          <% if (logs.length > 0) { %>
+            <% logs.forEach(log => { %>
+              <tr style="border-bottom: 1px solid #f1f5f9;">
+                <td style="padding: 10px 14px; white-space: nowrap; color: #64748b; font-size: 12px;">
+                  <%= new Date(log.created_at).toLocaleString() %>
+                </td>
+                <td style="padding: 10px 14px;">
+                  <strong style="color: #1e293b;"><%= log.username %></strong>
+                </td>
+                <td style="padding: 10px 14px;">
+                  <% if (log.action.startsWith('SUBMIT') || log.action.startsWith('POST')) { %>
+                    <span style="background: #fef3c7; color: #d97706; padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 11px;"><%= log.action %></span>
+                  <% } else if (log.action.startsWith('TIME')) { %>
+                    <span style="background: #f3e8ff; color: #7e22ce; padding: 2px 8px; border-radius: 6px; font-weight: 600; font-size: 11px;"><%= log.action %></span>
+                  <% } else { %>
+                    <span style="background: #e0f2fe; color: #0284c7; padding: 2px 8px; border-radius: 6px; font-weight: 600; font-size: 11px;"><%= log.action %></span>
+                  <% } %>
+                </td>
+                <td style="padding: 10px 14px; font-weight: 600; color: #334155;">
+                  <%= log.section %>
+                </td>
+                <td style="padding: 10px 14px; font-family: monospace; font-size: 12px; color: #475569;">
+                  <%= log.page_url %>
+                </td>
+                <td style="padding: 10px 14px;">
+                  <span style="font-weight: 700; font-size: 11px; color: <%= log.method === 'POST' ? '#dc2626' : '#2563eb' %>;"><%= log.method %></span>
+                </td>
+                <td style="padding: 10px 14px; font-family: monospace; color: #64748b; font-size: 12px;">
+                  <%= log.ip_address || '127.0.0.1' %>
+                </td>
+                <td style="padding: 10px 14px; color: #475569; font-size: 12px;">
+                  <%= log.details || '-' %>
+                </td>
+              </tr>
+            <% }) %>
+          <% } else { %>
+            <tr><td colspan="8" style="text-align: center; padding: 20px; color: #94a3b8;">No activity logged yet.</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+function filterActivityTable() {
+  const query = (document.getElementById('activityFilterInput')?.value || '').toLowerCase();
+  const rows = document.querySelectorAll('#activityLogTable tbody tr');
+  rows.forEach(row => {
+    const text = row.innerText.toLowerCase();
+    row.style.display = text.includes(query) ? '' : 'none';
+  });
+}
+
+function purgeOldActivityLogs() {
+  if (!confirm('🗑️ Are you sure you want to purge activity logs older than 30 days?')) return;
+  fetch('/admin/activity-logs/purge', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' }
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      alert('✅ ' + data.message);
+      fetchLiveActivityFeed();
+    } else {
+      alert('Error purging logs: ' + data.error);
+    }
+  })
+  .catch(err => { alert('Failed to purge logs.'); console.error(err); });
+}
+
+// Live Real-Time Auto-Updating Feed (Polls every 4 seconds)
+function fetchLiveActivityFeed() {
+  fetch('/api/admin/activity-feed')
+    .then(res => res.json())
+    .then(data => {
+      if (!data.success) return;
+
+      // 1. Update summary counters
+      const onlineAdminsCount = data.onlineAdminsCount !== undefined ? data.onlineAdminsCount : data.presenceList.filter(p => p.isOnline && p.user_type !== 'user').length;
+      const onlineUsersCount = data.onlineUsersCount !== undefined ? data.onlineUsersCount : data.presenceList.filter(p => p.isOnline && p.user_type === 'user').length;
+      const totalDurSecs = data.sectionStats.reduce((acc, curr) => acc + parseInt(curr.total_duration || 0, 10), 0);
+      const totalHrs = (totalDurSecs / 3600).toFixed(1);
+
+      document.getElementById('cardOnlineAdmins').innerHTML = '<span style="display: inline-block; width: 12px; height: 12px; background: #22c55e; border-radius: 50%; box-shadow: 0 0 8px #22c55e;"></span><span>' + onlineAdminsCount + ' Active</span>';
+      document.getElementById('cardOnlineUsers').innerHTML = '<span style="display: inline-block; width: 12px; height: 12px; background: #38bdf8; border-radius: 50%;"></span><span>' + onlineUsersCount + ' Surfing</span>';
+      document.getElementById('cardTotalLogs').textContent = data.totalLogs + ' Records';
+      document.getElementById('cardTotalHours').textContent = totalHrs + ' Hours';
+
+      // 2. Update Presence Table
+      const presenceBody = document.getElementById('presenceTableBody');
+      if (presenceBody) {
+        if (data.presenceList.length === 0) {
+          presenceBody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #94a3b8;">No presence data recorded yet.</td></tr>';
+        } else {
+          presenceBody.innerHTML = data.presenceList.map(p => {
+            const statusBadge = p.isOnline
+              ? '<span style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; background: #dcfce7; color: #15803d; border: 1px solid #86efac; border-radius: 20px; font-weight: 700; font-size: 11px;"><span style="width: 8px; height: 8px; background: #16a34a; border-radius: 50%;"></span> ONLINE 🟢</span>'
+              : '<span style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; border-radius: 20px; font-weight: 600; font-size: 11px;"><span style="width: 8px; height: 8px; background: #94a3b8; border-radius: 50%;"></span> OFFLINE 🔴</span>';
+
+            const typeBadge = p.user_type === 'super_admin'
+              ? '<span style="background: #f3e8ff; color: #7e22ce; padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 11px;">Super Admin</span>'
+              : (p.user_type === 'admin'
+                  ? '<span style="background: #dbeafe; color: #1d4ed8; padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 11px;">Admin</span>'
+                  : '<span style="background: #f1f5f9; color: #475569; padding: 2px 8px; border-radius: 6px; font-weight: 600; font-size: 11px;">Visitor</span>');
+
+            const lastActiveTxt = p.timeAgo < 60 ? p.timeAgo + ' sec ago' : Math.round(p.timeAgo / 60) + ' min ago';
+
+            return '<tr style="border-bottom: 1px solid #f1f5f9;">' +
+              '<td style="padding: 12px 16px; white-space: nowrap;">' + statusBadge + '</td>' +
+              '<td style="padding: 12px 16px;"><strong style="color: #0f172a; font-size: 14px;">' + (p.username || 'Guest User') + '</strong></td>' +
+              '<td style="padding: 12px 16px;">' + typeBadge + '</td>' +
+              '<td style="padding: 12px 16px; font-weight: 600; color: #334155;">' + (p.last_section || 'General') + '</td>' +
+              '<td style="padding: 12px 16px; font-family: monospace; font-size: 12px; color: #475569;">' + (p.current_page || '/') + '</td>' +
+              '<td style="padding: 12px 16px; font-family: monospace; color: #64748b;">' + (p.ip_address || '127.0.0.1') + '</td>' +
+              '<td style="padding: 12px 16px; color: #64748b; white-space: nowrap;">' + lastActiveTxt + '</td>' +
+            '</tr>';
+          }).join('');
+        }
+      }
+
+      // 3. Update Section Stats
+      const statsContainer = document.getElementById('sectionStatsContainer');
+      if (statsContainer) {
+        statsContainer.innerHTML = data.sectionStats.map(stat => {
+          const secs = parseInt(stat.total_duration || 0, 10);
+          const mins = Math.round(secs / 60);
+          const durationText = mins > 0 ? mins + ' min' : secs + ' sec';
+          return '<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 18px; flex: 1; min-width: 200px;">' +
+            '<div style="font-weight: 700; color: #1e293b; font-size: 14px;">' + stat.section + '</div>' +
+            '<div style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 12px; color: #64748b;">' +
+              '<span>Visits: <strong style="color: #0f172a;">' + stat.visit_count + '</strong></span>' +
+              '<span>Duration: <strong style="color: #6d28d9;">' + durationText + '</strong></span>' +
+            '</div>' +
+          '</div>';
+        }).join('');
+      }
+
+      // 4. Update Logs Table
+      const logsBody = document.getElementById('activityLogBody');
+      if (logsBody) {
+        if (data.logs.length === 0) {
+          logsBody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #94a3b8;">No activity logged yet.</td></tr>';
+        } else {
+          logsBody.innerHTML = data.logs.map(log => {
+            let badge = '<span style="background: #e0f2fe; color: #0284c7; padding: 2px 8px; border-radius: 6px; font-weight: 600; font-size: 11px;">' + log.action + '</span>';
+            if (log.action.startsWith('SUBMIT') || log.action.startsWith('POST')) {
+              badge = '<span style="background: #fef3c7; color: #d97706; padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 11px;">' + log.action + '</span>';
+            } else if (log.action.startsWith('TIME')) {
+              badge = '<span style="background: #f3e8ff; color: #7e22ce; padding: 2px 8px; border-radius: 6px; font-weight: 600; font-size: 11px;">' + log.action + '</span>';
+            }
+
+            const methodColor = log.method === 'POST' ? '#dc2626' : '#2563eb';
+
+            return '<tr style="border-bottom: 1px solid #f1f5f9;">' +
+              '<td style="padding: 10px 14px; white-space: nowrap; color: #64748b; font-size: 12px;">' + new Date(log.created_at).toLocaleString() + '</td>' +
+              '<td style="padding: 10px 14px;"><strong style="color: #1e293b;">' + (log.username || 'Guest User') + '</strong></td>' +
+              '<td style="padding: 10px 14px;">' + badge + '</td>' +
+              '<td style="padding: 10px 14px; font-weight: 600; color: #334155;">' + log.section + '</td>' +
+              '<td style="padding: 10px 14px; font-family: monospace; font-size: 12px; color: #475569;">' + log.page_url + '</td>' +
+              '<td style="padding: 10px 14px;"><span style="font-weight: 700; font-size: 11px; color: ' + methodColor + ';">' + log.method + '</span></td>' +
+              '<td style="padding: 10px 14px; font-family: monospace; color: #64748b; font-size: 12px;">' + (log.ip_address || '127.0.0.1') + '</td>' +
+              '<td style="padding: 10px 14px; color: #475569; font-size: 12px;">' + (log.details || '-') + '</td>' +
+            '</tr>';
+          }).join('');
+        }
+        filterActivityTable();
+      }
+    })
+    .catch(err => console.error('Live activity feed update error:', err));
+}
+
+// Start live auto-polling every 2 seconds
+setInterval(fetchLiveActivityFeed, 2000);
+</script>

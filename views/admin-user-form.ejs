@@ -1,119 +1,183 @@
-<!DOCTYPE html>
+<div class="admin-form-wrapper">
 
-<html>
+    <div class="admin-page-header">
 
-<head>
-    <title>Create Admin</title>
-</head>
+        <div>
 
-<body>
+            <h1>
+                <%= admin ? "Edit Administrator" : "Create Administrator" %>
+            </h1>
 
-<h1>
-<%= admin ? "Edit Admin" : "Create Admin" %>
-</h1>
-<% if (error) { %>
-    <p style="color:red">
-        <%= error %>
-    </p>
-<% } %>
-<form
-    method="POST"
-    action="<%= admin
-        ? '/admin/admin-users/' + admin.id
-        : '/admin/admin-users'
-    %>">
+            <p>
+                Create and manage administrator accounts securely.
+            </p>
 
-<p>
+        </div>
 
-Display Name
+        <a href="/admin/admin-users" class="back-btn">
+            ← Back
+        </a>
 
-<br>
+    </div>
 
-<input
-    type="text"
-    name="display_name"
-    value="<%= admin ? admin.display_name : '' %>"
-    required
->
 
-</p>
+    <% if(error){ %>
 
-<p>
+        <div class="admin-error">
 
-Username
+            <%= error %>
 
-<br>
+        </div>
 
-<input
-    type="text"
-    name="username"
-    value="<%= admin ? admin.username : '' %>"
-    required
->
+    <% } %>
 
-</p>
 
-<p>
+    <form
+        method="POST"
+        action="<%= admin ? '/admin/admin-users/' + admin.id : '/admin/admin-users' %>">
 
-Temporary Password
 
-<br>
+<div class="section-title">
 
-<input
-    type="password"
-    name="password"
-    required
->
+    <span class="section-icon">👤</span>
 
-</p>
+    <h2>Administrator Information</h2>
 
-<p>
+</div>
 
-Google Email (optional)
+            <div class="admin-card-body">
 
-<br>
+                <div class="admin-grid">
 
-<input
-    type="text"
-    name="google_email"
-    value="<%= admin ? admin.google_email : '' %>"
-    required
->
+                    <div class="field">
 
-</p>
+                        <label>Display Name</label>
 
-<p>
+                        <input
+                            type="text"
+                            name="display_name"
+                            value="<%= admin ? admin.display_name : '' %>"
+                            required>
 
-Role
+                    </div>
 
-<br>
+                    <div class="field">
 
-<select name="role">
+                        <label>Admin Title (Designation)</label>
 
-<option value="admin">
+                        <input
+                            type="text"
+                            name="title"
+                            placeholder="e.g., Samiti Incharge, President"
+                            value="<%= admin ? (admin.title || '') : '' %>">
 
-Admin
+                    </div>
 
-</option>
+                    <div class="field">
 
-<option value="super_admin">
+                        <label>Username</label>
 
-Super Admin
+                        <input
+                            type="text"
+                            name="username"
+                            value="<%= admin ? admin.username : '' %>"
+                            required>
 
-</option>
+                    </div>
 
-</select>
+                    <div class="field">
 
-</p>
+                        <label>Google Email</label>
 
-<button>
+                        <input
+                            type="email"
+                            name="google_email"
+                            value="<%= admin ? admin.google_email : '' %>">
 
-Create Admin
+                    </div>
 
-</button>
+                    <div class="field">
 
-</form>
+                        <label>Role</label>
 
-</body>
+                        <select name="role">
 
-</html>
+                            <option value="admin"
+                                <%= admin && admin.role==="admin" ? "selected":"" %>>
+                                Administrator
+                            </option>
+
+                            <option value="super_admin"
+                                <%= admin && admin.role==="super_admin" ? "selected":"" %>>
+                                Super Administrator
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="admin-card">
+
+            <div class="admin-card-header">
+
+                <h2>🔒 Security</h2>
+
+            </div>
+
+            <div class="admin-card-body">
+
+                <div class="field">
+
+                    <label>Temporary Password</label>
+
+                    <input
+                        type="password"
+                        name="password"
+                        <%= admin ? "" : "required" %>>
+
+                    <% if(admin){ %>
+
+                        <small>
+                            Leave blank to keep the existing password.
+                        </small>
+
+                    <% } %>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="admin-actions">
+
+            <a
+                href="/admin/admin-users"
+                class="secondary-btn">
+
+                Cancel
+
+            </a>
+
+            <button
+                type="submit"
+                class="primary-btn">
+
+                <%= admin ? "Update Administrator" : "Create Administrator" %>
+
+            </button>
+
+        </div>
+
+    </form>
+
+</div>

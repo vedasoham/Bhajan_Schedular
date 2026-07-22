@@ -31,9 +31,13 @@ exports.showSingerDictionary = async (req, res) => {
 };
 exports.addSinger = async (req, res) => {
   try {
-    const { name } = req.body;
+    const { name, gender } = req.body;
     if (name && name.trim()) {
-      await Singer.findOrCreate({ where: { name: name.trim() } });
+      const [singer] = await Singer.findOrCreate({
+        where: { name: name.trim() },
+        defaults: { gender: gender || null }
+      });
+      if (!singer.gender && gender) await singer.update({ gender });
     }
     res.redirect('/admin/singer-dictionary');
   } catch (error) {
@@ -42,9 +46,9 @@ exports.addSinger = async (req, res) => {
 };
 exports.editSinger = async (req, res) => {
   try {
-    const { name } = req.body;
+    const { name, gender } = req.body;
     if (name && name.trim()) {
-      await Singer.update({ name: name.trim() }, { where: { id: req.params.id } });
+      await Singer.update({ name: name.trim(), gender: gender || null }, { where: { id: req.params.id } });
     }
     res.redirect('/admin/singer-dictionary');
   } catch (error) {

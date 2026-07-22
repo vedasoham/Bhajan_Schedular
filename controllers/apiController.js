@@ -4,19 +4,67 @@ const BhajanSubmission = require("../models/BhajanSubmission");
 const Singer = require("../models/Singer");
 const DeityRule = require("../models/DeityRule");
 
+// The source bank has historically used a few different labels for the same
+// deity. Keep this mapping at the API boundary so the form never hides an
+// otherwise relevant bhajan merely because its imported category differs.
+const DEITY_ALIASES = {
+  Vitthala: ["Vitthala", "Vittala"],
+  Mata: ["Mata", "Devi"],
+  Hanuman: ["Hanuman", "Anjaneya"]
+};
+
+const DEITY_TITLE_MATCHERS = {
+  Vitthala: /vitt?hala|vithoba|pandurang/i,
+  Hanuman: /hanuman|anjaneya|maruthi|maruti|pavana suta|bajrang/i
+};
+
+const DEITY_TITLE_SEARCH_TERMS = {
+  Vitthala: ["Pandurang", "Vitt", "Vith"],
+  Hanuman: ["Hanuman", "Anjaneya", "Maruthi", "Maruti", "Pavana Suta", "Bajrang"]
+};
+
 exports.getMasterBhajans = async (req, res) => {
     try {
+    const deity = req.params.deity;
+    const aliases = DEITY_ALIASES[deity] || [deity];
+    const titleMatcher = DEITY_TITLE_MATCHERS[deity];
+    const titleSearchTerms = DEITY_TITLE_SEARCH_TERMS[deity] || [];
+
+    // Include obvious title matches as well: a few imported Vitthala titles,
+    // for example, are filed under Rama, Krishna, or Narayana.
     const bhajans = await MasterBhajan.findAll({
-      where: { deity: req.params.deity },
-      order: [['title', 'ASC']]
+      where: titleMatcher
+        ? {
+            [Sequelize.Op.or]: [
+              { deity: { [Sequelize.Op.in]: aliases } },
+              ...titleSearchTerms.map((term) => ({
+                title: { [Sequelize.Op.like]: `%${term}%` }
+              }))
+            ]
+          }
+        : { deity: { [Sequelize.Op.in]: aliases } }
     });
-    res.json(bhajans);
+
+    // The broad SQL conditions above are narrowed back to the chosen deity,
+    // then deduplicated by title before they reach the autocomplete UI.
+    const seenTitles = new Set();
+    const relevantBhajans = bhajans
+      .filter((bhajan) => !titleMatcher || aliases.includes(bhajan.deity) || titleMatcher.test(bhajan.title))
+      .filter((bhajan) => {
+        const key = bhajan.title.trim().toLocaleLowerCase();
+        if (seenTitles.has(key)) return false;
+        seenTitles.add(key);
+        return true;
+      })
+      .sort((a, b) => a.title.localeCompare(b.title));
+    res.json(relevantBhajans);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 }
+
 exports.checkCooldown = async (req, res) => {
-    try {
+  try {
     const { title } = req.query;
     if (!title) return res.json(null);
     
@@ -35,15 +83,17 @@ exports.checkCooldown = async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
-}
-exports.getSingers = async (req, res) => {
+};
 
-try {
+exports.getSingers = async (req, res) => {
+  try {
     const singers = await Singer.findAll({ order: [['name', 'ASC']] });
     res.json(singers);
-  } 
-  catch (error) { res.status(500).json({ error: error.message }); }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 };
+
 exports.getDeityRules = async (req, res) => {
   try {
     const date = req.query.date || 'default';
@@ -52,6 +102,74 @@ exports.getDeityRules = async (req, res) => {
       rules = await DeityRule.findAll({ where: { session_date: 'default' } });
     }
     res.json(rules);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const UserPresence = require("../models/UserPresence");
+const ActivityLog = require("../models/ActivityLog");
+const { getSectionName } = require("../middleware/activityTracker");
+
+exports.recordHeartbeat = async (req, res) => {
+  try {
+    const sessionId = req.session?.visitorId;
+    if (!sessionId) return res.json({ success: false });
+
+    const admin = req.session.admin || null;
+    const userType = admin ? (admin.role === "super_admin" ? "super_admin" : "admin") : "user";
+    const adminId = admin ? admin.id : null;
+    const adminName = admin ? (admin.display_name || admin.displayName || admin.username || "Admin") : "Guest User";
+    const adminTitleStr = admin && admin.title ? ` (${admin.title})` : "";
+    const username = admin ? `${adminName}${adminTitleStr}` : "Guest User";
+    const pageUrl = req.body.page || "/";
+    const section = getSectionName(pageUrl.split("?")[0]);
+    const duration = parseInt(req.body.duration || 0, 10);
+
+    await UserPresence.upsert({
+      session_id: sessionId,
+      admin_id: adminId,
+      username: username,
+      user_type: userType,
+      current_page: pageUrl,
+      last_section: section,
+      ip_address: req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "127.0.0.1",
+      last_seen_at: new Date()
+    });
+
+    if (duration > 0) {
+      await ActivityLog.create({
+        session_id: sessionId,
+        user_type: userType,
+        admin_id: adminId,
+        username: username,
+        action: `TIME_SPENT_${section.replace(/\s+/g, "_").toUpperCase()}`,
+        section: section,
+        page_url: pageUrl,
+        method: "BEACON",
+        ip_address: req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "127.0.0.1",
+        user_agent: (req.headers["user-agent"] || "").slice(0, 250),
+        duration_seconds: duration,
+        details: `Active on ${section} for ${duration}s`
+      });
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+exports.recordOffline = async (req, res) => {
+  try {
+    const sessionId = req.session?.visitorId;
+    if (sessionId) {
+      await UserPresence.update(
+        { last_seen_at: new Date(0) },
+        { where: { session_id: sessionId } }
+      );
+    }
+    res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

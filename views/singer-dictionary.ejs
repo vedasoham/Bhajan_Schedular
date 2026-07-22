@@ -1,14 +1,4 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <title>Singer Dictionary</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css">
-</head>
-<body>
-  <div class="container container-lg">
+<div class="container container-lg">
     <div class="header" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); color: #0277bd;">
       <h1 style="color: #0277bd;">📖 Singer Dictionary</h1>
       <p>Manage the Master List of Approved Singer Names</p>
@@ -22,6 +12,12 @@
       <h3 style="margin-bottom:12px; color:#495057;">➕ Add New Singer</h3>
       <form action="/api/admin/add-singer" method="POST" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
         <input type="text" name="name" required class="filter-input" placeholder="e.g., Rahul S." style="max-width:300px;">
+        <select name="gender" required class="filter-input" style="max-width:150px;">
+          <option value="">Gender</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+          <option value="Other">Other</option>
+        </select>
         <button type="submit" class="button" style="background:#28a745; border:none; padding:10px 20px;">Add Singer</button>
       </form>
     </div>
@@ -31,6 +27,7 @@
         <thead>
           <tr>
             <th onclick="sortTable(0, 'singerDictTable')" style="cursor:pointer;">Singer Name ↕</th>
+            <th>Gender</th>
             <th style="text-align:right;">Actions</th>
           </tr>
         </thead>
@@ -39,9 +36,11 @@
             <% singers.forEach(s => { %>
               <tr>
                 <td><strong><%= s.name %></strong></td>
+                <td><%= s.gender || 'Not set' %></td>
                 <td style="text-align:right;">
                   <form action="/api/admin/edit-singer/<%= s.id %>" method="POST" style="margin:0; display:inline;" id="edit-form-<%= s.id %>">
                     <input type="hidden" name="name" id="edit-input-<%= s.id %>" value="<%= s.name %>">
+                    <input type="hidden" name="gender" id="edit-gender-<%= s.id %>" value="<%= s.gender || '' %>">
                     <button type="button" class="button" style="padding:6px 12px; font-size:12px; background:#4dabf7; border:none;" onclick="editSinger(<%= s.id %>, '<%= s.name.replace(/'/g, "\\'") %>')">✏️ Edit</button>
                   </form>
                   <form action="/api/admin/delete-singer/<%= s.id %>" method="POST" style="margin:0; display:inline;" onsubmit="return confirm('Delete this singer from the dictionary?');"><button type="submit" class="button" style="padding:6px 12px; font-size:12px; background:#e03131; border:none;">❌ Delete</button></form>
@@ -49,12 +48,10 @@
               </tr>
             <% }) %>
           <% } else { %>
-            <tr><td colspan="2" style="text-align:center;">No singers in dictionary yet. Add one above!</td></tr>
+            <tr><td colspan="3" style="text-align:center;">No singers in dictionary yet. Add one above!</td></tr>
           <% } %>
         </tbody>
       </table>
     </div>
   </div>
   <script src="/js/script.js"></script>
-</body>
-</html>

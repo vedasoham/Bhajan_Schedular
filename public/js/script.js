@@ -31,22 +31,115 @@ function closeConfirmModal() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+  const sidebarToggle = document.getElementById('sidebarToggle');
+  if (localStorage.getItem('admin_sidebar_collapsed') === 'true') document.body.classList.add('sidebar-collapsed');
+  sidebarToggle?.addEventListener('click', () => {
+    document.body.classList.toggle('sidebar-collapsed');
+    localStorage.setItem('admin_sidebar_collapsed', String(document.body.classList.contains('sidebar-collapsed')));
+  });
   const adminInput = document.querySelector('input[name="admin"]');
   const isAdmin = adminInput && adminInput.value === 'true';
 
+  if (new URLSearchParams(window.location.search).get('copy') === 'true' && typeof openCopySessionModal === 'function') {
+    setTimeout(openCopySessionModal, 0);
+  }
+
   // Fetch Singer Dictionary for Autocomplete
   const singerList = document.getElementById('singerList');
+  const singerInput = document.getElementById('singerName');
+  const singerSuggestions = document.getElementById('singerSuggestions');
+  const genderSelect = document.getElementById('gender');
+  const lockedGenderInput = document.getElementById('lockedGender');
+  let singerNames = [];
+  let singersByName = new Map();
+  let activeSingerIndex = -1;
+
+  const hideSingerSuggestions = () => {
+    singerSuggestions?.classList.remove('show');
+    singerInput?.setAttribute('aria-expanded', 'false');
+  };
+
+  const applySingerGender = (name) => {
+    const singer = singersByName.get(name.trim().toLocaleLowerCase());
+    if (singer?.gender && genderSelect) {
+      const genderChanged = genderSelect.value !== singer.gender;
+      genderSelect.value = singer.gender;
+      genderSelect.disabled = true;
+      genderSelect.setAttribute('aria-disabled', 'true');
+      if (lockedGenderInput) lockedGenderInput.value = singer.gender;
+      if (genderChanged) genderSelect.dispatchEvent(new Event('change', { bubbles: true }));
+    } else if (genderSelect) {
+      genderSelect.disabled = false;
+      genderSelect.removeAttribute('aria-disabled');
+      if (lockedGenderInput) lockedGenderInput.value = '';
+    }
+  };
+
+  const renderSingerSuggestions = () => {
+    if (!singerInput || !singerSuggestions) return;
+    const search = singerInput.value.trim().toLocaleLowerCase();
+    const matches = singerNames
+      .filter(name => name.toLocaleLowerCase().includes(search))
+      .slice(0, 12);
+    singerSuggestions.innerHTML = '';
+    activeSingerIndex = -1;
+    matches.forEach((name, index) => {
+      const option = document.createElement('button');
+      option.type = 'button';
+      option.className = 'bhajan-suggestion';
+      option.setAttribute('role', 'option');
+      option.id = `singer-suggestion-${index}`;
+      option.textContent = name;
+      option.addEventListener('mousedown', event => {
+        event.preventDefault();
+        singerInput.value = name;
+        applySingerGender(name);
+        hideSingerSuggestions();
+      });
+      singerSuggestions.appendChild(option);
+    });
+    const hasMatches = matches.length > 0;
+    singerSuggestions.classList.toggle('show', hasMatches);
+    singerInput.setAttribute('aria-expanded', String(hasMatches));
+  };
+
   if (singerList) {
     fetch('/api/singers')
       .then(res => res.json())
       .then(data => {
+        singerNames = data.map(singer => singer.name);
+        singersByName = new Map(data.map(singer => [singer.name.toLocaleLowerCase(), singer]));
         data.forEach(singer => {
           const option = document.createElement('option');
           option.value = singer.name;
           singerList.appendChild(option);
         });
+        if (singerInput?.value) applySingerGender(singerInput.value);
       }).catch(err => console.error('Failed to load singer dictionary'));
   }
+
+  singerInput?.addEventListener('input', () => {
+    applySingerGender(singerInput.value);
+    renderSingerSuggestions();
+  });
+  singerInput?.addEventListener('blur', () => setTimeout(hideSingerSuggestions, 150));
+  singerInput?.addEventListener('keydown', event => {
+    const options = Array.from(singerSuggestions?.querySelectorAll('.bhajan-suggestion') || []);
+    if (!options.length) return;
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      activeSingerIndex = event.key === 'ArrowDown'
+        ? (activeSingerIndex + 1) % options.length
+        : (activeSingerIndex - 1 + options.length) % options.length;
+      options.forEach((option, index) => option.classList.toggle('active', index === activeSingerIndex));
+      singerInput.setAttribute('aria-activedescendant', options[activeSingerIndex].id);
+    } else if (event.key === 'Enter' && activeSingerIndex >= 0) {
+      event.preventDefault();
+      options[activeSingerIndex].dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    } else if (event.key === 'Escape') {
+      hideSingerSuggestions();
+    }
+  });
 
   // 1. Load saved details only if not in admin mode
   if (!isAdmin) {
@@ -73,6 +166,69 @@ document.addEventListener('DOMContentLoaded', function() {
 
   let selectedDeity = null;
   let currentMasterBhajans = []; // Array to hold the API data
+  const titleInput = document.getElementById('bhajanTitleInput');
+  const suggestions = document.getElementById('bhajanSuggestions');
+  let activeSuggestionIndex = -1;
+
+  const renderBhajanSuggestions = () => {
+    if (!suggestions || !titleInput || !selectedDeity) return;
+    const search = titleInput.value.trim().toLocaleLowerCase();
+    const matches = currentMasterBhajans
+      .filter(bhajan => bhajan.title.toLocaleLowerCase().includes(search))
+      .slice(0, 12);
+
+    suggestions.innerHTML = '';
+    activeSuggestionIndex = -1;
+    matches.forEach((bhajan, index) => {
+      const option = document.createElement('button');
+      option.type = 'button';
+      option.className = 'bhajan-suggestion';
+      option.setAttribute('role', 'option');
+      option.id = `bhajan-suggestion-${index}`;
+      option.textContent = bhajan.title;
+      option.addEventListener('mousedown', event => {
+        event.preventDefault(); // Keep focus in the input while selecting.
+        titleInput.value = bhajan.title;
+        hideBhajanSuggestions();
+        titleInput.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+      suggestions.appendChild(option);
+    });
+
+    const hasMatches = matches.length > 0;
+    suggestions.classList.toggle('show', hasMatches);
+    titleInput.setAttribute('aria-expanded', String(hasMatches));
+  };
+
+  const hideBhajanSuggestions = () => {
+    suggestions?.classList.remove('show');
+    titleInput?.setAttribute('aria-expanded', 'false');
+  };
+
+  // Convert the stored Indian shruti notation by five semitones. This is used
+  // only when a dedicated female shruti has not been entered in the master DB.
+  const femaleFallbackShruti = (maleShruti) => {
+    const match = String(maleShruti || '').trim().match(/^(1|1\.5|2|2\.5|3|4|4\.5|5|5\.5|6|6\.5|7)\s*([pPmM])$/);
+    if (!match) return '';
+    const values = ['1', '1.5', '2', '2.5', '3', '4', '4.5', '5', '5.5', '6', '6.5', '7'];
+    let pitch = values.indexOf(match[1]);
+    if (match[2].toUpperCase() === 'M') pitch = (pitch + 5) % 12;
+    const femalePitch = (pitch - 5 + 12) % 12;
+    return `${values[femalePitch]}P`;
+  };
+
+  const scaleForGender = (bhajan, gender) => {
+    const femaleShruti = String(bhajan.shruti_female || '').trim();
+    const rawMaleShruti = String(bhajan.shruti || '').trim();
+    const maleShruti = rawMaleShruti === '#N/A' ? '' : rawMaleShruti;
+    if (gender === 'Female') {
+      if (femaleShruti && femaleShruti !== '#N/A') {
+        return { scale: femaleShruti, usedFallback: false };
+      }
+      return { scale: femaleFallbackShruti(maleShruti) || maleShruti, usedFallback: true };
+    }
+    return { scale: maleShruti, usedFallback: false };
+  };
 
   // Deity card selection
   document.querySelectorAll('.deity-card.available').forEach(card => {
@@ -85,11 +241,8 @@ document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('deityDisplay').textContent = selectedDeity;
       document.getElementById('bhajanDetails').classList.add('show');
       
-      const datalist = document.getElementById('bhajanList');
-      const titleInput = document.getElementById('bhajanTitleInput');
       
       // Reset fields
-      datalist.innerHTML = '';
       titleInput.value = '';
       titleInput.placeholder = `Loading ${selectedDeity} bhajans...`;
       document.getElementById('masterDataBadge').style.display = 'none';
@@ -99,12 +252,8 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
           currentMasterBhajans = data; // Save data globally for this session
-          data.forEach(bhajan => {
-            const option = document.createElement('option');
-            option.value = bhajan.title;
-            datalist.appendChild(option);
-          });
           titleInput.placeholder = `Search ${data.length} ${selectedDeity} bhajans...`;
+          renderBhajanSuggestions();
         })
         .catch(err => titleInput.placeholder = "Type bhajan name here...");
         
@@ -116,7 +265,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // MAGIC AUTO-FILL LOGIC: Listen for when they select a title
   let searchTimeout;
-  document.getElementById('bhajanTitleInput').addEventListener('input', function(e) {
+  titleInput.addEventListener('input', function(e) {
+    const enteredTitle = e.target.value.trim().toLocaleLowerCase();
+    const isExactBhajan = currentMasterBhajans.some(
+      bhajan => bhajan.title.trim().toLocaleLowerCase() === enteredTitle
+    );
+    if (isExactBhajan) hideBhajanSuggestions();
+    else renderBhajanSuggestions();
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => {
       const selectedTitle = e.target.value;
@@ -145,13 +300,8 @@ document.addEventListener('DOMContentLoaded', function() {
       // 1. Auto-fill visible inputs
       const genderSelect = document.getElementById('gender');
       const gender = genderSelect ? genderSelect.value : '';
-      let scaleToUse = '';
-      if (gender === 'Female' && matchedBhajan.shruti_female && matchedBhajan.shruti_female !== '#N/A') {
-        scaleToUse = matchedBhajan.shruti_female;
-      } else if (matchedBhajan.shruti && matchedBhajan.shruti !== '#N/A') {
-        scaleToUse = matchedBhajan.shruti;
-      }
-      document.getElementById('scaleInput').value = scaleToUse;
+      const scaleSelection = scaleForGender(matchedBhajan, gender);
+      document.getElementById('scaleInput').value = scaleSelection.scale;
       document.getElementById('speedInput').value = cleanValue(matchedBhajan.tempo);
       
       // 2. Auto-fill other inputs to send to database
@@ -164,6 +314,9 @@ document.addEventListener('DOMContentLoaded', function() {
       let badgeText = "";
       const cleanRaag = cleanValue(matchedBhajan.raga);
       if (cleanRaag !== 'Not specified') badgeText += `(Raag: ${cleanRaag})`;
+      if (scaleSelection.usedFallback) {
+        badgeText += `${badgeText ? ' ' : ''}(Female shruti: −5 from ${matchedBhajan.shruti})`;
+      }
       
       document.getElementById('badgeDetails').textContent = badgeText;
       badge.style.display = 'block';
@@ -177,6 +330,31 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     }, 300);
   });
+
+  titleInput.addEventListener('focus', renderBhajanSuggestions);
+  titleInput.addEventListener('blur', () => {
+    setTimeout(() => {
+      hideBhajanSuggestions();
+    }, 150);
+  });
+  titleInput.addEventListener('keydown', event => {
+    const options = Array.from(suggestions?.querySelectorAll('.bhajan-suggestion') || []);
+    if (!options.length) return;
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      activeSuggestionIndex = event.key === 'ArrowDown'
+        ? (activeSuggestionIndex + 1) % options.length
+        : (activeSuggestionIndex - 1 + options.length) % options.length;
+      options.forEach((option, index) => option.classList.toggle('active', index === activeSuggestionIndex));
+      titleInput.setAttribute('aria-activedescendant', options[activeSuggestionIndex].id);
+    } else if (event.key === 'Enter' && activeSuggestionIndex >= 0) {
+      event.preventDefault();
+      options[activeSuggestionIndex].dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    } else if (event.key === 'Escape') {
+      suggestions.classList.remove('show');
+      titleInput.setAttribute('aria-expanded', 'false');
+    }
+  });
   
   // Instantly swap scale if they change gender AFTER picking a bhajan
   document.getElementById('gender')?.addEventListener('change', function(e) {
@@ -185,13 +363,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const matchedBhajan = currentMasterBhajans.find(b => b.title === selectedTitle);
       if (matchedBhajan) {
         const gender = e.target.value;
-        let scaleToUse = '';
-        if (gender === 'Female' && matchedBhajan.shruti_female && matchedBhajan.shruti_female !== '#N/A') {
-          scaleToUse = matchedBhajan.shruti_female;
-        } else if (matchedBhajan.shruti && matchedBhajan.shruti !== '#N/A') {
-          scaleToUse = matchedBhajan.shruti;
-        }
-        document.getElementById('scaleInput').value = scaleToUse;
+        document.getElementById('scaleInput').value = scaleForGender(matchedBhajan, gender).scale;
       }
     }
   });
@@ -626,8 +798,137 @@ function toggleSessionLock(date, isLocked) {
 // ==========================================
 function editSinger(id, currentName) {
   const newName = prompt("Edit Singer Name:", currentName);
-  if (newName !== null && newName.trim() !== "" && newName !== currentName) {
-    document.getElementById('edit-input-' + id).value = newName.trim();
-    document.getElementById('edit-form-' + id).submit();
+  if (newName === null || newName.trim() === "") return;
+  document.getElementById('edit-input-' + id).value = newName.trim();
+
+  const currentGender = document.getElementById('edit-gender-' + id)?.value || '';
+  const newGender = prompt("Set gender (Male, Female, or Other):", currentGender);
+  if (newGender === null) return;
+  if (!['Male', 'Female', 'Other'].includes(newGender.trim())) {
+    alert('Please enter Male, Female, or Other.');
+    return;
+  }
+  document.getElementById('edit-gender-' + id).value = newGender.trim();
+  document.getElementById('edit-form-' + id).submit();
+}
+
+// Chrome can otherwise restore a stale form from its back/forward cache.
+window.addEventListener('pageshow', (event) => {
+  if (event.persisted) window.location.reload();
+});
+function openCopySessionModal() {
+  document.getElementById('copySessionModal').classList.add('show');
+}
+function closeCopySessionModal() {
+  document.getElementById('copySessionModal').classList.remove('show');
+}
+function submitCopySession() {
+  const source_date = document.getElementById('copySourceDate').value;
+  const target_date = document.getElementById('copyTargetDate').value;
+  if (!source_date || !target_date) {
+    alert('⚠️ Please choose both dates.');
+    return;
+  }
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = '/admin/copy-session';
+  [['source_date', source_date], ['target_date', target_date]].forEach(([name, value]) => {
+    const input = document.createElement('input');
+    input.type = 'hidden'; input.name = name; input.value = value;
+    form.appendChild(input);
+  });
+  document.body.appendChild(form);
+  form.submit();
+}
+
+// Real-time Activity & Presence Heartbeat
+(function() {
+  let pageStartTime = Date.now();
+  function sendHeartbeat() {
+    const elapsedSeconds = Math.round((Date.now() - pageStartTime) / 1000);
+    pageStartTime = Date.now();
+    fetch('/api/activity/heartbeat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ page: window.location.pathname + window.location.search, duration: elapsedSeconds })
+    }).catch(function() {});
+  }
+
+  function sendOfflineBeacon() {
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon('/api/activity/offline');
+    } else {
+      fetch('/api/activity/offline', { method: 'POST', keepalive: true }).catch(function() {});
+    }
+  }
+
+  setInterval(sendHeartbeat, 8000);
+  window.addEventListener('pagehide', sendOfflineBeacon);
+  document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'hidden') {
+      sendOfflineBeacon();
+    }
+  });
+})();
+
+// Searchable Dropdowns for Master Bhajan Bank Filters
+function toggleSearchDropdown(containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const menu = container.querySelector('.dd-menu');
+  const isOpening = menu.style.display === 'none';
+  
+  document.querySelectorAll('.dd-menu').forEach(m => m.style.display = 'none');
+  
+  if (isOpening) {
+    menu.style.display = 'block';
+    const searchInput = menu.querySelector('.dd-search');
+    if (searchInput) {
+      searchInput.value = '';
+      filterDropdownOptions(containerId);
+      setTimeout(() => searchInput.focus(), 50);
+    }
   }
 }
+
+function filterDropdownOptions(containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const searchInput = container.querySelector('.dd-search');
+  const filterText = (searchInput?.value || '').toLowerCase().trim();
+  const options = container.querySelectorAll('.dd-option');
+  
+  options.forEach(opt => {
+    const text = opt.textContent.toLowerCase();
+    opt.style.display = text.includes(filterText) ? 'block' : 'none';
+  });
+}
+
+function selectDropdownOption(containerId, val, label) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  
+  let hiddenInputId = 'filterBankDeity';
+  if (containerId === 'dd-tempo') hiddenInputId = 'filterBankTempo';
+  if (containerId === 'dd-raga') hiddenInputId = 'filterBankRaga';
+  
+  const hiddenInput = document.getElementById(hiddenInputId);
+  if (hiddenInput) {
+    hiddenInput.value = val;
+    hiddenInput.dispatchEvent(new Event('change'));
+  }
+  
+  const labelEl = container.querySelector('.dd-label');
+  if (labelEl) labelEl.textContent = label;
+  
+  const menu = container.querySelector('.dd-menu');
+  if (menu) menu.style.display = 'none';
+  
+  filterMasterBank();
+}
+
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.searchable-dropdown')) {
+    document.querySelectorAll('.dd-menu').forEach(m => m.style.display = 'none');
+  }
+});

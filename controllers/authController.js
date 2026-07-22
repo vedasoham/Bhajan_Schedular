@@ -5,15 +5,37 @@ const AdminUser = require("../models/AdminUser");
 
 const googleClient = new OAuth2Client();
 
-function createAdminSession(req, admin) {
+async function createAdminSession(req, admin) {
   req.session.adminUserId = admin.id;
 
   req.session.admin = {
     id: admin.id,
     username: admin.username,
+    display_name: admin.display_name,
+    title: admin.title || "",
     displayName: admin.display_name,
     role: admin.role
   };
+
+  try {
+    const visitorId = req.session.visitorId;
+    if (visitorId) {
+      const UserPresence = require("../models/UserPresence");
+      const userType = admin.role === "super_admin" ? "super_admin" : "admin";
+      const titleStr = admin.title ? ` (${admin.title})` : "";
+      await UserPresence.update(
+        {
+          user_type: userType,
+          admin_id: admin.id,
+          username: `${admin.display_name || admin.username}${titleStr}`,
+          last_seen_at: new Date()
+        },
+        { where: { session_id: visitorId } }
+      );
+    }
+  } catch (err) {
+    console.error("Session presence upgrade error:", err.message);
+  }
 }
 
 exports.showLogin = (req, res) => {
@@ -60,7 +82,7 @@ exports.login = async (req, res) => {
       });
     }
 
-    createAdminSession(req, admin);
+    await createAdminSession(req, admin);
 
     req.session.save((error) => {
       if (error) {
@@ -184,7 +206,7 @@ exports.googleLogin = async (req, res) => {
       });
     }
 
-    createAdminSession(req, admin);
+    await createAdminSession(req, admin);
 
     req.session.save((error) => {
       if (error) {
@@ -211,7 +233,30 @@ exports.googleLogin = async (req, res) => {
   }
 };
 
-exports.logout = (req, res) => {
+const UserPresence = require("../models/UserPresence");
+const { Op } = require("sequelize");
+
+exports.logout = async (req, res) => {
+  try {
+    const visitorId = req.session?.visitorId;
+    const adminId = req.session?.adminUserId;
+    if (visitorId || adminId) {
+      await UserPresence.update(
+        { last_seen_at: new Date(0) },
+        {
+          where: {
+            [Op.or]: [
+              visitorId ? { session_id: visitorId } : null,
+              adminId ? { admin_id: adminId } : null
+            ].filter(Boolean)
+          }
+        }
+      );
+    }
+  } catch (err) {
+    console.error("Logout presence update failed:", err.message);
+  }
+
   req.session.destroy((error) => {
     if (error) {
       console.error("Logout failed:", error);

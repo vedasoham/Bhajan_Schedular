@@ -1,0 +1,98 @@
+/* ===========================
+   Fullscreen Loader
+=========================== */
+
+#loader-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 999999;
+  overflow: hidden;
+  transition: opacity 0.5s ease;
+}
+
+.loader-backdrop {
+  position: absolute;
+  inset: 0;
+  backdrop-filter: blur(16px);
+  background: rgba(34, 30, 42, 0.6);
+}
+
+.loader-container {
+  position: relative;
+  width: min(760px, 82vw);
+  height: min(60vh, 520px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.loader-image {
+  border-radius: 24px;
+  overflow: hidden;
+  position: absolute;
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.35),
+    0 0 60px rgba(233, 200, 118, 0.1);
+  width: min(760px, 82vw);
+  max-height: 78vh;
+  object-fit: contain;
+  opacity: 0;
+  transform: scale(0.96);
+  transition: opacity 0.9s ease, transform 3.2s ease;
+  -webkit-mask-image: radial-gradient(
+    ellipse at center,
+    black 62%,
+    rgba(0, 0, 0, 0.95) 72%,
+    rgba(0, 0, 0, 0.6) 84%,
+    transparent 100%
+  );
+  mask-image: radial-gradient(
+    ellipse at center,
+    black 62%,
+    rgba(0, 0, 0, 0.95) 72%,
+    rgba(0, 0, 0, 0.6) 84%,
+    transparent 100%
+  );
+}
+
+.loader-image.active {
+  opacity: 1;
+  transform: scale(1.05);
+}
+
+#loader-overlay.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.loader-quote {
+  position: static;
+  margin-top: 26px;
+  width: min(680px, 88vw);
+  text-align: center;
+  z-index: 10;
+}
+
+#loader-quote-text {
+  color: #f3dfa4;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 18px rgba(233, 200, 118, 0.18);
+  opacity: 1;
+  transition: opacity 0.45s ease, transform 0.45s ease;
+}
+
+.loader-quote-author {
+  margin-top: 8px;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 13px;
+  letter-spacing: 2px;
+}

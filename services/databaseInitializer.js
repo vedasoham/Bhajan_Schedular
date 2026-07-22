@@ -1,253 +1,118 @@
 const bcrypt = require("bcrypt");
-
-const AdminUser = require("../models/AdminUser");
-
-async function initializeSuperAdmin() {
-  const superAdminCount = await AdminUser.count({
-    where: {
-      role: "super_admin"
-    }
-  });
-
-  if (superAdminCount > 0) {
-    return;
-  }
-
-  const username = process.env.SUPER_ADMIN_USER;
-  const password = process.env.SUPER_ADMIN_PASS;
-  const displayName =
-    process.env.SUPER_ADMIN_DISPLAY_NAME || "Super Admin";
-
-  if (!username || !password) {
-    throw new Error(
-      "SUPER_ADMIN_USER and SUPER_ADMIN_PASS must be configured."
-    );
-  }
-
-  const passwordHash = await bcrypt.hash(password, 12);
-
-await AdminUser.create({
-  username: username.trim().toLowerCase(),
-  google_email: process.env.SUPER_ADMIN_GOOGLE_EMAIL
-    ? process.env.SUPER_ADMIN_GOOGLE_EMAIL.trim().toLowerCase()
-    : null,
-  display_name: displayName.trim(),
-  password_hash: passwordHash,
-  role: "super_admin",
-  is_active: true
-});
-
-  console.log("✅ Initial super admin account created.");
-};
-
 const fs = require("fs");
 const path = require("path");
 
 const sequelize = require("../config/database");
 
+const AdminUser = require("../models/AdminUser");
 const BhajanSubmission = require("../models/BhajanSubmission");
 const MasterBhajan = require("../models/MasterBhajan");
 const DeityRule = require("../models/DeityRule");
+const ActivityLog = require("../models/ActivityLog");
+const UserPresence = require("../models/UserPresence");
+
+async function initializeSuperAdmin() {
+  const superAdminCount = await AdminUser.count({
+    where: { role: "super_admin" }
+  });
+
+  if (superAdminCount > 0) return;
+
+  const username = process.env.SUPER_ADMIN_USER;
+  const password = process.env.SUPER_ADMIN_PASS;
+  const displayName = process.env.SUPER_ADMIN_DISPLAY_NAME || "Super Admin";
+
+  if (!username || !password) {
+    throw new Error("SUPER_ADMIN_USER and SUPER_ADMIN_PASS must be configured.");
+  }
+
+  const passwordHash = await bcrypt.hash(password, 12);
+
+  await AdminUser.create({
+    username: username.trim().toLowerCase(),
+    google_email: process.env.SUPER_ADMIN_GOOGLE_EMAIL
+      ? process.env.SUPER_ADMIN_GOOGLE_EMAIL.trim().toLowerCase()
+      : null,
+    display_name: displayName.trim(),
+    password_hash: passwordHash,
+    role: "super_admin",
+    is_active: true
+  });
+
+  console.log("✅ Initial super admin account created.");
+}
 
 async function loadMasterBhajans() {
   try {
     const count = await MasterBhajan.count();
-
-    if (count !== 0) {
-      return;
-    }
+    if (count !== 0) return;
 
     const filePath = path.join(__dirname, "..", "master_bhajans.json");
-
     if (!fs.existsSync(filePath)) {
-      console.log(
-        "⚠️ master_bhajans.json not found. Skipping load."
-      );
+      console.log("⚠️ master_bhajans.json not found. Skipping load.");
       return;
     }
 
-    const data = JSON.parse(
-      fs.readFileSync(filePath, "utf8")
-    );
-
+    const data = JSON.parse(fs.readFileSync(filePath, "utf8"));
     await MasterBhajan.bulkCreate(data);
-
-    console.log(
-      `✅ Loaded ${data.length} master bhajans into the database.`
-    );
+    console.log(`✅ Loaded ${data.length} master bhajans into database.`);
   } catch (error) {
-    console.error(
-      "Error loading master bhajans:",
-      error
-    );
+    console.error("Error loading master bhajans:", error);
+  }
+}
+
+async function ensureSingerGenderColumn() {
+  try {
+    const [columns] = await sequelize.query("PRAGMA table_info(singer_dictionary)");
+    if (!columns.some((column) => column.name === "gender")) {
+      await sequelize.query("ALTER TABLE singer_dictionary ADD COLUMN gender VARCHAR(20)");
+    }
+  } catch (err) {
+    // Ignore if table info query fails
   }
 }
 
 async function initDeityRules() {
   try {
     const count = await DeityRule.count({
-      where: {
-        session_date: "default"
-      }
+      where: { session_date: "default" }
     });
-
-    if (count !== 0) {
-      return;
-    }
-
-    // Attempt migration from deity_rules_v3
-    try {
-      const [oldRules] = await sequelize.query(
-        `
-        SELECT
-          session_date,
-          deity_name,
-          min_required,
-          max_allowed
-        FROM deity_rules_v3
-        `
-      );
-
-      if (oldRules && oldRules.length > 0) {
-        await DeityRule.bulkCreate(oldRules);
-
-        console.log(
-          "✅ Migrated old deity rules from v3 to v4."
-        );
-
-        return;
-      }
-    } catch (error) {
-      // Ignore if v3 table does not exist
-    }
-
-    // Attempt migration from deity_rules_v2
-    try {
-      const [oldRules] = await sequelize.query(
-        `
-        SELECT
-          session_date,
-          deity_name,
-          min_required,
-          max_allowed
-        FROM deity_rules_v2
-        `
-      );
-
-      if (oldRules && oldRules.length > 0) {
-        await DeityRule.bulkCreate(oldRules);
-
-        console.log(
-          "✅ Migrated old deity rules from v2 to v4."
-        );
-
-        return;
-      }
-    } catch (error) {
-      // Ignore if v2 table does not exist
-    }
+    if (count !== 0) return;
 
     await DeityRule.bulkCreate([
-      {
-        session_date: "default",
-        deity_name: "Ganesha",
-        min_required: 0,
-        max_allowed: 2
-      },
-      {
-        session_date: "default",
-        deity_name: "Guru",
-        min_required: 0,
-        max_allowed: 2
-      },
-      {
-        session_date: "default",
-        deity_name: "Mata",
-        min_required: 0,
-        max_allowed: 2
-      },
-      {
-        session_date: "default",
-        deity_name: "SarvaDharma",
-        min_required: 0,
-        max_allowed: 2
-      },
-      {
-        session_date: "default",
-        deity_name: "Sai",
-        min_required: 0,
-        max_allowed: 2
-      },
-      {
-        session_date: "default",
-        deity_name: "Shiva",
-        min_required: 0,
-        max_allowed: 2
-      },
-      {
-        session_date: "default",
-        deity_name: "Krishna",
-        min_required: 0,
-        max_allowed: 2
-      },
-      {
-        session_date: "default",
-        deity_name: "Rama",
-        min_required: 0,
-        max_allowed: 2
-      },
-      {
-        session_date: "default",
-        deity_name: "Vitthala",
-        min_required: 0,
-        max_allowed: 2
-      },
-      {
-        session_date: "default",
-        deity_name: "Hanuman",
-        min_required: 0,
-        max_allowed: 2
-      }
+      { session_date: "default", deity_name: "Ganesha", min_required: 0, max_allowed: 2 },
+      { session_date: "default", deity_name: "Guru", min_required: 0, max_allowed: 2 },
+      { session_date: "default", deity_name: "Mata", min_required: 0, max_allowed: 2 },
+      { session_date: "default", deity_name: "SarvaDharma", min_required: 0, max_allowed: 2 },
+      { session_date: "default", deity_name: "Sai", min_required: 0, max_allowed: 2 },
+      { session_date: "default", deity_name: "Shiva", min_required: 0, max_allowed: 2 },
+      { session_date: "default", deity_name: "Krishna", min_required: 0, max_allowed: 2 },
+      { session_date: "default", deity_name: "Rama", min_required: 0, max_allowed: 2 },
+      { session_date: "default", deity_name: "Vitthala", min_required: 0, max_allowed: 2 },
+      { session_date: "default", deity_name: "Hanuman", min_required: 0, max_allowed: 2 }
     ]);
-
     console.log("✅ Created default deity rules.");
   } catch (error) {
-    console.error(
-      "Error initializing deity rules:",
-      error
-    );
+    console.error("Error initializing deity rules:", error);
   }
 }
 
 async function migrateLegacySubmissions() {
-  const count = await BhajanSubmission.count();
-
-  if (count !== 0) {
-    return;
-  }
-
   try {
-    const [oldData] = await sequelize.query(
-      "SELECT * FROM bhajan_submissions"
-    );
+    const count = await BhajanSubmission.count();
+    if (count !== 0) return;
 
-    if (!oldData || oldData.length === 0) {
-      return;
-    }
+    const [oldData] = await sequelize.query("SELECT * FROM bhajan_submissions");
+    if (!oldData || oldData.length === 0) return;
 
     const mappedData = oldData.map((row) => {
       const migratedRow = { ...row };
-
       delete migratedRow.id;
-
       return migratedRow;
     });
 
     await BhajanSubmission.bulkCreate(mappedData);
-
-    console.log(
-      `✅ Migrated ${oldData.length} records to the new unconstrained database table.`
-    );
+    console.log(`✅ Migrated ${oldData.length} records.`);
   } catch (error) {
     // Ignore if legacy table does not exist
   }
@@ -256,37 +121,56 @@ async function migrateLegacySubmissions() {
 async function normalizeDeityNames() {
   try {
     await MasterBhajan.update(
-      {
-        deity: "SarvaDharma"
-      },
-      {
-        where: {
-          deity: "Sarva dharma"
-        }
-      }
+      { deity: "SarvaDharma" },
+      { where: { deity: "Sarva dharma" } }
     );
-
     await BhajanSubmission.update(
-      {
-        deity: "SarvaDharma"
-      },
-      {
-        where: {
-          deity: "Sarva dharma"
-        }
-      }
+      { deity: "SarvaDharma" },
+      { where: { deity: "Sarva dharma" } }
     );
   } catch (error) {
-    console.error(
-      "Error normalizing SarvaDharma:",
-      error
-    );
+    console.error("Error normalizing SarvaDharma:", error);
+  }
+}
+
+async function ensureAdminUserColumns() {
+  try {
+    const [columns] = await sequelize.query("PRAGMA table_info(admin_users)");
+    if (columns && !columns.some((col) => col.name === "title")) {
+      await sequelize.query("ALTER TABLE admin_users ADD COLUMN title VARCHAR(255) DEFAULT ''");
+    }
+  } catch (err) {
+    console.error("Column check failed for admin_users:", err.message);
+  }
+}
+
+async function ensureActivityTables() {
+  try {
+    await ActivityLog.sync({ alter: true });
+    await UserPresence.sync({ alter: true });
+
+    // Double check session_id column in activity_logs
+    const [actCols] = await sequelize.query("PRAGMA table_info(activity_logs)");
+    if (actCols && !actCols.some((col) => col.name === "session_id")) {
+      await sequelize.query("ALTER TABLE activity_logs ADD COLUMN session_id VARCHAR(255) DEFAULT ''");
+    }
+
+    // Double check session_id column in user_presence
+    const [presCols] = await sequelize.query("PRAGMA table_info(user_presence)");
+    if (presCols && !presCols.some((col) => col.name === "session_id")) {
+      await sequelize.query("ALTER TABLE user_presence ADD COLUMN session_id VARCHAR(255) DEFAULT ''");
+    }
+  } catch (err) {
+    console.error("Activity tables check failed:", err.message);
   }
 }
 
 async function initializeDatabase() {
   try {
     await sequelize.sync();
+    await ensureAdminUserColumns();
+    await ensureSingerGenderColumn();
+    await ensureActivityTables();
 
     await initializeSuperAdmin();
     await migrateLegacySubmissions();
@@ -296,11 +180,7 @@ async function initializeDatabase() {
 
     console.log("✅ Database initialization complete.");
   } catch (error) {
-    console.error(
-      "Database initialization failed:",
-      error
-    );
-
+    console.error("Database initialization failed:", error);
     throw error;
   }
 }

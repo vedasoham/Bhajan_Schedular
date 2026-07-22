@@ -5,6 +5,7 @@ const BhajanSubmission = require("../models/BhajanSubmission");
 const SessionPermission = require("../models/SessionPermission");
 const SessionMeta = require("../models/SessionMeta");
 const DeityRule = require("../models/DeityRule");
+const Singer = require("../models/Singer");
 
 const {
     getNextThursday,
@@ -19,6 +20,9 @@ const {
     generateDatePickerHtml,
     escapeHtml
 } = require("../templates");
+
+const normalizeBhajanTitle = (title) =>
+  String(title || "").trim().replace(/\s+/g, " ").toLocaleLowerCase();
 
 exports.showSubmitForm = async (req, res) => {
     
@@ -130,28 +134,23 @@ exports.showSubmitForm = async (req, res) => {
     // Generate deity cards HTML
     const generateCardHtml = (deity) => {
       const status = deityStatus[deity];
-      let cardClass, statusBadge, singerInfo, onclick;
+      let cardClass, statusBadge, onclick;
+      const countClass = `count-${Math.min(status.count, 3)}`;
       
       if (status.maxAllowed === 0) {
-        return `<div class="deity-card disabled" style="opacity:0.4; pointer-events:none;"><div class="deity-name">${deity}</div><span class="badge badge-taken" style="background:#e03131;">Blocked</span></div>`;
+        return `<div class="deity-card disabled ${countClass}" style="opacity:0.4; pointer-events:none;"><div class="deity-name">${deity}</div><span class="badge badge-taken" style="background:#e03131;">Blocked</span></div>`;
       }
 
-      if (status.taken) {
-        if (isSpecialOrFestival || status.count < status.maxAllowed) {
-          cardClass = "deity-card available"; 
-          statusBadge = `<span class="badge badge-available">Add ${status.count + 1}</span>`;
-          singerInfo = `<div class="singer-name">Prev: ${status.by}</div>`;
-          onclick = "";
-        } else {
-          cardClass = "deity-card taken";
-          statusBadge = '<span class="badge badge-taken">✓ Taken</span>';
-          singerInfo = `<div class="singer-name">${status.by}</div>`;
-          onclick = `onclick="showDetails('${deity}', '${status.by.replace(/'/g, "\\'")}', '${status.bhajan.replace(/'/g, "\\'")}', '${status.scale}', '${status.speed}')" style="cursor:pointer;"`;
-        }
+      const isFull = !isSpecialOrFestival && status.count >= status.maxAllowed;
+      const bhajanText = `${status.count} Bhajan${status.count === 1 ? '' : 's'}`;
+
+      if (isFull) {
+        cardClass = `deity-card taken ${countClass}`;
+        statusBadge = `<span class="badge badge-taken">✓ ${status.count} Taken</span>`;
+        onclick = `onclick="showDetails('${deity}', '${status.by.replace(/'/g, "\\'")}', '${status.bhajan.replace(/'/g, "\\'")}', '${status.scale}', '${status.speed}')" style="cursor:pointer;"`;
       } else {
-        cardClass = "deity-card available";
-        statusBadge = '<span class="badge badge-available">Available</span>';
-        singerInfo = "";
+        cardClass = `deity-card available ${countClass}`;
+        statusBadge = `<span class="badge badge-available">${bhajanText}</span>`;
         onclick = "";
       }
       
@@ -161,7 +160,6 @@ exports.showSubmitForm = async (req, res) => {
         <div class="${cardClass}" data-deity="${deity}" ${onclick}>
           <div class="deity-name">${deity}</div>
           ${statusBadge}
-          ${singerInfo}
           ${mandatoryLabel}
         </div>
       `;
@@ -174,7 +172,21 @@ exports.showSubmitForm = async (req, res) => {
     let hanumanCard = generateCardHtml("Hanuman").replace('deity-card', 'deity-card hanuman-card');
     
     // Send HTML response
-    res.send(generateSubmitFormHtml(sessionDate, mandatoryFilled, totalMandatory, optionalFilled, totalOptional, ganeshaCardHtml, otherDeitiesHtml, hanumanCard, isAdmin, showSuccess));
+    const submissionRowsHtml = results
+      .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+      .map((submission, index) => `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${escapeHtml(submission.singer_name)}</td>
+          <td>${escapeHtml(submission.deity)}</td>
+          <td>${escapeHtml(submission.title)}</td>
+          <td>${escapeHtml(submission.speed || "Not specified")}</td>
+          <td>${escapeHtml(submission.scale || "Not specified")}</td>
+        </tr>
+      `)
+      .join("");
+
+    res.send(generateSubmitFormHtml(sessionDate, mandatoryFilled, totalMandatory, optionalFilled, totalOptional, ganeshaCardHtml, otherDeitiesHtml, hanumanCard, isAdmin, showSuccess, submissionRowsHtml, results.length));
     
   } catch (error) {
     res.status(500).send(`<h1>Error</h1><p>${error.message}</p>`);
@@ -183,7 +195,7 @@ exports.showSubmitForm = async (req, res) => {
 
   exports.submitForm = async (req, res) => {
   try {
-    const { session_date, singer_name, gender, partner_name, deity, title, speed, scale, raga, level, language, admin } = req.body;
+    const { session_date, singer_name, gender, locked_gender, partner_name, deity, title, speed, scale, raga, level, language, admin } = req.body;
     
     if (!session_date || !singer_name || !deity || !title) {
       return res.status(400).send('<h1>Error</h1><p>Missing required fields.</p><a class="button" href="javascript:history.back()">Go Back</a>');
@@ -196,6 +208,16 @@ exports.showSubmitForm = async (req, res) => {
 
     // Fetch all submissions for this date to check rules
     const allSubmissions = await BhajanSubmission.findAll({ where: { session_date } });
+
+    // A title may be used only once in a session, regardless of deity or
+    // singer. Normalize spaces and casing so minor typing differences cannot
+    // create a duplicate entry.
+    const duplicateBhajan = allSubmissions.find(
+      (submission) => normalizeBhajanTitle(submission.title) === normalizeBhajanTitle(title)
+    );
+    if (duplicateBhajan) {
+      return res.status(409).send(`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="/css/style.css"><title>Bhajan Already Added</title></head><body><div class="container" style="max-width:560px; padding:32px; text-align:center;"><h2>Bhajan Already Added</h2><p><strong>${escapeHtml(duplicateBhajan.title)}</strong> has already been submitted for this session by <strong>${escapeHtml(duplicateBhajan.singer_name)}</strong>.</p><a class="button secondary" href="/submit-form?session_date=${encodeURIComponent(session_date)}">Go back to the form</a></div></body></html>`);
+    }
 
     // Check if special/festival
     const permission = await SessionPermission.findByPk(session_date);
@@ -226,11 +248,23 @@ exports.showSubmitForm = async (req, res) => {
       }
     }
     
+    // Save a singer's gender the first time it is supplied. Once recorded,
+    // always use that stored value rather than trusting a changed form value.
+    const submittedGender = gender || locked_gender;
+    const [singer] = await Singer.findOrCreate({
+      where: { name: singer_name.trim() },
+      defaults: { gender: submittedGender || null }
+    });
+    if (!singer.gender && submittedGender) {
+      await singer.update({ gender: submittedGender });
+    }
+    const resolvedGender = singer.gender || submittedGender || null;
+
     // Save submission
     await BhajanSubmission.create({
       session_date,
       singer_name,
-      gender,
+      gender: resolvedGender,
       partner_name: partner_name || null,
       title,
       deity,
