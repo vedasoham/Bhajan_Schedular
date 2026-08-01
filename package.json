@@ -1,7 +1,7 @@
 {
   "name": "bhajan_planner",
   "version": "1.0.0",
-  "description": "",
+  "description": "Bhajan scheduling and planning tool for Sri Sathya Sai Seva Organisation, Gandhinagar",
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
@@ -10,6 +10,9 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "type": "commonjs",
   "dependencies": {
     "bcrypt": "^6.0.0",
