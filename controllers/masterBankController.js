@@ -9,7 +9,7 @@ const{
 
 exports.showMasterBank = async (req, res) =>{
     try {
-    const isAdmin = req.session && req.session.isAdmin;
+    const isAdmin = !!(req.session && req.session.adminUserId);
     const bhajans = await MasterBhajan.findAll({
       order: [['title', 'ASC']]
     });
