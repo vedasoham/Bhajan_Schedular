@@ -3,7 +3,7 @@
       <h1>🗃️ Bhajan Database</h1>
       <p>Full Records</p>
     </div>
-    <div style="margin-bottom: 20px;"><a href="/" class="button secondary">🏠 Home</a></div>
+    <div style="margin-bottom: 20px;"><a href="<%= currentAdmin ? '/admin' : '/' %>" class="button secondary"><%= currentAdmin ? '🏠 Dashboard' : '🏠 Home' %></a></div>
     
     <div class="table-container">
       <table id="dbTable">

@@ -32,11 +32,48 @@ function closeConfirmModal() {
 
 document.addEventListener('DOMContentLoaded', function() {
   const sidebarToggle = document.getElementById('sidebarToggle');
+  const mobileSidebarToggle = document.getElementById('mobileSidebarToggle');
+  const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+  // Desktop: collapse/expand sidebar (icon-only mode)
   if (localStorage.getItem('admin_sidebar_collapsed') === 'true') document.body.classList.add('sidebar-collapsed');
   sidebarToggle?.addEventListener('click', () => {
+    // On mobile, treat the in-sidebar toggle as a close button
+    if (window.innerWidth <= 768) {
+      document.body.classList.remove('mobile-sidebar-open');
+      return;
+    }
     document.body.classList.toggle('sidebar-collapsed');
     localStorage.setItem('admin_sidebar_collapsed', String(document.body.classList.contains('sidebar-collapsed')));
   });
+
+  // Mobile: hamburger opens overlay sidebar
+  const openMobileSidebar = () => {
+    document.body.classList.add('mobile-sidebar-open');
+  };
+  const closeMobileSidebar = () => {
+    document.body.classList.remove('mobile-sidebar-open');
+  };
+
+  mobileSidebarToggle?.addEventListener('click', openMobileSidebar);
+
+  // Clicking the dim overlay closes the sidebar
+  sidebarOverlay?.addEventListener('click', closeMobileSidebar);
+
+  // Close sidebar when a nav link is tapped on mobile
+  if (window.innerWidth <= 768) {
+    document.querySelectorAll('.sidebar-nav a, .sidebar-footer a').forEach(link => {
+      link.addEventListener('click', closeMobileSidebar);
+    });
+  }
+
+  // Close mobile sidebar on resize to desktop
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 768) {
+      closeMobileSidebar();
+    }
+  });
+
   const adminInput = document.querySelector('input[name="admin"]');
   const isAdmin = adminInput && adminInput.value === 'true';
 
@@ -872,16 +909,42 @@ function submitCopySession() {
 })();
 
 // Searchable Dropdowns for Master Bhajan Bank Filters
+// Using position:fixed + getBoundingClientRect so the dropdown escapes
+// ALL parent overflow:hidden, flex clipping, and body overflow-x:hidden.
+function positionDropdown(menu, btn) {
+  const rect = btn.getBoundingClientRect();
+  const menuW = parseInt(menu.style.width) || 220;
+  const viewportW = window.innerWidth;
+
+  // Default: align left edge with button
+  let left = rect.left;
+
+  // If dropdown overflows right edge, align right edge with button's right
+  if (left + menuW > viewportW - 8) {
+    left = rect.right - menuW;
+  }
+  // Clamp to viewport left
+  if (left < 8) left = 8;
+
+  menu.style.position = 'fixed';
+  menu.style.top = (rect.bottom + 6) + 'px';
+  menu.style.left = left + 'px';
+  menu.style.width = Math.min(menuW, viewportW - 16) + 'px';
+}
+
 function toggleSearchDropdown(containerId) {
   const container = document.getElementById(containerId);
   if (!container) return;
   const menu = container.querySelector('.dd-menu');
-  const isOpening = menu.style.display === 'none';
-  
+  const btn  = container.querySelector('.dd-toggle');
+  const isOpening = menu.style.display === 'none' || menu.style.display === '';
+
+  // Close all dropdowns first
   document.querySelectorAll('.dd-menu').forEach(m => m.style.display = 'none');
-  
+
   if (isOpening) {
     menu.style.display = 'block';
+    positionDropdown(menu, btn);
     const searchInput = menu.querySelector('.dd-search');
     if (searchInput) {
       searchInput.value = '';
@@ -891,13 +954,28 @@ function toggleSearchDropdown(containerId) {
   }
 }
 
+// Reposition open dropdown on scroll or resize
+['scroll', 'resize'].forEach(evt => {
+  window.addEventListener(evt, () => {
+    document.querySelectorAll('.dd-menu').forEach(menu => {
+      if (menu.style.display === 'block') {
+        const containerId = menu.closest('.searchable-dropdown')?.id;
+        if (!containerId) return;
+        const container = document.getElementById(containerId);
+        const btn = container?.querySelector('.dd-toggle');
+        if (btn) positionDropdown(menu, btn);
+      }
+    });
+  }, { passive: true });
+});
+
 function filterDropdownOptions(containerId) {
   const container = document.getElementById(containerId);
   if (!container) return;
   const searchInput = container.querySelector('.dd-search');
   const filterText = (searchInput?.value || '').toLowerCase().trim();
   const options = container.querySelectorAll('.dd-option');
-  
+
   options.forEach(opt => {
     const text = opt.textContent.toLowerCase();
     opt.style.display = text.includes(filterText) ? 'block' : 'none';
@@ -907,23 +985,23 @@ function filterDropdownOptions(containerId) {
 function selectDropdownOption(containerId, val, label) {
   const container = document.getElementById(containerId);
   if (!container) return;
-  
+
   let hiddenInputId = 'filterBankDeity';
   if (containerId === 'dd-tempo') hiddenInputId = 'filterBankTempo';
   if (containerId === 'dd-raga') hiddenInputId = 'filterBankRaga';
-  
+
   const hiddenInput = document.getElementById(hiddenInputId);
   if (hiddenInput) {
     hiddenInput.value = val;
     hiddenInput.dispatchEvent(new Event('change'));
   }
-  
+
   const labelEl = container.querySelector('.dd-label');
   if (labelEl) labelEl.textContent = label;
-  
+
   const menu = container.querySelector('.dd-menu');
   if (menu) menu.style.display = 'none';
-  
+
   filterMasterBank();
 }
 

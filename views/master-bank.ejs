@@ -55,7 +55,7 @@
           <button type="button" class="filter-chip dd-toggle" onclick="toggleSearchDropdown('dd-deity')" style="background:#fff; border:1px solid #cbd5e1; border-radius:20px; padding:6px 14px; font-size:13px; font-weight:600; cursor:pointer; color:#334155; display:inline-flex; align-items:center; gap:6px;">
             <span class="dd-label">All Deities</span> ▾
           </button>
-          <div class="dd-menu" style="display:none; position:absolute; top:110%; left:0; z-index:100; background:#ffffff; border:1px solid #cbd5e1; border-radius:10px; box-shadow:0 10px 25px rgba(0,0,0,0.15); width:220px; padding:8px;">
+          <div class="dd-menu" style="display:none; position:fixed; z-index:9999; background:#ffffff; border:1px solid #cbd5e1; border-radius:10px; box-shadow:0 10px 25px rgba(0,0,0,0.18); width:220px; padding:8px; max-height:300px; overflow:auto;">
             <input type="text" class="dd-search" placeholder="🔍 Search deity..." onkeyup="filterDropdownOptions('dd-deity')" style="width:100%; padding:6px 10px; border:1px solid #e2e8f0; border-radius:6px; font-size:12px; margin-bottom:6px; box-sizing:border-box;">
             <div class="dd-options" style="max-height:180px; overflow-y:auto;">
               <div class="dd-option selected" data-val="" onclick="selectDropdownOption('dd-deity', '', 'All Deities')" style="padding:6px 10px; font-size:13px; border-radius:4px; cursor:pointer;">All Deities</div>
@@ -72,7 +72,7 @@
           <button type="button" class="filter-chip dd-toggle" onclick="toggleSearchDropdown('dd-tempo')" style="background:#fff; border:1px solid #cbd5e1; border-radius:20px; padding:6px 14px; font-size:13px; font-weight:600; cursor:pointer; color:#334155; display:inline-flex; align-items:center; gap:6px;">
             <span class="dd-label">All Tempos</span> ▾
           </button>
-          <div class="dd-menu" style="display:none; position:absolute; top:110%; left:0; z-index:100; background:#ffffff; border:1px solid #cbd5e1; border-radius:10px; box-shadow:0 10px 25px rgba(0,0,0,0.15); width:200px; padding:8px;">
+          <div class="dd-menu" style="display:none; position:fixed; z-index:9999; background:#ffffff; border:1px solid #cbd5e1; border-radius:10px; box-shadow:0 10px 25px rgba(0,0,0,0.18); width:200px; padding:8px; max-height:300px; overflow:auto;">
             <input type="text" class="dd-search" placeholder="🔍 Search tempo..." onkeyup="filterDropdownOptions('dd-tempo')" style="width:100%; padding:6px 10px; border:1px solid #e2e8f0; border-radius:6px; font-size:12px; margin-bottom:6px; box-sizing:border-box;">
             <div class="dd-options" style="max-height:180px; overflow-y:auto;">
               <div class="dd-option selected" data-val="" onclick="selectDropdownOption('dd-tempo', '', 'All Tempos')" style="padding:6px 10px; font-size:13px; border-radius:4px; cursor:pointer;">All Tempos</div>
@@ -89,7 +89,7 @@
           <button type="button" class="filter-chip dd-toggle" onclick="toggleSearchDropdown('dd-raga')" style="background:#fff; border:1px solid #cbd5e1; border-radius:20px; padding:6px 14px; font-size:13px; font-weight:600; cursor:pointer; color:#334155; display:inline-flex; align-items:center; gap:6px;">
             <span class="dd-label">All Ragas</span> ▾
           </button>
-          <div class="dd-menu" style="display:none; position:absolute; top:110%; left:0; z-index:100; background:#ffffff; border:1px solid #cbd5e1; border-radius:10px; box-shadow:0 10px 25px rgba(0,0,0,0.15); width:240px; padding:8px;">
+          <div class="dd-menu" style="display:none; position:fixed; z-index:9999; background:#ffffff; border:1px solid #cbd5e1; border-radius:10px; box-shadow:0 10px 25px rgba(0,0,0,0.18); width:240px; padding:8px; max-height:300px; overflow:auto;">
             <input type="text" class="dd-search" placeholder="🔍 Search raga..." onkeyup="filterDropdownOptions('dd-raga')" style="width:100%; padding:6px 10px; border:1px solid #e2e8f0; border-radius:6px; font-size:12px; margin-bottom:6px; box-sizing:border-box;">
             <div class="dd-options" style="max-height:180px; overflow-y:auto;">
               <div class="dd-option selected" data-val="" onclick="selectDropdownOption('dd-raga', '', 'All Ragas')" style="padding:6px 10px; font-size:13px; border-radius:4px; cursor:pointer;">All Ragas</div>

@@ -103,6 +103,13 @@ body {
   }
 }
 
+/* Prevent horizontal overflow (fixes screen shifting right on mobile when
+   bhajan detail form appears after deity selection) */
+html, body {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
 /* quiet warmth wash — no motion, no floating blobs */
 body::before {
   content: "";
@@ -200,6 +207,19 @@ h1, h2, h3, h4 {
 
 .container-lg { max-width: 980px; }
 .container-xl { max-width: 1180px; }
+
+/* container-xl (used on master bank / browse pages) must allow dropdowns to
+   escape the container boundary without being clipped */
+.container.container-xl {
+  overflow: visible;
+}
+
+/* bank-body wraps the toolbar + search + filter bar. It must stack ABOVE
+   the .table-container sibling so dropdown menus float over the results. */
+.bank-body {
+  position: relative;
+  z-index: 20;
+}
 
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(14px); }
@@ -693,11 +713,37 @@ h1, h2, h3, h4 {
   border-radius: var(--radius);
   padding: 22px;
   margin-top: 26px;
+  /* Contain width to parent — prevents layout shift */
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .bhajan-details.show {
   display: block;
   animation: slideDown 0.3s var(--ease);
+}
+
+/* On mobile, force the form-rows inside bhajan-details to stack */
+@media (max-width: 600px) {
+  .bhajan-details {
+    padding: 16px 14px;
+  }
+  .bhajan-details .form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+  .bhajan-details .form-row > .form-group {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin-bottom: 14px;
+  }
+  /* Keep suggestions dropdown within the viewport */
+  .bhajan-suggestions {
+    left: 0;
+    right: 0;
+    width: auto;
+    max-width: calc(100vw - 60px);
+  }
 }
 
 .submitted-bhajans {
@@ -712,9 +758,63 @@ h1, h2, h3, h4 {
 .submitted-bhajans-heading p,
 .submitted-bhajans-empty { margin: 0; color: var(--muted); font-size: 13px; }
 .submitted-bhajans .table-container { margin-top: 16px; }
-.submitted-bhajans table { min-width: 620px; }
+.submitted-bhajans table { min-width: 520px; }
 .submitted-bhajans th,
 .submitted-bhajans td { padding: 10px 12px; font-size: 13px; }
+
+/* On mobile, submitted-bhajans stays as a scrollable TABLE (not cards) */
+@media (max-width: 768px) {
+  .submitted-bhajans {
+    padding: 14px 12px;
+  }
+  .submitted-bhajans .table-container {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  /* Override the generic card layout for THIS section only */
+  .submitted-bhajans table,
+  .submitted-bhajans thead,
+  .submitted-bhajans tbody,
+  .submitted-bhajans th,
+  .submitted-bhajans td,
+  .submitted-bhajans tr {
+    display: revert;
+  }
+  .submitted-bhajans thead tr {
+    position: static;
+  }
+  .submitted-bhajans td {
+    border-bottom: 1px solid var(--border-soft);
+    padding: 9px 10px;
+    text-align: left;
+    padding-left: 10px;
+    display: table-cell;
+    justify-content: unset;
+  }
+  .submitted-bhajans td:before {
+    display: none;
+  }
+  .submitted-bhajans td[data-label="#"] {
+    padding-left: 10px;
+    font-size: 13px;
+    border-bottom: 1px solid var(--border-soft);
+    padding-bottom: 9px;
+    margin-bottom: 0;
+    justify-content: unset;
+  }
+  .submitted-bhajans tr {
+    background: transparent;
+    border-radius: 0;
+    box-shadow: none;
+    margin-bottom: 0;
+    padding: 0;
+    border: none;
+    display: table-row;
+  }
+}
 
 @keyframes slideDown {
   from { opacity: 0; transform: translateY(-14px); }
@@ -753,6 +853,9 @@ h1, h2, h3, h4 {
   border-radius: var(--radius-lg);
   overflow: hidden;
   margin-top: 20px;
+  /* Explicit stacking context below the filter bar */
+  position: relative;
+  z-index: 1;
 }
 
 table {
@@ -1228,6 +1331,21 @@ tr:hover td { background-color: var(--paper); }
   border: 1px solid var(--border);
   border-radius: var(--radius);
   margin-bottom: 18px;
+  /* Ensure the filter bar stacks above the table content below */
+  position: relative;
+  z-index: 10;
+}
+
+/* Searchable dropdown containers */
+.searchable-dropdown {
+  position: relative;
+  display: inline-block;
+  z-index: 1;
+}
+
+/* Ensure open dropdown menus always float above everything */
+.searchable-dropdown .dd-menu {
+  z-index: 9999 !important;
 }
 
 .filter-bar-label {

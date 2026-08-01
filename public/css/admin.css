@@ -63,6 +63,11 @@ body.admin-page {
   overflow: hidden;
 }
 
+/* Mobile sidebar open: prevent body scroll */
+body.mobile-sidebar-open {
+  overflow: hidden;
+}
+
 input,
 select,
 textarea,
@@ -103,6 +108,7 @@ a {
   display: flex;
   height: 100vh;
   width: 100%;
+  overflow: hidden;
 }
 
 .main-content {
@@ -115,6 +121,7 @@ a {
   overflow-x: hidden;
 
   height: 100vh;
+  min-width: 0;
 }
 /* ==========================================================================
    SIDEBAR
@@ -326,9 +333,31 @@ body.sidebar-collapsed .sidebar:hover .sidebar-footer a {
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   display: flex;
+  flex-direction: row;
   justify-content: space-between;
   align-items: center;
   padding: env(safe-area-inset-top) max(30px, env(safe-area-inset-right)) 0 30px;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+/* Mobile hamburger — hidden on desktop */
+.mobile-menu-btn {
+  display: none;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: 18px;
+  color: var(--text-light);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: var(--transition);
+  line-height: 1;
+}
+.mobile-menu-btn:hover {
+  background: var(--bg);
+  color: var(--accent);
 }
 
 .page-title {
@@ -336,12 +365,25 @@ body.sidebar-collapsed .sidebar:hover .sidebar-footer a {
   font-weight: 600;
   color: var(--text);
   font-family: var(--font-display);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .admin-info {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.admin-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
 }
 
 .role-badge {
@@ -353,6 +395,7 @@ body.sidebar-collapsed .sidebar:hover .sidebar-footer a {
   font-weight: 700;
   letter-spacing: 0.4px;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 /* ==========================================================================
@@ -1019,29 +1062,124 @@ body.sidebar-collapsed .sidebar:hover .sidebar-footer a {
   }
 }
 
+/* ============================================================
+   MOBILE — sidebar becomes a full-screen overlay
+   ============================================================ */
 @media (max-width: 768px) {
+  /* Show the hamburger button in the topbar */
+  .mobile-menu-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Topbar: always a single row on mobile */
   .topbar {
-    padding: 16px;
-    height: auto;
-    flex-direction: column;
-    gap: 12px;
+    padding: 14px 16px;
+    min-height: 60px;
+    padding-top: max(14px, env(safe-area-inset-top));
   }
+
+  .page-title {
+    font-size: 17px;
+  }
+
+  .admin-name {
+    font-size: 13px;
+  }
+
+  .role-badge {
+    padding: 5px 10px;
+    font-size: 10px;
+  }
+
   .page-body {
-    padding: 20px;
+    padding: 16px;
   }
+
+  /* Hide the desktop sidebar completely */
   .sidebar {
-    width: 78px;
-    padding: 16px 10px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 80vw;
+    max-width: 300px;
+    height: 100vh;
+    height: 100dvh;
+    z-index: 1000;
+    transform: translateX(-100%);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: none;
+    padding: max(26px, env(safe-area-inset-top)) 20px
+      max(26px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+  }
+
+  /* Show sidebar when mobile-sidebar-open is on body */
+  body.mobile-sidebar-open .sidebar {
+    transform: translateX(0);
+    box-shadow: 4px 0 32px rgba(34, 30, 42, 0.22);
+  }
+
+  /* Dim overlay behind sidebar */
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(34, 30, 42, 0.5);
+    z-index: 999;
+    backdrop-filter: blur(2px);
+  }
+
+  body.mobile-sidebar-open .sidebar-overlay {
+    display: block;
+  }
+
+  /* Collapsed state has NO effect on mobile (sidebar is hidden via transform) */
+  body.sidebar-collapsed .sidebar {
+    width: 80vw !important;
+    max-width: 300px !important;
+    padding-left: max(20px, env(safe-area-inset-left)) !important;
+    padding-right: 20px !important;
+  }
+  body.sidebar-collapsed .sidebar-header {
+    justify-content: flex-start !important;
+    margin-bottom: 38px;
+  }
+  body.sidebar-collapsed .sidebar-header > .logo,
+  body.sidebar-collapsed .sidebar-header > div:not(.logo) {
+    display: flex !important;
+  }
+  body.sidebar-collapsed .sidebar-toggle {
+    margin-left: auto !important;
+  }
+  body.sidebar-collapsed .sidebar-nav a,
+  body.sidebar-collapsed .sidebar-footer a {
+    justify-content: flex-start !important;
+    font-size: 14px !important;
+    padding: 12px 14px !important;
+  }
+  body.sidebar-collapsed .sidebar-nav a span,
+  body.sidebar-collapsed .sidebar-footer a span {
+    font-size: 18px !important;
+    width: 20px;
+  }
+
+  /* Sidebar header: always show logo and title on mobile overlay */
+  .sidebar-header > .logo,
+  .sidebar-header > div:not(.logo) {
+    display: flex !important;
   }
   .sidebar-header h2,
-  .sidebar-header small,
-  .sidebar-nav a span:not(:first-child),
-  .sidebar-footer a span:not(:first-child) {
-    display: none;
+  .sidebar-header small {
+    display: block !important;
+  }
+  .sidebar-toggle {
+    margin-left: auto;
   }
   .sidebar-nav a,
   .sidebar-footer a {
-    justify-content: center;
+    justify-content: flex-start !important;
+    font-size: 14px !important;
   }
 }
 
@@ -1507,3 +1645,104 @@ body.sidebar-collapsed .sidebar:hover .sidebar-footer a {
 
   font-weight: 700;
 }
+
+/* ==========================================================================
+   ADMIN CALENDAR — MOBILE OVERRIDES
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  /* Container no longer needs to fight the sidebar */
+  .container.container-xl {
+    padding: 16px 12px;
+  }
+
+  .calendar-wrapper {
+    padding: 0 4px;
+  }
+
+  .calendar-grid {
+    gap: 5px;
+    padding: 0 4px 12px;
+  }
+
+  .calendar-day {
+    padding: 6px 4px;
+    min-height: 70px;
+    border-radius: 8px;
+  }
+
+  .calendar-date-num {
+    font-size: 13px;
+  }
+
+  .event-pill {
+    padding: 3px 5px;
+    font-size: 9px;
+    border-radius: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .perm-pill {
+    padding: 2px 4px;
+    font-size: 8px;
+  }
+
+  .calendar-nav-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+  }
+
+  .calendar-title {
+    font-size: 22px;
+  }
+
+  .calendar-header {
+    margin-top: 16px;
+    margin-bottom: 16px;
+  }
+
+  /* Admin Users Management — Mobile Adjustments */
+  .admin-users-wrapper {
+    padding: 0 4px;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+
+  .stats-grid .stat-card {
+    padding: 12px 14px;
+  }
+
+  .stat-value {
+    font-size: 22px;
+    margin-top: 4px;
+  }
+
+  .table-header {
+    padding: 14px 16px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .table-header input.search-box {
+    width: 100%;
+  }
+
+  .admin-users-wrapper .admin-table th,
+  .admin-users-wrapper .admin-table td {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+
+  .table-actions {
+    justify-content: flex-start;
+  }
+}
+

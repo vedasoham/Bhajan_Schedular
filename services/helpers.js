@@ -1,6 +1,6 @@
 const DEITY_ORDER = [
   "Ganesha", "Guru", "Mata", "SarvaDharma", 
-  "Sai", "Shiva", "Krishna", "Rama", "Vitthala", "Hanuman"
+  "Sai", "Shiva", "Krishna", "Rama", "Narayana", "Vitthala", "Hanuman"
 ];
 
 const SPEED_ORDER = { "slow": 0, "medium": 1, "fast": 2 };

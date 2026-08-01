@@ -22,10 +22,11 @@ function generateSubmitFormHtml(
   submissionRowsHtml = "",
   submissionCount = 0,
 ) {
-  const dateAttr = isAdmin
+  const isAdminBool = isAdmin === true || isAdmin === 'true';
+  const dateAttr = isAdminBool
     ? ""
     : 'readonly style="cursor:not-allowed; background:#f8f9fa;"';
-  const dateMsg = isAdmin
+  const dateMsg = isAdminBool
     ? '<span style="color:#e03131; font-weight:bold;">Admin Mode: Select any date</span>'
     : "This form is for the upcoming Thursday session";
 
@@ -42,7 +43,7 @@ function generateSubmitFormHtml(
   <div class="container">
     
     <div class="header">
-      <a href="/" class="home-btn" title="Return to Homepage">🏠 Home</a>
+      <a href="${isAdminBool ? '/admin' : '/'}" class="home-btn" title="${isAdminBool ? 'Back to Dashboard' : 'Return to Homepage'}">${isAdminBool ? '🏠 Dashboard' : '🏠 Home'}</a>
       <h1>📋 Bhajan Scheduler</h1>
       <p>Sri Sathya Sai Seva Organisation - Gandhinagar</p>
     </div>
@@ -59,7 +60,7 @@ function generateSubmitFormHtml(
       </div>
       
       <form method="post" action="/submit-form" id="bhajanForm">
-        <input type="hidden" name="admin" value="${isAdmin}" />
+        <input type="hidden" name="admin" value="${isAdminBool}" />
         <div class="form-group">
           <label>📅 Bhajan Session Date (Thursday)</label>
           <input type="date" name="session_date" value="${sessionDate}" required ${dateAttr} />
@@ -282,7 +283,7 @@ function generatePlanViewHtml(
       </form>
       <div style="display:flex; gap:8px;">
         <button onclick="window.print()" class="button secondary" style="padding:8px 16px; font-size:14px;">🖨️ Print</button>
-        <a href="/" class="button secondary" style="padding:8px 16px; font-size:14px;">🏠 Home</a>
+        <a href="/admin" class="button secondary" style="padding:8px 16px; font-size:14px;">🏠 Dashboard</a>
       </div>
     </div>
 
@@ -402,7 +403,7 @@ function generateAdminSessionViewHtml(date, submissions, isLocked) {
       <a href="/admin/rules?date=${date}" class="button secondary">⚙️ Session Rules</a>
       <button onclick="toggleSessionLock('${date}', ${!isLocked})" class="button" style="background:${isLocked ? "#28a745" : "#e03131"}; border:none;">${isLocked ? "🔓 Unlock Submissions" : "🔒 Lock Submissions"}</button>
       <a href="/plan-view" class="button secondary">📅 View Plans</a>
-      <a href="/" class="button secondary">🏠 Home</a>
+      <a href="/admin" class="button secondary">🏠 Dashboard</a>
     </div>
     
     <div style="background:#fff3cd; border:1px solid #ffe066; padding:15px; border-radius:12px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
@@ -547,7 +548,7 @@ function generateAdminCalendarHtml(
     </div>
     
     <div style="margin-bottom: 20px; display:flex; gap:10px; flex-wrap:wrap;">
-      <a href="/" class="button secondary">🏠 Home</a>
+      <a href="/admin" class="button secondary">🏠 Dashboard</a>
       <a href="/submit-form?admin=true" class="button secondary">➕ New Entry (Any Date)</a>
       <a href="/admin/rules" class="button secondary">⚙️ Default Deity Rules</a>
       <a href="/admin/singers" class="button secondary" style="background:#e6fcf5; color:#099268; border-color:#c3fae8;">👤 Singer Directory</a>
@@ -633,7 +634,7 @@ function generateAdminCalendarHtml(
           <input type="text" id="mbTitle" readonly style="width:100%; padding:8px; border:1px solid #ddd; background:#f5f5f5; border-radius:4px;"></div>
         <div><label style="font-size:12px; font-weight:600; color:#495057;">Deity</label>
           <select id="mbDeity" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;">
-            <option value="Ganesha">Ganesha</option><option value="Guru">Guru</option><option value="Mata">Mata</option><option value="SarvaDharma">SarvaDharma</option><option value="Sai">Sai</option><option value="Shiva">Shiva</option><option value="Krishna">Krishna</option><option value="Rama">Rama</option><option value="Vitthala">Vitthala</option><option value="Hanuman">Hanuman</option>
+            <option value="Ganesha">Ganesha</option><option value="Guru">Guru</option><option value="Mata">Mata</option><option value="SarvaDharma">SarvaDharma</option><option value="Sai">Sai</option><option value="Shiva">Shiva</option><option value="Krishna">Krishna</option><option value="Rama">Rama</option><option value="Narayana">Narayana</option><option value="Vitthala">Vitthala</option><option value="Hanuman">Hanuman</option>
           </select></div>
         <div><label style="font-size:12px; font-weight:600; color:#495057;">Tempo (Speed)</label>
           <select id="mbTempo" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;">

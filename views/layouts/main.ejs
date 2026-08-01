@@ -37,6 +37,7 @@
     <% if (currentAdmin) { %>
       <div class="admin-layout">
         <%- include('../partials/sidebar') %>
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
         <main class="main-content">
           <%- include('../partials/topbar') %>
           <div class="page-body"><%- body %></div>

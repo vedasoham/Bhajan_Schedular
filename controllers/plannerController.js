@@ -27,7 +27,7 @@ const normalizeBhajanTitle = (title) =>
 exports.showSubmitForm = async (req, res) => {
     
   try {
-    const isAdmin = req.query.admin === 'true';
+    const isAdmin = req.query.admin === 'true' || !!(req.session && req.session.admin);
     const showSuccess = req.query.success === 'true';
     let sessionDate = req.query.session_date;
 
@@ -54,6 +54,7 @@ exports.showSubmitForm = async (req, res) => {
       const availableDates = await getAvailableDates();
       const sortedDates = Array.from(availableDates.keys()).sort();
       let optionsHtml = '';
+      const adminParam = isAdmin ? '&admin=true' : '';
       sortedDates.forEach(date => {
         const info = availableDates.get(date);
         const type = info.label;
@@ -63,9 +64,11 @@ exports.showSubmitForm = async (req, res) => {
         if (type === 'Festival') btnStyle += ' background: #ff922b; border:none; color:white;';
         else if (type === 'Special') btnStyle += ' background: #4dabf7; border:none; color:white;';
         else btnStyle += ' background: linear-gradient(135deg, #ff9933 0%, #ff7700 100%); color:white;';
-        optionsHtml += `<a href="/submit-form?session_date=${date}" class="button" style="${btnStyle}">${displayLabel}</a>`;
+        optionsHtml += `<a href="/submit-form?session_date=${date}${adminParam}" class="button" style="${btnStyle}">${displayLabel}</a>`;
       });
-      return res.send(`<!DOCTYPE html><html><head><title>Select Session</title><meta name="viewport" content="width=device-width, initial-scale=1" /><link rel="stylesheet" href="/css/style.css"></head><body><div class="container" style="text-align:center; padding:40px; max-width:500px;"><h2 style="color:#e65100; margin-bottom:20px;">🗓️ Select Session</h2><p style="color:#555; margin-bottom:20px;">${msg}</p><div style="background:#f8f9fa; padding:20px; border-radius:12px; border:1px solid #eee;"><div style="display:flex; flex-direction:column; gap:10px;">${optionsHtml}</div></div><div style="margin-top:25px;"><a href="/" class="button secondary">🏠 Return Home</a></div></div></body></html>`);
+      const homeUrl = isAdmin ? '/admin' : '/';
+      const homeText = isAdmin ? '🏠 Return to Dashboard' : '🏠 Return Home';
+      return res.send(`<!DOCTYPE html><html><head><title>Select Session</title><meta name="viewport" content="width=device-width, initial-scale=1" /><link rel="stylesheet" href="/css/style.css"></head><body><div class="container" style="text-align:center; padding:40px; max-width:500px;"><h2 style="color:#e65100; margin-bottom:20px;">🗓️ Select Session</h2><p style="color:#555; margin-bottom:20px;">${msg}</p><div style="background:#f8f9fa; padding:20px; border-radius:12px; border:1px solid #eee;"><div style="display:flex; flex-direction:column; gap:10px;">${optionsHtml}</div></div><div style="margin-top:25px;"><a href="${homeUrl}" class="button secondary">${homeText}</a></div></div></body></html>`);
     };
 
     // If no date provided, check if we should show selection screen
@@ -105,7 +108,7 @@ exports.showSubmitForm = async (req, res) => {
     
     // Build base deityStatus dynamically
     const deityStatus = {};
-    const ALL_DEITIES = ["Ganesha", "Guru", "Mata", "SarvaDharma", "Sai", "Shiva", "Krishna", "Rama", "Vitthala", "Hanuman"];
+    const ALL_DEITIES = ["Ganesha", "Guru", "Mata", "SarvaDharma", "Sai", "Shiva", "Krishna", "Rama", "Narayana", "Vitthala", "Hanuman"];
     ALL_DEITIES.forEach(d => {
       const rule = rules.find(r => r.deity_name === d) || { min_required: 0, max_allowed: 2 };
       deityStatus[d] = {
@@ -166,7 +169,7 @@ exports.showSubmitForm = async (req, res) => {
     };
 
     const ganeshaCardHtml = generateCardHtml("Ganesha");
-    const otherDeities = ["Guru", "Mata", "SarvaDharma", "Sai", "Shiva", "Krishna", "Rama", "Vitthala"];
+    const otherDeities = ["Guru", "Mata", "SarvaDharma", "Sai", "Shiva", "Krishna", "Rama", "Narayana", "Vitthala"];
     let otherDeitiesHtml = "";
     otherDeities.forEach(d => otherDeitiesHtml += generateCardHtml(d));
     let hanumanCard = generateCardHtml("Hanuman").replace('deity-card', 'deity-card hanuman-card');
@@ -196,14 +199,15 @@ exports.showSubmitForm = async (req, res) => {
   exports.submitForm = async (req, res) => {
   try {
     const { session_date, singer_name, gender, locked_gender, partner_name, deity, title, speed, scale, raga, level, language, admin } = req.body;
+    const isAdmin = admin === 'true' || !!(req.session && req.session.admin);
     
     if (!session_date || !singer_name || !deity || !title) {
       return res.status(400).send('<h1>Error</h1><p>Missing required fields.</p><a class="button" href="javascript:history.back()">Go Back</a>');
     }
     
     const meta = await SessionMeta.findByPk(session_date);
-    if (meta && meta.is_locked && admin !== 'true') {
-      return res.status(403).send('<h1>Locked</h1><p>This session has been locked by the admin.</p><a class="button" href="/">Go Home</a>');
+    if (meta && meta.is_locked && !isAdmin) {
+      return res.status(403).send(`<h1>Locked</h1><p>This session has been locked by the coordinator.</p><a class="button" href="${isAdmin ? '/admin' : '/'}">${isAdmin ? 'Return to Dashboard' : 'Go Home'}</a>`);
     }
 
     // Fetch all submissions for this date to check rules
@@ -216,7 +220,8 @@ exports.showSubmitForm = async (req, res) => {
       (submission) => normalizeBhajanTitle(submission.title) === normalizeBhajanTitle(title)
     );
     if (duplicateBhajan) {
-      return res.status(409).send(`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="/css/style.css"><title>Bhajan Already Added</title></head><body><div class="container" style="max-width:560px; padding:32px; text-align:center;"><h2>Bhajan Already Added</h2><p><strong>${escapeHtml(duplicateBhajan.title)}</strong> has already been submitted for this session by <strong>${escapeHtml(duplicateBhajan.singer_name)}</strong>.</p><a class="button secondary" href="/submit-form?session_date=${encodeURIComponent(session_date)}">Go back to the form</a></div></body></html>`);
+      const adminParam = isAdmin ? '&admin=true' : '';
+      return res.status(409).send(`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="/css/style.css"><title>Bhajan Already Added</title></head><body><div class="container" style="max-width:560px; padding:32px; text-align:center;"><h2>Bhajan Already Added</h2><p><strong>${escapeHtml(duplicateBhajan.title)}</strong> has already been submitted for this session by <strong>${escapeHtml(duplicateBhajan.singer_name)}</strong>.</p><a class="button secondary" href="/submit-form?session_date=${encodeURIComponent(session_date)}${adminParam}">Go back to the form</a></div></body></html>`);
     }
 
     // Check if special/festival
@@ -230,11 +235,11 @@ exports.showSubmitForm = async (req, res) => {
     const ruleForDeity = rules.find(r => r.deity_name === deity) || { max_allowed: 2 };
     const maxAllowed = ruleForDeity.max_allowed;
 
-    if (maxAllowed === 0 && !isSpecialOrFestival && admin !== 'true') {
+    if (maxAllowed === 0 && !isSpecialOrFestival && !isAdmin) {
       return res.send(generateErrorHtml(deity, { singer_name: "Admin", title: "Blocked for this session", created_at: new Date() }, session_date));
     }
     
-    if (!isSpecialOrFestival && admin !== 'true') {
+    if (!isSpecialOrFestival && !isAdmin) {
       // Check existing count for requested deity
       const existingEntries = allSubmissions.filter(s => s.deity === deity);
       
@@ -276,7 +281,7 @@ exports.showSubmitForm = async (req, res) => {
     });
     
     // Success response
-    const adminQuery = admin === 'true' ? '&admin=true' : '';
+    const adminQuery = isAdmin ? '&admin=true' : '';
     res.redirect(`/submit-form?session_date=${session_date}&success=true${adminQuery}`);
     
   } catch (error) {
