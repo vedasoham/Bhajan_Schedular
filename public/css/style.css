@@ -904,6 +904,40 @@ tr:hover td { background-color: var(--paper); }
   letter-spacing: 0.4px;
 }
 
+/* ── Deity-specific color accents ──────────────────────────────── */
+/* Each deity gets a unique color for the pill and card accent.
+   These use the data-deity attribute set on tr elements. */
+
+/* Ganesha — warm saffron */
+tr[data-deity="ganesha"] .deity-pill { background: #FFF3E0; color: #E65100; }
+
+/* Guru — deep violet */
+tr[data-deity="guru"] .deity-pill { background: #EDE7F6; color: #5E35B1; }
+
+/* Mata / Devi — rose pink */
+tr[data-deity="mata"] .deity-pill { background: #FCE4EC; color: #C62828; }
+
+/* SarvaDharma — teal */
+tr[data-deity="sarvadharma"] .deity-pill { background: #E0F2F1; color: #00796B; }
+
+/* Sai — rich maroon */
+tr[data-deity="sai"] .deity-pill { background: var(--clay-bg); color: var(--maroon); }
+
+/* Shiva — cool blue */
+tr[data-deity="shiva"] .deity-pill { background: #E3F2FD; color: #1565C0; }
+
+/* Krishna — indigo */
+tr[data-deity="krishna"] .deity-pill { background: #E8EAF6; color: #283593; }
+
+/* Rama — sage green */
+tr[data-deity="rama"] .deity-pill { background: var(--sage-bg); color: var(--sage); }
+
+/* Vitthala — earthy amber */
+tr[data-deity="vitthala"] .deity-pill { background: #FFF8E1; color: #F57F17; }
+
+/* Hanuman — burnt orange */
+tr[data-deity="hanuman"] .deity-pill { background: #FBE9E7; color: #D84315; }
+
 /* Responsive table → card layout */
 @media (max-width: 768px) {
   .table-container {
@@ -919,7 +953,7 @@ tr:hover td { background-color: var(--paper); }
 
   tr {
     background: var(--surface);
-    border-radius: var(--radius);
+    border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);
     margin-bottom: 14px;
     padding: 18px;
@@ -961,6 +995,142 @@ tr:hover td { background-color: var(--paper); }
   }
 
   td[data-label="#"]:before { display: none; }
+
+  /* ── Master Bank: modern compact card override ─────────────── */
+
+  .bank-table tr {
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-lg);
+    box-shadow: 0 1px 4px rgba(34, 30, 42, 0.06), 0 0 0 1px var(--border);
+    overflow: hidden;
+    transition: box-shadow 0.2s var(--ease);
+  }
+
+  .bank-table tr:active {
+    box-shadow: 0 2px 8px rgba(34, 30, 42, 0.1), 0 0 0 1px var(--border);
+  }
+
+  /* Title cell — becomes the card header */
+  .bank-table td[data-label="Title"] {
+    display: block;
+    padding: 16px 16px 8px;
+    padding-left: 16px;
+    text-align: left;
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1.35;
+    border-bottom: none;
+    background: linear-gradient(135deg, var(--saffron-bg) 0%, var(--surface) 60%);
+    border-left: 4px solid var(--saffron);
+  }
+
+  .bank-table td[data-label="Title"]:before { display: none; }
+
+  /* Deity cell — colored pill right under title */
+  .bank-table td[data-label="Deity"] {
+    display: block;
+    padding: 0 16px 12px;
+    padding-left: 16px;
+    text-align: left;
+    background: linear-gradient(135deg, var(--saffron-bg) 0%, var(--surface) 60%);
+    border-left: 4px solid var(--saffron);
+    border-bottom: 1px solid var(--border-soft);
+  }
+
+  .bank-table td[data-label="Deity"]:before { display: none; }
+
+  /* Key detail cells — compact 2-column grid */
+  .bank-table td[data-label="Tempo"],
+  .bank-table td[data-label="Raga"],
+  .bank-table td[data-label="Scale (M)"],
+  .bank-table td[data-label="West (M)"],
+  .bank-table td[data-label="Scale (F)"],
+  .bank-table td[data-label="West (F)"],
+  .bank-table td[data-label="Level"] {
+    display: inline-flex;
+    width: 50%;
+    padding: 10px 16px;
+    padding-left: 16px;
+    text-align: left;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    font-size: 13px;
+    color: var(--ink-soft);
+    vertical-align: top;
+    border-bottom: 1px solid var(--border-soft);
+    box-sizing: border-box;
+  }
+
+  .bank-table td[data-label="Tempo"]:before,
+  .bank-table td[data-label="Raga"]:before,
+  .bank-table td[data-label="Scale (M)"]:before,
+  .bank-table td[data-label="West (M)"]:before,
+  .bank-table td[data-label="Scale (F)"]:before,
+  .bank-table td[data-label="West (F)"]:before,
+  .bank-table td[data-label="Level"]:before {
+    position: static;
+    width: auto;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 1px;
+  }
+
+  /* Last row of the grid shouldn't have border */
+  .bank-table td[data-label="Level"] {
+    border-bottom: none;
+  }
+
+  /* Actions cell — clean bottom bar */
+  .bank-table td[data-label="Actions"] {
+    display: flex;
+    padding: 10px 16px;
+    padding-left: 16px;
+    gap: 8px;
+    justify-content: flex-end;
+    background: var(--paper);
+    border-top: 1px solid var(--border-soft);
+    border-bottom: none;
+  }
+
+  .bank-table td[data-label="Actions"]:before { display: none; }
+
+  /* ── Deity-specific card accent borders ─────────────────────── */
+  .bank-table tr[data-deity="ganesha"] td[data-label="Title"],
+  .bank-table tr[data-deity="ganesha"] td[data-label="Deity"] { border-left-color: #E65100; }
+
+  .bank-table tr[data-deity="guru"] td[data-label="Title"],
+  .bank-table tr[data-deity="guru"] td[data-label="Deity"] { border-left-color: #5E35B1; }
+
+  .bank-table tr[data-deity="mata"] td[data-label="Title"],
+  .bank-table tr[data-deity="mata"] td[data-label="Deity"] { border-left-color: #C62828; }
+
+  .bank-table tr[data-deity="sarvadharma"] td[data-label="Title"],
+  .bank-table tr[data-deity="sarvadharma"] td[data-label="Deity"] { border-left-color: #00796B; }
+
+  .bank-table tr[data-deity="sai"] td[data-label="Title"],
+  .bank-table tr[data-deity="sai"] td[data-label="Deity"] { border-left-color: var(--maroon); }
+
+  .bank-table tr[data-deity="shiva"] td[data-label="Title"],
+  .bank-table tr[data-deity="shiva"] td[data-label="Deity"] { border-left-color: #1565C0; }
+
+  .bank-table tr[data-deity="krishna"] td[data-label="Title"],
+  .bank-table tr[data-deity="krishna"] td[data-label="Deity"] { border-left-color: #283593; }
+
+  .bank-table tr[data-deity="rama"] td[data-label="Title"],
+  .bank-table tr[data-deity="rama"] td[data-label="Deity"] { border-left-color: var(--sage); }
+
+  .bank-table tr[data-deity="vitthala"] td[data-label="Title"],
+  .bank-table tr[data-deity="vitthala"] td[data-label="Deity"] { border-left-color: #F57F17; }
+
+  .bank-table tr[data-deity="hanuman"] td[data-label="Title"],
+  .bank-table tr[data-deity="hanuman"] td[data-label="Deity"] { border-left-color: #D84315; }
 }
 
 /* ==========================================================================
@@ -1312,6 +1482,13 @@ tr:hover td { background-color: var(--paper); }
   color: var(--ink);
   box-shadow: var(--shadow-sm);
   transition: border-color 0.2s var(--ease), box-shadow 0.2s var(--ease);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.search-field input::-webkit-search-decoration,
+.search-field input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
 }
 
 .search-field input:focus {

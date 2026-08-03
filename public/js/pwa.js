@@ -1,0 +1,181 @@
+// ============================================================
+// PWA Install Handler — Bhajan Planner
+// Registers the service worker, intercepts the install prompt,
+// shows a custom banner with size info, handles iOS separately
+// ============================================================
+
+(function () {
+  'use strict';
+
+  // ── Guard: don't run if already installed as standalone ─────
+  if (
+    window.matchMedia('(display-mode: standalone)').matches ||
+    window.navigator.standalone === true
+  ) {
+    // Still register the SW for offline support inside the app
+    registerServiceWorker();
+    return;
+  }
+
+  // ── Service Worker Registration ─────────────────────────────
+  function registerServiceWorker() {
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker
+          .register('/sw.js', { updateViaCache: 'none' })
+          .then((reg) => {
+            console.log('[PWA] Service Worker registered – scope:', reg.scope);
+            // Check for updates every 60 minutes
+            setInterval(() => reg.update(), 60 * 60 * 1000);
+          })
+          .catch((err) => console.error('[PWA] SW registration failed:', err));
+      });
+    }
+  }
+
+  registerServiceWorker();
+
+  // ── Constants ───────────────────────────────────────────────
+  const DISMISS_KEY  = 'pwa-install-dismissed';
+  const DISMISS_DAYS = 7;
+  const BANNER_DELAY = 2500; // ms before showing banner
+
+  let deferredPrompt = null;
+
+  // ── Helpers ─────────────────────────────────────────────────
+  function wasDismissedRecently() {
+    const ts = localStorage.getItem(DISMISS_KEY);
+    if (!ts) return false;
+    const daysSince = (Date.now() - parseInt(ts, 10)) / (1000 * 60 * 60 * 24);
+    return daysSince < DISMISS_DAYS;
+  }
+
+  function isIOS() {
+    return (
+      /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream
+    );
+  }
+
+  /**
+   * Calculate the total size of assets in the service-worker cache.
+   * Falls back to the Storage Estimate API, then to a hardcoded default.
+   */
+  async function getEstimatedSize() {
+    try {
+      // Method 1: measure actual cached content
+      const cacheNames = await caches.keys();
+      if (cacheNames.length > 0) {
+        let totalBytes = 0;
+        for (const name of cacheNames) {
+          const cache     = await caches.open(name);
+          const requests  = await cache.keys();
+          for (const req of requests) {
+            const res = await cache.match(req);
+            if (res) {
+              const blob = await res.clone().blob();
+              totalBytes += blob.size;
+            }
+          }
+        }
+        if (totalBytes > 0) return formatBytes(totalBytes);
+      }
+
+      // Method 2: Storage Estimate API
+      if (navigator.storage && navigator.storage.estimate) {
+        const { usage } = await navigator.storage.estimate();
+        if (usage > 0) return formatBytes(usage);
+      }
+    } catch (e) {
+      console.warn('[PWA] Could not estimate size:', e);
+    }
+    return '< 2 MB'; // safe fallback
+  }
+
+  function formatBytes(bytes) {
+    const mb = bytes / (1024 * 1024);
+    if (mb < 1)  return '< 1 MB';
+    if (mb < 10) return `~${mb.toFixed(1)} MB`;
+    return `~${Math.round(mb)} MB`;
+  }
+
+  // ── Banner Show / Hide ──────────────────────────────────────
+  function showBanner() {
+    const overlay = document.getElementById('pwaInstallOverlay');
+    if (!overlay) return;
+
+    // Populate size
+    getEstimatedSize().then((size) => {
+      const el = document.getElementById('pwaBannerSize');
+      if (el) el.textContent = size;
+    });
+
+    // Show iOS-specific instructions if needed
+    if (isIOS()) {
+      const iosEl = document.getElementById('pwaIosInstructions');
+      const installBtn = document.getElementById('pwaBtnInstall');
+      if (iosEl) iosEl.style.display = '';
+      if (installBtn) installBtn.style.display = 'none';
+    }
+
+    setTimeout(() => overlay.classList.add('show'), BANNER_DELAY);
+  }
+
+  function hideBanner() {
+    const overlay = document.getElementById('pwaInstallOverlay');
+    if (overlay) overlay.classList.remove('show');
+  }
+
+  // ── Intercept Chrome / Edge install prompt ──────────────────
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();          // suppress the browser's mini-infobar
+    deferredPrompt = e;
+
+    if (!wasDismissedRecently()) {
+      showBanner();
+    }
+  });
+
+  // ── Wire up banner buttons on DOM ready ─────────────────────
+  document.addEventListener('DOMContentLoaded', () => {
+    const installBtn  = document.getElementById('pwaBtnInstall');
+    const dismissBtn  = document.getElementById('pwaBtnDismiss');
+    const closeBtn    = document.getElementById('pwaBannerClose');
+
+    // Install
+    installBtn?.addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      console.log('[PWA] Install prompt outcome:', outcome);
+      deferredPrompt = null;
+      hideBanner();
+    });
+
+    // Dismiss / close
+    function dismiss() {
+      localStorage.setItem(DISMISS_KEY, Date.now().toString());
+      hideBanner();
+    }
+    dismissBtn?.addEventListener('click', dismiss);
+    closeBtn?.addEventListener('click', dismiss);
+
+    // Close on overlay click (outside the banner card)
+    const overlay = document.getElementById('pwaInstallOverlay');
+    overlay?.addEventListener('click', (e) => {
+      if (e.target === overlay) dismiss();
+    });
+
+    // ── iOS: no beforeinstallprompt event, show manual banner ─
+    if (isIOS() && !wasDismissedRecently()) {
+      // Wait a little longer on iOS since there is no install event
+      setTimeout(() => showBanner(), 4000);
+    }
+  });
+
+  // ── Track successful install ────────────────────────────────
+  window.addEventListener('appinstalled', () => {
+    hideBanner();
+    deferredPrompt = null;
+    console.log('[PWA] Bhajan Planner installed successfully!');
+  });
+})();

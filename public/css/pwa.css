@@ -1,0 +1,244 @@
+/* =========================================================================
+   PWA Install Banner — Bottom-Sheet Popup
+   Bhajan Planner Design System
+   ========================================================================= */
+
+/* ── Overlay backdrop ──────────────────────────────────────────────────── */
+.pwa-install-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(34, 30, 42, 0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 10000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.35s ease, visibility 0.35s ease;
+}
+
+.pwa-install-overlay.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ── Banner card ───────────────────────────────────────────────────────── */
+.pwa-install-banner {
+  width: 100%;
+  max-width: 480px;
+  background: #ffffff;
+  border-radius: 20px 20px 0 0;
+  padding: 28px 24px calc(20px + env(safe-area-inset-bottom, 0px));
+  transform: translateY(100%);
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 -8px 40px rgba(34, 30, 42, 0.18);
+}
+
+.pwa-install-overlay.show .pwa-install-banner {
+  transform: translateY(0);
+}
+
+/* ── Header row: icon · text · close ───────────────────────────────────── */
+.pwa-banner-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.pwa-banner-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  object-fit: contain;
+}
+
+.pwa-banner-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.pwa-banner-info h3 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #221e2a;
+  margin: 0 0 3px;
+  line-height: 1.3;
+}
+
+.pwa-banner-size {
+  font-size: 0.8rem;
+  color: #8b8394;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.pwa-banner-size .size-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #d4c9b8;
+  display: inline-block;
+}
+
+.pwa-banner-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: #f4f0e8;
+  color: #8b8394;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s;
+}
+
+.pwa-banner-close:hover {
+  background: #e7e0d2;
+  color: #221e2a;
+}
+
+/* ── Divider ───────────────────────────────────────────────────────────── */
+.pwa-banner-divider {
+  height: 1px;
+  background: #e7e0d2;
+  margin: 0 0 16px;
+}
+
+/* ── Benefits row ──────────────────────────────────────────────────────── */
+.pwa-banner-benefits {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+}
+
+.pwa-benefit {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.78rem;
+  color: #4a4456;
+  background: #fbf8f2;
+  padding: 6px 11px;
+  border-radius: 8px;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+
+.pwa-benefit span {
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+/* ── Action buttons ────────────────────────────────────────────────────── */
+.pwa-banner-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.pwa-btn-install {
+  flex: 1;
+  padding: 14px 24px;
+  background: linear-gradient(135deg, #D98A2B 0%, #C47A22 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.2s;
+  box-shadow: 0 4px 16px rgba(217, 138, 43, 0.32);
+  letter-spacing: 0.01em;
+}
+
+.pwa-btn-install:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 22px rgba(217, 138, 43, 0.42);
+}
+
+.pwa-btn-install:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(217, 138, 43, 0.22);
+}
+
+.pwa-btn-dismiss {
+  padding: 14px 20px;
+  background: transparent;
+  color: #8b8394;
+  border: 1.5px solid #e7e0d2;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.pwa-btn-dismiss:hover {
+  background: #fbf8f2;
+  color: #4a4456;
+  border-color: #d4c9b8;
+}
+
+/* ── iOS instructions ──────────────────────────────────────────────────── */
+.pwa-ios-instructions {
+  text-align: center;
+  padding: 16px 0 0;
+  border-top: 1px solid #e7e0d2;
+  margin-top: 16px;
+}
+
+.pwa-ios-instructions p {
+  font-size: 0.88rem;
+  color: #4a4456;
+  line-height: 1.7;
+  margin: 0;
+}
+
+.pwa-ios-share-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  background: #2E6F86;
+  color: #fff;
+  border-radius: 5px;
+  font-size: 0.72rem;
+  vertical-align: middle;
+  margin: 0 3px;
+}
+
+/* ── Desktop: center the banner instead of bottom-sheet ────────────────── */
+@media (min-width: 481px) {
+  .pwa-install-overlay {
+    align-items: center;
+  }
+
+  .pwa-install-banner {
+    border-radius: 20px;
+    margin: 24px;
+  }
+}
+
+/* ── Reduced motion ────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .pwa-install-overlay,
+  .pwa-install-banner {
+    transition-duration: 0.01ms !important;
+  }
+}

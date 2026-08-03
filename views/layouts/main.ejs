@@ -11,6 +11,11 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/images/icons/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/images/icons/icon-192x192.png">
+
 <title>
     <%= typeof pageTitle !== "undefined"
         ? pageTitle
@@ -19,6 +24,7 @@
     <!-- Global CSS -->
 <link rel="stylesheet" href="/css/style.css">
 <link rel="stylesheet" href="/css/loading.css">
+<link rel="stylesheet" href="/css/pwa.css">
 
 <% if (typeof isAdminPage !== "undefined" && isAdminPage) { %>
 <link rel="stylesheet" href="/css/admin.css">
@@ -31,6 +37,33 @@
 </head>
 
 <body class="<%= currentAdmin ? 'admin-page' : '' %>">
+
+    <!-- PWA Install Banner -->
+    <div class="pwa-install-overlay" id="pwaInstallOverlay">
+      <div class="pwa-install-banner">
+        <div class="pwa-banner-header">
+          <img src="/images/icons/icon-192x192.png" alt="Bhajan Planner" class="pwa-banner-icon">
+          <div class="pwa-banner-info">
+            <h3>Install Bhajan Planner</h3>
+            <p class="pwa-banner-size">App size <span class="size-dot"></span> <span id="pwaBannerSize">calculating…</span></p>
+          </div>
+          <button class="pwa-banner-close" id="pwaBannerClose" aria-label="Close">✕</button>
+        </div>
+        <div class="pwa-banner-divider"></div>
+        <div class="pwa-banner-benefits">
+          <div class="pwa-benefit"><span>⚡</span> Faster loading</div>
+          <div class="pwa-benefit"><span>📱</span> Works like a native app</div>
+          <div class="pwa-benefit"><span>🏠</span> Home screen access</div>
+        </div>
+        <div class="pwa-banner-actions">
+          <button class="pwa-btn-install" id="pwaBtnInstall">Install App</button>
+          <button class="pwa-btn-dismiss" id="pwaBtnDismiss">Not Now</button>
+        </div>
+        <div class="pwa-ios-instructions" id="pwaIosInstructions" style="display:none">
+          <p>Tap <strong>Share</strong> <span class="pwa-ios-share-icon">⬆</span> then <strong>“Add to Home Screen”</strong></p>
+        </div>
+      </div>
+    </div>
 
     <%- include("../partials/loading") %>
 
@@ -50,6 +83,7 @@
     <!-- Global JS -->
     <script src="/js/script.js"></script>
     <script src="/js/loading.js"></script>
+    <script src="/js/pwa.js"></script>
 
     <!-- Optional page-specific JS -->
     <% if (typeof pageJS !== "undefined") { %>

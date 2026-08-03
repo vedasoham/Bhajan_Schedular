@@ -495,9 +495,9 @@ function filterTable() {
 }
 
 let filterMasterBankTimeout;
-function filterMasterBank() {
+function filterMasterBank(immediate = false) {
   clearTimeout(filterMasterBankTimeout);
-  filterMasterBankTimeout = setTimeout(() => {
+  const doFilter = () => {
     const titleFilter = (document.getElementById('filterBankTitle')?.value || '').toUpperCase();
     const deityFilter = (document.getElementById('filterBankDeity')?.value || '').toUpperCase();
     const tempoFilter = (document.getElementById('filterBankTempo')?.value || '').toUpperCase();
@@ -523,7 +523,13 @@ function filterMasterBank() {
         tr[i].style.display = (matchTitle && matchDeity && matchTempo && matchRaga) ? "" : "none";
       }
     }
-  }, 250);
+  };
+
+  if (immediate) {
+    doFilter();
+  } else {
+    filterMasterBankTimeout = setTimeout(doFilter, 250);
+  }
 }
 
 // Admin Calendar Modal Logic
@@ -648,10 +654,11 @@ function editMasterRow(id) {
   const cells = row.querySelectorAll('.edit-cell');
   
   cells.forEach(cell => {
-    const currentValue = cell.textContent === '-' ? '' : cell.textContent;
+    const rawVal = cell.textContent || '';
+    const currentValue = rawVal.trim() === '-' ? '' : rawVal.trim();
     const fieldName = cell.getAttribute('data-field');
     const safeValue = currentValue.replace(/"/g, '&quot;');
-    cell.innerHTML = `<input type="text" id="input-${id}-${fieldName}" value="${safeValue}" class="filter-input" style="width: 100%; padding: 4px; border: 1px solid #ccc; border-radius: 4px;">`;
+    cell.innerHTML = `<input type="text" id="input-${id}-${fieldName}" value="${safeValue}" class="filter-input" style="width: 100%; padding: 6px 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px;">`;
   });
 
   const actionCell = row.querySelector('.action-cell');
@@ -680,11 +687,19 @@ function saveMasterRow(id) {
   .then(response => {
     if(response.success) {
       const row = document.getElementById(`row-${id}`);
-      const cells = row.querySelectorAll('.edit-cell');
-      cells.forEach(cell => {
-        const fieldName = cell.getAttribute('data-field');
-        cell.textContent = updatedData[fieldName] || '-';
-      });
+      if (row) {
+        row.setAttribute('data-deity', (updatedData.deity || '').toLowerCase());
+        const cells = row.querySelectorAll('.edit-cell');
+        cells.forEach(cell => {
+          const fieldName = cell.getAttribute('data-field');
+          const val = updatedData[fieldName] || '-';
+          if (fieldName === 'deity') {
+            cell.innerHTML = `<span class="deity-pill">${escapeHTML ? escapeHTML(val) : val}</span>`;
+          } else {
+            cell.textContent = val;
+          }
+        });
+      }
       
       // Update western scale display dynamically
       const westM = document.getElementById(`west-m-${id}`);
