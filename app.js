@@ -70,7 +70,6 @@ const ADMIN_PATH_PREFIXES = [
   "/admin-login",
   "/forgot-password", // login-recovery flow shares the admin visual language
   "/master-bank",
-  "/database",
 ];
 
 app.use((req, res, next) => {

@@ -30,6 +30,8 @@ router.post(
   requireApiLogin,
   adminController.reorderBhajans,
 );
+router.get("/admin/import-sessions", requireLogin, adminController.showImportSessions);
+router.post("/admin/import-sessions", requireLogin, adminController.processImportSessions);
 router.post("/admin/copy-session", requireLogin, adminController.copySession);
 router.get("/admin/danger-reset-history", requireSuperAdmin, adminController.showDangerResetHistory);
 router.post(

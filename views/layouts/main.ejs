@@ -36,7 +36,7 @@
 <% } %>
 </head>
 
-<body class="<%= currentAdmin ? 'admin-page' : '' %>">
+<body class="<%= (typeof isAdminPage !== 'undefined' && isAdminPage && currentAdmin) ? 'admin-page' : '' %>">
 
     <!-- PWA Install Banner -->
     <div class="pwa-install-overlay" id="pwaInstallOverlay">
@@ -67,7 +67,7 @@
 
     <%- include("../partials/loading") %>
 
-    <% if (currentAdmin) { %>
+    <% if (typeof isAdminPage !== "undefined" && isAdminPage && currentAdmin) { %>
       <div class="admin-layout">
         <%- include('../partials/sidebar') %>
         <div class="sidebar-overlay" id="sidebarOverlay"></div>

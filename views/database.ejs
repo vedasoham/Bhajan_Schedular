@@ -1,50 +1,99 @@
 <div class="container container-xl">
-    <div class="header">
-      <h1>🗃️ Bhajan Database</h1>
-      <p>Full Records</p>
-    </div>
-    <div style="margin-bottom: 20px;"><a href="<%= currentAdmin ? '/admin' : '/' %>" class="button secondary"><%= currentAdmin ? '🏠 Dashboard' : '🏠 Home' %></a></div>
-    
-    <div class="table-container">
-      <table id="dbTable">
-        <thead>
-          <tr>
-            <th><input type="text" class="filter-input" onkeyup="filterTable()" placeholder="Bhajan..."></th>
-            <th><input type="text" class="filter-input" onkeyup="filterTable()" placeholder="Deity..."></th>
-            <th><input type="text" class="filter-input" onkeyup="filterTable()" placeholder="Scale..."></th>
-            <th><input type="text" class="filter-input" onkeyup="filterTable()" placeholder="Tempo..."></th>
-            <th><input type="text" class="filter-input" onkeyup="filterTable()" placeholder="Last Sung..."></th>
-            <th><input type="text" class="filter-input" onkeyup="filterTable()" placeholder="Date..."></th>
-            <th><input type="text" class="filter-input" onkeyup="filterTable()" placeholder="Singer..."></th>
-            <th><input type="text" class="filter-input" onkeyup="filterTable()" placeholder="Partner..."></th>
-          </tr>
-          <tr>
-            <th onclick="sortTable(0, 'dbTable')" style="cursor:pointer;" title="Click to sort">Bhajan Title ↕</th>
-            <th onclick="sortTable(1, 'dbTable')" style="cursor:pointer;" title="Click to sort">Deity ↕</th>
-            <th onclick="sortTable(2, 'dbTable')" style="cursor:pointer;" title="Click to sort">Scale ↕</th>
-            <th onclick="sortTable(3, 'dbTable')" style="cursor:pointer;" title="Click to sort">Tempo ↕</th>
-            <th onclick="sortTable(4, 'dbTable')" style="cursor:pointer;" title="Click to sort">Last Sung ↕</th>
-            <th onclick="sortTable(5, 'dbTable')" style="cursor:pointer;" title="Click to sort">Date ↕</th>
-            <th onclick="sortTable(6, 'dbTable')" style="cursor:pointer;" title="Click to sort">Singer ↕</th>
-            <th onclick="sortTable(7, 'dbTable')" style="cursor:pointer;" title="Click to sort">Partner ↕</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% submissions.forEach(s => { %>
-            <% const highlightClass = (s.lastSung === 'Today' || s.lastSung === 'Yesterday') ? 'highlight-recent' : ''; %>
-            <tr class="<%= highlightClass %>">
-              <td><%= s.title %></td>
-              <td><span class="deity-pill"><%= s.deity %></span></td>
-              <td><%= s.scale || '-' %></td>
-              <td><%= s.speed %></td>
-              <td data-sort="<%= s.session_date %>"><%= s.lastSung %></td>
-              <td data-sort="<%= s.session_date %>"><%= s.formattedDate %></td>
-              <td><%= s.singer_name %></td>
-              <td><%= s.partner_name || '-' %></td>
-            </tr>
-          <% }) %>
-        </tbody>
-      </table>
-    </div>
+  <div class="header">
+    <h1>🗃️ Bhajan History</h1>
+    <p>Session Records - Gandhinagar Bhajan Schedules</p>
   </div>
-  <script src="/js/script.js"></script>
+  <div style="margin-bottom: 20px;">
+    <a href="<%= currentAdmin ? '/admin' : '/' %>" class="button secondary">
+      <%= currentAdmin ? '🏠 Dashboard' : '🏠 Home' %>
+    </a>
+  </div>
+
+  <% if (sessions.length === 0) { %>
+    <div class="submitted-bhajans" style="text-align: center; padding: 40px 20px;">
+      <p style="font-size: 16px; color: var(--muted);">No session records found yet.</p>
+    </div>
+  <% } else { %>
+    <%# Date filter bar %>
+    <div class="history-filter-bar">
+      <label for="historyDateFilter">🔍 Filter by date</label>
+      <div class="history-filter-controls">
+        <input type="date" id="historyDateFilter" class="filter-input" />
+        <button type="button" id="historyDateClear" class="button secondary" style="padding: 8px 14px; font-size: 13px;">Clear</button>
+      </div>
+    </div>
+
+    <div id="historyNoMatch" class="submitted-bhajans" style="text-align: center; padding: 30px 20px; display: none;">
+      <p style="font-size: 15px; color: var(--muted);">No session found for the selected date.</p>
+    </div>
+
+    <% sessions.forEach(session => { %>
+      <section class="submitted-bhajans history-session" data-date="<%= session.date %>">
+        <div class="submitted-bhajans-heading">
+          <div>
+            <h3>📅 <%= session.heading %></h3>
+            <p><%= session.bhajans.length %> bhajan<%= session.bhajans.length === 1 ? '' : 's' %> in this session</p>
+          </div>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Singer</th>
+                <th>Deity</th>
+                <th>Bhajan</th>
+                <th>Speed</th>
+                <th>Scale</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% session.bhajans.forEach((s, i) => { %>
+                <tr>
+                  <td data-label="#"><%= i + 1 %></td>
+                  <td data-label="Singer"><%= s.singer_name %></td>
+                  <td data-label="Deity"><span class="deity-pill"><%= s.deity %></span></td>
+                  <td data-label="Bhajan"><%= s.title %></td>
+                  <td data-label="Speed"><%= s.speed || '-' %></td>
+                  <td data-label="Scale"><%= s.scale || '-' %></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    <% }) %>
+  <% } %>
+</div>
+
+<script>
+(function() {
+  var dateInput = document.getElementById('historyDateFilter');
+  var clearBtn = document.getElementById('historyDateClear');
+  var noMatch  = document.getElementById('historyNoMatch');
+  if (!dateInput) return;
+
+  function filterSessions() {
+    var val = dateInput.value; // YYYY-MM-DD or empty
+    var sections = document.querySelectorAll('.history-session');
+    var anyVisible = false;
+
+    sections.forEach(function(sec) {
+      if (!val || sec.getAttribute('data-date') === val) {
+        sec.style.display = '';
+        anyVisible = true;
+      } else {
+        sec.style.display = 'none';
+      }
+    });
+
+    noMatch.style.display = (val && !anyVisible) ? '' : 'none';
+  }
+
+  dateInput.addEventListener('change', filterSessions);
+  clearBtn.addEventListener('click', function() {
+    dateInput.value = '';
+    filterSessions();
+  });
+})();
+</script>

@@ -554,6 +554,7 @@ function generateAdminCalendarHtml(
       <a href="/admin/singers" class="button secondary" style="background:#e6fcf5; color:#099268; border-color:#c3fae8;">👤 Singer Directory</a>
       <a href="/admin/singer-dictionary" class="button secondary" style="background:#e3f2fd; color:#0277bd; border-color:#90caf9;">📖 Singer Dictionary</a>
       <a href="/master-bank" class="button secondary" style="background:#fff3cd; color:#e67700; border-color:#ffe066;">📚 Edit Master Bank</a>
+      <a href="/admin/import-sessions" class="button secondary" style="background:#e8f5e9; color:#2e7d32; border-color:#c8e6c9;">📥 Import Past Sessions</a>
       <a href="/admin/analytics" class="button secondary" style="background:#f3f0ff; color:#6741d9; border-color:#e5dbff;">📈 Analytics</a>
     </div>
 
@@ -738,6 +739,93 @@ function generateAdminRulesHtml(rules, date) {
   </div><script src="/js/script.js"></script></body></html>`;
 }
 
+function generateAdminImportSessionsHtml(resultInfo = null) {
+  let resultBanner = "";
+  if (resultInfo) {
+    if (resultInfo.error) {
+      resultBanner = `
+        <div style="background:#ffebee; border:1px solid #ffcdd2; color:#c62828; padding:16px; border-radius:12px; margin-bottom:24px;">
+          <strong>❌ Error importing sessions:</strong> ${escapeHtml(resultInfo.error)}
+        </div>
+      `;
+    } else {
+      const sessionList = (resultInfo.sessionSummary || [])
+        .map((s) => `<li>📅 <strong>${s.date}</strong>: ${s.count} bhajans</li>`)
+        .join("");
+      resultBanner = `
+        <div style="background:#e8f5e9; border:1px solid #c8e6c9; color:#2e7d32; padding:18px; border-radius:12px; margin-bottom:24px;">
+          <h3 style="margin:0 0 8px 0; color:#1b5e20;">🎉 Import Successful!</h3>
+          <p style="margin:0 0 10px 0;">Successfully processed <strong>${resultInfo.totalSessions} session(s)</strong> and <strong>${resultInfo.totalBhajans} bhajan(s)</strong>.</p>
+          <ul style="margin:0; padding-left:20px; font-size:14px;">${sessionList}</ul>
+          <div style="margin-top:14px;">
+            <a href="/database" class="button" style="padding:6px 16px; font-size:13px; text-decoration:none;">🗃️ View in History</a>
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Admin - Import Past Sessions</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="container container-xl">
+    <div class="header">
+      <h1>📥 Import Past Sessions</h1>
+      <p>Bulk add historical bhajan records into the database</p>
+    </div>
+    
+    <div style="margin-bottom: 24px; display:flex; gap:10px; flex-wrap:wrap;">
+      <a href="/admin" class="button secondary">🏠 Dashboard</a>
+      <a href="/database" class="button secondary">🗃️ View History</a>
+      <a href="/plan-view" class="button secondary">📅 View Plans</a>
+    </div>
+
+    ${resultBanner}
+
+    <div style="background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:24px; margin-bottom:24px;">
+      <form action="/admin/import-sessions" method="POST">
+        <div style="margin-bottom:16px;">
+          <label style="display:block; font-weight:700; font-size:15px; margin-bottom:8px; color:#343a40;">
+            📋 Paste Session Text / WhatsApp Plan Data below:
+          </label>
+          <textarea name="raw_text" required rows="14" placeholder="Paste your past session text here...&#10;&#10;Example 1:&#10;23/07/2026&#10;1. Gajanana Gajanana, Prathama Poojana — A#&#10;2. Jaya Kailash Patey Shiva Shankara — C#&#10;&#10;Example 2:&#10;Bhajan Plan – 2026-07-30&#10;1) Nisarg Chaudhari – [Ganesha] Prathama Vandana Gowri Nandana – Scale: 2.5P, Speed: Slow" style="width:100%; padding:14px; border:1px solid #ced4da; border-radius:8px; font-family:monospace; font-size:13.5px; line-height:1.5; resize:vertical; background:#f8f9fa;"></textarea>
+        </div>
+
+        <button type="submit" class="button" style="background:#28a745; border:none; padding:12px 28px; font-weight:700; font-size:15px; cursor:pointer;">
+          🚀 Import Sessions to Database
+        </button>
+      </form>
+    </div>
+
+    <div style="background:#f1f3f5; border:1px solid #dee2e6; border-radius:var(--radius); padding:20px;">
+      <h3 style="margin-top:0; color:#343a40; font-size:16px;">💡 Supported Format Examples</h3>
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:16px; margin-top:12px;">
+        <div style="background:#fff; padding:14px; border-radius:8px; border:1px solid #e9ecef;">
+          <strong style="color:#e65100;">Format 1: Plain Text</strong>
+          <pre style="margin:8px 0 0 0; font-size:12px; color:#495057;">23/07/2026
+1. Bhajan Title — Scale
+2. Singer Name: Bhajan Title — Scale</pre>
+        </div>
+        <div style="background:#fff; padding:14px; border-radius:8px; border:1px solid #e9ecef;">
+          <strong style="color:#e65100;">Format 2: WhatsApp Plan View</strong>
+          <pre style="margin:8px 0 0 0; font-size:12px; color:#495057;">Bhajan Plan – 2026-07-30
+1) Singer (Partner) – [Deity] Title – Scale: 2.5P, Speed: Slow</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="/js/script.js"></script>
+</body>
+</html>`;
+}
+
 module.exports = {
   escapeHtml,
   generateSubmitFormHtml,
@@ -749,4 +837,6 @@ module.exports = {
   generateAdminCalendarHtml,
   generateAdminSessionViewHtml,
   generateAdminRulesHtml,
+  generateAdminImportSessionsHtml,
 };
+

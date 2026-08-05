@@ -150,9 +150,9 @@ exports.googleLogin = async (req, res) => {
     }
 
     const payload =
-    await verifyGoogleCredential(
+      await verifyGoogleCredential(
         credential
-    );
+      );
 
     const googleSub = payload.sub;
     const googleEmail = (payload.email || "")
@@ -267,78 +267,78 @@ exports.logout = async (req, res) => {
 };
 exports.showForgotPassword = (req, res) => {
 
-    res.render("forgot-password", {
-        error: null
-    });
+  res.render("forgot-password", {
+    error: null
+  });
 
 };
 exports.checkForgotPassword = async (req, res) => {
 
-    const username =
-        (req.body.username || "")
-        .trim()
-        .toLowerCase();
+  const username =
+    (req.body.username || "")
+      .trim()
+      .toLowerCase();
 
-    const admin =
-        await AdminUser.findOne({
-            where: { username }
-        });
+  const admin =
+    await AdminUser.findOne({
+      where: { username }
+    });
 
-    if (!admin) {
+  if (!admin) {
 
-        return res.render(
-            "forgot-password",
-            {
-                error: "Account not found."
-            }
-        );
-
-    }
-
-    if (admin.google_sub) {
-
-        return res.redirect(
-            `/forgot-password/google/${admin.id}`
-        );
-
-    }
-
-    const superAdmin =
-        await AdminUser.findOne({
-
-            where: {
-                role: "super_admin",
-                is_active: true
-            }
-
-        });
-
-    res.render(
-        "forgot-password-contact",
-        {
-            superAdmin
-        }
+    return res.render(
+      "forgot-password",
+      {
+        error: "Account not found."
+      }
     );
+
+  }
+
+  if (admin.google_sub) {
+
+    return res.redirect(
+      `/forgot-password/google/${admin.id}`
+    );
+
+  }
+
+  const superAdmin =
+    await AdminUser.findOne({
+
+      where: {
+        role: "super_admin",
+        is_active: true
+      }
+
+    });
+
+  res.render(
+    "forgot-password-contact",
+    {
+      superAdmin
+    }
+  );
 
 };
 exports.showGoogleRecovery = async (req, res) => {
 
-    const admin = await AdminUser.findByPk(
-        req.params.id
-    );
+  const admin = await AdminUser.findByPk(
+    req.params.id
+  );
 
-    if (!admin) {
-        return res.redirect("/forgot-password");
+  if (!admin) {
+    return res.redirect("/forgot-password");
+  }
+
+  res.render(
+    "forgot-password-google",
+    {
+      admin,
+      googleClientId:
+        process.env.GOOGLE_CLIENT_ID
     }
-
-    res.render(
-        "forgot-password-google",
-        {
-            admin,
-            googleClientId:
-                process.env.GOOGLE_CLIENT_ID
-        }
-    );
+  );
 
 };
 exports.googleRecovery = async (req, res) => {
@@ -422,95 +422,95 @@ exports.googleRecovery = async (req, res) => {
   }
 
 };
-    exports.showPasswordReset = (req, res) => {
+exports.showPasswordReset = (req, res) => {
 
-    const recovery =
-        req.session.passwordRecovery;
+  const recovery =
+    req.session.passwordRecovery;
 
-    if (
-        !recovery ||
-        recovery.expires < Date.now()
-    ) {
+  if (
+    !recovery ||
+    recovery.expires < Date.now()
+  ) {
 
-        return res.redirect(
-            "/forgot-password"
-        );
-
-    }
-
-    res.render(
-        "forgot-password-reset",
-        {
-            error: null
-        }
+    return res.redirect(
+      "/forgot-password"
     );
+
+  }
+
+  res.render(
+    "forgot-password-reset",
+    {
+      error: null
+    }
+  );
 
 };
 
-    exports.resetForgotPassword = async (req, res) => {
+exports.resetForgotPassword = async (req, res) => {
 
-    const recovery =
-        req.session.passwordRecovery;
+  const recovery =
+    req.session.passwordRecovery;
 
-    if (
-        !recovery ||
-        recovery.expires < Date.now()
-    ) {
+  if (
+    !recovery ||
+    recovery.expires < Date.now()
+  ) {
 
-        return res.redirect(
-            "/forgot-password"
-        );
+    return res.redirect(
+      "/forgot-password"
+    );
 
-    }
+  }
 
-    const {
-        password,
-        confirmPassword
-    } = req.body;
+  const {
+    password,
+    confirmPassword
+  } = req.body;
 
-    if (
-        password !== confirmPassword
-    ) {
+  if (
+    password !== confirmPassword
+  ) {
 
-        return res.render(
-            "forgot-password-reset",
-            {
-                error:
-                    "Passwords do not match."
-            }
-        );
+    return res.render(
+      "forgot-password-reset",
+      {
+        error:
+          "Passwords do not match."
+      }
+    );
 
-    }
+  }
 
-    const admin =
-        await AdminUser.findByPk(
-            recovery.adminId
-        );
+  const admin =
+    await AdminUser.findByPk(
+      recovery.adminId
+    );
 
-    if (!admin) {
+  if (!admin) {
 
-        return res.redirect(
-            "/forgot-password"
-        );
+    return res.redirect(
+      "/forgot-password"
+    );
 
-    }
+  }
 
-    admin.password_hash =
-        await bcrypt.hash(
-            password,
-            12
-        );
+  admin.password_hash =
+    await bcrypt.hash(
+      password,
+      12
+    );
 
-    await admin.save();
+  await admin.save();
 
-    delete req.session.passwordRecovery;
+  delete req.session.passwordRecovery;
 
-    req.session.save(() => {
+  req.session.save(() => {
 
-        res.redirect(
-            "/admin-login"
-        );
+    res.redirect(
+      "/admin-login"
+    );
 
-    });
+  });
 
 };

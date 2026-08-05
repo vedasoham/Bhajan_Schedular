@@ -2,31 +2,72 @@ const { Sequelize } = require("sequelize");
 
 const BhajanSubmission = require("../models/BhajanSubmission");
 const MasterBhajan = require("../models/MasterBhajan");
-const Singer = require("../models/Singer");
-const {formatDateHuman, timeSince} = require("../services/helpers");
-const {escapeHtml, generateDatabaseHtml} = require ("../templates");
 
 exports.showDatabase = async (req, res) => {
-    try {
+  try {
+    // Today as YYYY-MM-DD string for date-only comparison
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+    // Only fetch sessions whose date <= today (hide future even if plan exists)
     const rawSubmissions = await BhajanSubmission.findAll({
+      where: {
+        session_date: { [Sequelize.Op.lte]: todayStr }
+      },
       order: [
-        ['title', 'ASC'],
-        ['singer_name', 'ASC']
+        ['session_date', 'DESC'],
+        ['list_order', 'ASC'],
+        ['created_at', 'ASC']
       ],
       raw: true
     });
-    
-    const submissions = rawSubmissions.map(s => {
-      s.formattedDate = formatDateHuman(s.session_date);
-      s.lastSung = timeSince(s.session_date);
-      return s;
+
+    // Group submissions by session_date
+    const { deityOrderKey, SPEED_ORDER } = require('../services/helpers');
+    const sessionsMap = new Map();
+
+    rawSubmissions.forEach(s => {
+      if (!sessionsMap.has(s.session_date)) {
+        sessionsMap.set(s.session_date, []);
+      }
+      sessionsMap.get(s.session_date).push(s);
     });
-    
-    res.render('database', { submissions });
+
+    // Build sessions array with heading and sorted bhajans
+    const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const sessions = [];
+
+    for (const [dateStr, bhajans] of sessionsMap) {
+      // Sort within session: manual order first, then deity/speed/singer fallback
+      bhajans.sort((a, b) => {
+        if (a.list_order > 0 || b.list_order > 0) {
+          if (a.list_order === 0) return 1;
+          if (b.list_order === 0) return -1;
+          return a.list_order - b.list_order;
+        }
+        const deityCompare = deityOrderKey(a.deity) - deityOrderKey(b.deity);
+        if (deityCompare !== 0) return deityCompare;
+        const speedCompare = (SPEED_ORDER[(a.speed || '').toLowerCase()] || 1) -
+                             (SPEED_ORDER[(b.speed || '').toLowerCase()] || 1);
+        if (speedCompare !== 0) return speedCompare;
+        return (a.singer_name || '').toLowerCase().localeCompare((b.singer_name || '').toLowerCase());
+      });
+
+      // Heading: DD-MM-YYYY - DayName
+      const [y, m, d] = dateStr.split('-').map(Number);
+      const dateObj = new Date(y, m - 1, d);
+      const dayName = DAY_NAMES[dateObj.getDay()];
+      const heading = `${String(d).padStart(2, '0')}-${String(m).padStart(2, '0')}-${y} - ${dayName}`;
+
+      sessions.push({ date: dateStr, heading, bhajans });
+    }
+
+    res.render('database', { sessions });
   } catch (error) {
     res.status(500).send(`<h1>Error</h1><p>${error.message}</p>`);
   }
 };
+
 exports.showAnalytics = async (req, res) => {
   try {
     const topBhajans = await BhajanSubmission.findAll({

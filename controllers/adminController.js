@@ -23,8 +23,10 @@ const {
   generateEditFormHtml,
   generateSuccessHtml,
   generateErrorHtml,
+  generateAdminImportSessionsHtml,
   escapeHtml,
 } = require("../templates");
+const { parseBatchSessions } = require("../scripts/import_sessions");
 const requireLogin = require("../middleware/auth");
 
 exports.dashboard = async (req, res) => {
@@ -436,3 +438,27 @@ exports.dangerResetHistory = async (req, res) => {
     res.status(500).send(error.message);
   }
 };
+
+exports.showImportSessions = (req, res) => {
+  res.send(generateAdminImportSessionsHtml());
+};
+
+exports.processImportSessions = async (req, res) => {
+  try {
+    const rawText = req.body.raw_text;
+    if (!rawText || !rawText.trim()) {
+      return res.send(generateAdminImportSessionsHtml({ error: "No text provided. Please paste session data." }));
+    }
+
+    const result = await parseBatchSessions(rawText);
+    if (!result || result.totalSessions === 0) {
+      return res.send(generateAdminImportSessionsHtml({ error: "No valid dates found in the text. Make sure dates are formatted as DD/MM/YYYY or 'Bhajan Plan – YYYY-MM-DD'." }));
+    }
+
+    res.send(generateAdminImportSessionsHtml(result));
+  } catch (error) {
+    res.send(generateAdminImportSessionsHtml({ error: error.message }));
+  }
+};
+
+

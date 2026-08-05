@@ -105,7 +105,8 @@ body {
 
 /* Prevent horizontal overflow (fixes screen shifting right on mobile when
    bhajan detail form appears after deity selection) */
-html, body {
+html,
+body {
   overflow-x: hidden;
   max-width: 100%;
 }
@@ -129,11 +130,21 @@ a {
 /* Mobile / future app-shell hardening ---------------------------------- */
 /* iOS Safari auto-zooms on focus for any input under 16px — keep every
    text input at 16px so forms don't jump around on phones. */
-input, select, textarea, button {
+input,
+select,
+textarea,
+button {
   font-size: 16px;
 }
 
-button, .btn, .button, a, .table-btn, .page-btn, .calendar-day, .menu-card {
+button,
+.btn,
+.button,
+a,
+.table-btn,
+.page-btn,
+.calendar-day,
+.menu-card {
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
 }
@@ -156,7 +167,10 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -173,7 +187,10 @@ body {
   outline-offset: 2px;
 }
 
-h1, h2, h3, h4 {
+h1,
+h2,
+h3,
+h4 {
   font-family: var(--font-display);
   color: var(--ink);
   font-weight: 600;
@@ -205,8 +222,13 @@ h1, h2, h3, h4 {
   }
 }
 
-.container-lg { max-width: 980px; }
-.container-xl { max-width: 1180px; }
+.container-lg {
+  max-width: 980px;
+}
+
+.container-xl {
+  max-width: 1180px;
+}
 
 /* container-xl (used on master bank / browse pages) must allow dropdowns to
    escape the container boundary without being clipped */
@@ -222,8 +244,15 @@ h1, h2, h3, h4 {
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(14px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ==========================================================================
@@ -305,7 +334,10 @@ h1, h2, h3, h4 {
 }
 
 @media (max-width: 600px) {
-  .header { padding: 26px 18px 22px; }
+  .header {
+    padding: 26px 18px 22px;
+  }
+
   .home-btn {
     position: relative;
     top: auto;
@@ -313,7 +345,10 @@ h1, h2, h3, h4 {
     margin-bottom: 14px;
     display: inline-flex;
   }
-  .header h1 { font-size: 22px; }
+
+  .header h1 {
+    font-size: 22px;
+  }
 }
 
 /* ==========================================================================
@@ -340,7 +375,9 @@ h1, h2, h3, h4 {
   position: relative;
 }
 
-.tab:hover { color: var(--ink-soft); }
+.tab:hover {
+  color: var(--ink-soft);
+}
 
 .tab.active {
   color: var(--maroon);
@@ -365,14 +402,25 @@ h1, h2, h3, h4 {
 }
 
 @media (max-width: 600px) {
-  .tab-content { padding: 20px 16px; }
+  .tab-content {
+    padding: 20px 16px;
+  }
 }
 
-.tab-content.active { display: block; }
+.tab-content.active {
+  display: block;
+}
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ==========================================================================
@@ -414,7 +462,9 @@ h1, h2, h3, h4 {
    FORMS
    ========================================================================== */
 
-.form-group { margin-bottom: 18px; }
+.form-group {
+  margin-bottom: 18px;
+}
 
 .form-row {
   display: flex;
@@ -423,7 +473,7 @@ h1, h2, h3, h4 {
   margin-bottom: 16px;
 }
 
-.form-row > .form-group {
+.form-row>.form-group {
   flex: 1 1 220px;
   margin-bottom: 0;
 }
@@ -459,7 +509,9 @@ h1, h2, h3, h4 {
 }
 
 .bhajan-autocomplete,
-.singer-autocomplete { position: relative; }
+.singer-autocomplete {
+  position: relative;
+}
 
 .bhajan-suggestions {
   display: none;
@@ -476,7 +528,9 @@ h1, h2, h3, h4 {
   box-shadow: 0 10px 24px rgba(56, 44, 31, 0.15);
 }
 
-.bhajan-suggestions.show { display: block; }
+.bhajan-suggestions.show {
+  display: block;
+}
 
 .bhajan-suggestion {
   width: 100%;
@@ -492,11 +546,19 @@ h1, h2, h3, h4 {
   cursor: pointer;
 }
 
-.bhajan-suggestion:last-child { border-bottom: 0; }
-.bhajan-suggestion:hover,
-.bhajan-suggestion.active { background: var(--saffron-bg); color: var(--clay); }
+.bhajan-suggestion:last-child {
+  border-bottom: 0;
+}
 
-.required { color: var(--clay); }
+.bhajan-suggestion:hover,
+.bhajan-suggestion.active {
+  background: var(--saffron-bg);
+  color: var(--clay);
+}
+
+.required {
+  color: var(--clay);
+}
 
 /* ==========================================================================
    DEITY SELECTION GRID
@@ -508,7 +570,9 @@ h1, h2, h3, h4 {
   margin-bottom: 20px;
 }
 
-.deity-grid.ganesha-row { grid-template-columns: 1fr; }
+.deity-grid.ganesha-row {
+  grid-template-columns: 1fr;
+}
 
 @media (min-width: 600px) {
   .deity-grid.ganesha-row {
@@ -614,15 +678,45 @@ h1, h2, h3, h4 {
   text-transform: uppercase;
 }
 
-.badge-available { background: #f1eee6; color: var(--muted); }
-.badge-taken { background: var(--sage); color: #fff; }
-.badge-optional { background: var(--gold-bg); color: #8a6a12; }
+.badge-available {
+  background: #f1eee6;
+  color: var(--muted);
+}
 
-.badge-purple { background: #ede7f6; color: #5a3a99; }
-.badge-blue { background: var(--sky-bg); color: var(--sky); }
-.badge-green { background: var(--sage-bg); color: var(--sage); }
-.badge-red { background: var(--clay-bg); color: var(--clay); }
-.badge-gray { background: #f1eee6; color: var(--muted); }
+.badge-taken {
+  background: var(--sage);
+  color: #fff;
+}
+
+.badge-optional {
+  background: var(--gold-bg);
+  color: #8a6a12;
+}
+
+.badge-purple {
+  background: #ede7f6;
+  color: #5a3a99;
+}
+
+.badge-blue {
+  background: var(--sky-bg);
+  color: var(--sky);
+}
+
+.badge-green {
+  background: var(--sage-bg);
+  color: var(--sage);
+}
+
+.badge-red {
+  background: var(--clay-bg);
+  color: var(--clay);
+}
+
+.badge-gray {
+  background: #f1eee6;
+  color: var(--muted);
+}
 
 /* ==========================================================================
    MODAL
@@ -663,7 +757,10 @@ h1, h2, h3, h4 {
   padding-bottom: 14px;
 }
 
-.modal-header h2, .modal-header h3 { font-size: 18px; }
+.modal-header h2,
+.modal-header h3 {
+  font-size: 18px;
+}
 
 .close-btn {
   background: var(--paper);
@@ -677,7 +774,10 @@ h1, h2, h3, h4 {
   transition: background 0.2s var(--ease);
 }
 
-.close-btn:hover { background: var(--border-soft); color: var(--ink); }
+.close-btn:hover {
+  background: var(--border-soft);
+  color: var(--ink);
+}
 
 .detail-row {
   margin: 12px 0;
@@ -728,15 +828,18 @@ h1, h2, h3, h4 {
   .bhajan-details {
     padding: 16px 14px;
   }
+
   .bhajan-details .form-row {
     flex-direction: column;
     gap: 0;
   }
-  .bhajan-details .form-row > .form-group {
+
+  .bhajan-details .form-row>.form-group {
     flex: 1 1 auto;
     min-width: 0;
     margin-bottom: 14px;
   }
+
   /* Keep suggestions dropdown within the viewport */
   .bhajan-suggestions {
     left: 0;
@@ -754,19 +857,38 @@ h1, h2, h3, h4 {
   border-radius: var(--radius);
 }
 
-.submitted-bhajans-heading h3 { font-size: 18px; margin: 0 0 4px; }
+.submitted-bhajans-heading h3 {
+  font-size: 18px;
+  margin: 0 0 4px;
+}
+
 .submitted-bhajans-heading p,
-.submitted-bhajans-empty { margin: 0; color: var(--muted); font-size: 13px; }
-.submitted-bhajans .table-container { margin-top: 16px; }
-.submitted-bhajans table { min-width: 520px; }
+.submitted-bhajans-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.submitted-bhajans .table-container {
+  margin-top: 16px;
+}
+
+.submitted-bhajans table {
+  min-width: 520px;
+}
+
 .submitted-bhajans th,
-.submitted-bhajans td { padding: 10px 12px; font-size: 13px; }
+.submitted-bhajans td {
+  padding: 10px 12px;
+  font-size: 13px;
+}
 
 /* On mobile, submitted-bhajans stays as a scrollable TABLE (not cards) */
 @media (max-width: 768px) {
   .submitted-bhajans {
     padding: 14px 12px;
   }
+
   .submitted-bhajans .table-container {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -774,6 +896,7 @@ h1, h2, h3, h4 {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
+
   /* Override the generic card layout for THIS section only */
   .submitted-bhajans table,
   .submitted-bhajans thead,
@@ -783,9 +906,11 @@ h1, h2, h3, h4 {
   .submitted-bhajans tr {
     display: revert;
   }
+
   .submitted-bhajans thead tr {
     position: static;
   }
+
   .submitted-bhajans td {
     border-bottom: 1px solid var(--border-soft);
     padding: 9px 10px;
@@ -794,9 +919,11 @@ h1, h2, h3, h4 {
     display: table-cell;
     justify-content: unset;
   }
+
   .submitted-bhajans td:before {
     display: none;
   }
+
   .submitted-bhajans td[data-label="#"] {
     padding-left: 10px;
     font-size: 13px;
@@ -805,6 +932,7 @@ h1, h2, h3, h4 {
     margin-bottom: 0;
     justify-content: unset;
   }
+
   .submitted-bhajans tr {
     background: transparent;
     border-radius: 0;
@@ -816,9 +944,56 @@ h1, h2, h3, h4 {
   }
 }
 
+/* History page: spacing between session sections */
+.history-session + .history-session {
+  margin-top: 24px;
+}
+
+/* History page: date filter bar */
+.history-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 14px 20px;
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 20px;
+}
+
+.history-filter-bar label {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.history-filter-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.history-filter-bar .filter-input {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 14px;
+  width: auto;
+}
+
 @keyframes slideDown {
-  from { opacity: 0; transform: translateY(-14px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .submit-btn {
@@ -883,14 +1058,26 @@ td {
   vertical-align: middle;
 }
 
-tr:last-child td { border-bottom: none; }
+tr:last-child td {
+  border-bottom: none;
+}
 
-tr:hover td { background-color: var(--paper); }
+tr:hover td {
+  background-color: var(--paper);
+}
 
-.highlight-recent td { background-color: var(--gold-bg) !important; }
-.highlight-recent:hover td { background-color: #f8e6b8 !important; }
+.highlight-recent td {
+  background-color: var(--gold-bg) !important;
+}
 
-#masterBankTable th, #masterBankTable td { text-align: center; }
+.highlight-recent:hover td {
+  background-color: #f8e6b8 !important;
+}
+
+#masterBankTable th,
+#masterBankTable td {
+  text-align: center;
+}
 
 .deity-pill {
   display: inline-block;
@@ -909,34 +1096,64 @@ tr:hover td { background-color: var(--paper); }
    These use the data-deity attribute set on tr elements. */
 
 /* Ganesha — warm saffron */
-tr[data-deity="ganesha"] .deity-pill { background: #FFF3E0; color: #E65100; }
+tr[data-deity="ganesha"] .deity-pill {
+  background: #FFF3E0;
+  color: #E65100;
+}
 
 /* Guru — deep violet */
-tr[data-deity="guru"] .deity-pill { background: #EDE7F6; color: #5E35B1; }
+tr[data-deity="guru"] .deity-pill {
+  background: #EDE7F6;
+  color: #5E35B1;
+}
 
 /* Mata / Devi — rose pink */
-tr[data-deity="mata"] .deity-pill { background: #FCE4EC; color: #C62828; }
+tr[data-deity="mata"] .deity-pill {
+  background: #FCE4EC;
+  color: #C62828;
+}
 
 /* SarvaDharma — teal */
-tr[data-deity="sarvadharma"] .deity-pill { background: #E0F2F1; color: #00796B; }
+tr[data-deity="sarvadharma"] .deity-pill {
+  background: #E0F2F1;
+  color: #00796B;
+}
 
 /* Sai — rich maroon */
-tr[data-deity="sai"] .deity-pill { background: var(--clay-bg); color: var(--maroon); }
+tr[data-deity="sai"] .deity-pill {
+  background: var(--clay-bg);
+  color: var(--maroon);
+}
 
 /* Shiva — cool blue */
-tr[data-deity="shiva"] .deity-pill { background: #E3F2FD; color: #1565C0; }
+tr[data-deity="shiva"] .deity-pill {
+  background: #E3F2FD;
+  color: #1565C0;
+}
 
 /* Krishna — indigo */
-tr[data-deity="krishna"] .deity-pill { background: #E8EAF6; color: #283593; }
+tr[data-deity="krishna"] .deity-pill {
+  background: #E8EAF6;
+  color: #283593;
+}
 
 /* Rama — sage green */
-tr[data-deity="rama"] .deity-pill { background: var(--sage-bg); color: var(--sage); }
+tr[data-deity="rama"] .deity-pill {
+  background: var(--sage-bg);
+  color: var(--sage);
+}
 
 /* Vitthala — earthy amber */
-tr[data-deity="vitthala"] .deity-pill { background: #FFF8E1; color: #F57F17; }
+tr[data-deity="vitthala"] .deity-pill {
+  background: #FFF8E1;
+  color: #F57F17;
+}
 
 /* Hanuman — burnt orange */
-tr[data-deity="hanuman"] .deity-pill { background: #FBE9E7; color: #D84315; }
+tr[data-deity="hanuman"] .deity-pill {
+  background: #FBE9E7;
+  color: #D84315;
+}
 
 /* Responsive table → card layout */
 @media (max-width: 768px) {
@@ -947,9 +1164,20 @@ tr[data-deity="hanuman"] .deity-pill { background: #FBE9E7; color: #D84315; }
     overflow: visible;
   }
 
-  table, thead, tbody, th, td, tr { display: block; }
+  table,
+  thead,
+  tbody,
+  th,
+  td,
+  tr {
+    display: block;
+  }
 
-  thead tr { position: absolute; top: -9999px; left: -9999px; }
+  thead tr {
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+  }
 
   tr {
     background: var(--surface);
@@ -994,7 +1222,9 @@ tr[data-deity="hanuman"] .deity-pill { background: #FBE9E7; color: #D84315; }
     padding-left: 0;
   }
 
-  td[data-label="#"]:before { display: none; }
+  td[data-label="#"]:before {
+    display: none;
+  }
 
   /* ── Master Bank: modern compact card override ─────────────── */
 
@@ -1027,7 +1257,9 @@ tr[data-deity="hanuman"] .deity-pill { background: #FBE9E7; color: #D84315; }
     border-left: 4px solid var(--saffron);
   }
 
-  .bank-table td[data-label="Title"]:before { display: none; }
+  .bank-table td[data-label="Title"]:before {
+    display: none;
+  }
 
   /* Deity cell — colored pill right under title */
   .bank-table td[data-label="Deity"] {
@@ -1040,7 +1272,9 @@ tr[data-deity="hanuman"] .deity-pill { background: #FBE9E7; color: #D84315; }
     border-bottom: 1px solid var(--border-soft);
   }
 
-  .bank-table td[data-label="Deity"]:before { display: none; }
+  .bank-table td[data-label="Deity"]:before {
+    display: none;
+  }
 
   /* Key detail cells — compact 2-column grid */
   .bank-table td[data-label="Tempo"],
@@ -1099,51 +1333,75 @@ tr[data-deity="hanuman"] .deity-pill { background: #FBE9E7; color: #D84315; }
     border-bottom: none;
   }
 
-  .bank-table td[data-label="Actions"]:before { display: none; }
+  .bank-table td[data-label="Actions"]:before {
+    display: none;
+  }
 
   /* ── Deity-specific card accent borders ─────────────────────── */
   .bank-table tr[data-deity="ganesha"] td[data-label="Title"],
-  .bank-table tr[data-deity="ganesha"] td[data-label="Deity"] { border-left-color: #E65100; }
+  .bank-table tr[data-deity="ganesha"] td[data-label="Deity"] {
+    border-left-color: #E65100;
+  }
 
   .bank-table tr[data-deity="guru"] td[data-label="Title"],
-  .bank-table tr[data-deity="guru"] td[data-label="Deity"] { border-left-color: #5E35B1; }
+  .bank-table tr[data-deity="guru"] td[data-label="Deity"] {
+    border-left-color: #5E35B1;
+  }
 
   .bank-table tr[data-deity="mata"] td[data-label="Title"],
-  .bank-table tr[data-deity="mata"] td[data-label="Deity"] { border-left-color: #C62828; }
+  .bank-table tr[data-deity="mata"] td[data-label="Deity"] {
+    border-left-color: #C62828;
+  }
 
   .bank-table tr[data-deity="sarvadharma"] td[data-label="Title"],
-  .bank-table tr[data-deity="sarvadharma"] td[data-label="Deity"] { border-left-color: #00796B; }
+  .bank-table tr[data-deity="sarvadharma"] td[data-label="Deity"] {
+    border-left-color: #00796B;
+  }
 
   .bank-table tr[data-deity="sai"] td[data-label="Title"],
-  .bank-table tr[data-deity="sai"] td[data-label="Deity"] { border-left-color: var(--maroon); }
+  .bank-table tr[data-deity="sai"] td[data-label="Deity"] {
+    border-left-color: var(--maroon);
+  }
 
   .bank-table tr[data-deity="shiva"] td[data-label="Title"],
-  .bank-table tr[data-deity="shiva"] td[data-label="Deity"] { border-left-color: #1565C0; }
+  .bank-table tr[data-deity="shiva"] td[data-label="Deity"] {
+    border-left-color: #1565C0;
+  }
 
   .bank-table tr[data-deity="krishna"] td[data-label="Title"],
-  .bank-table tr[data-deity="krishna"] td[data-label="Deity"] { border-left-color: #283593; }
+  .bank-table tr[data-deity="krishna"] td[data-label="Deity"] {
+    border-left-color: #283593;
+  }
 
   .bank-table tr[data-deity="rama"] td[data-label="Title"],
-  .bank-table tr[data-deity="rama"] td[data-label="Deity"] { border-left-color: var(--sage); }
+  .bank-table tr[data-deity="rama"] td[data-label="Deity"] {
+    border-left-color: var(--sage);
+  }
 
   .bank-table tr[data-deity="vitthala"] td[data-label="Title"],
-  .bank-table tr[data-deity="vitthala"] td[data-label="Deity"] { border-left-color: #F57F17; }
+  .bank-table tr[data-deity="vitthala"] td[data-label="Deity"] {
+    border-left-color: #F57F17;
+  }
 
   .bank-table tr[data-deity="hanuman"] td[data-label="Title"],
-  .bank-table tr[data-deity="hanuman"] td[data-label="Deity"] { border-left-color: #D84315; }
+  .bank-table tr[data-deity="hanuman"] td[data-label="Deity"] {
+    border-left-color: #D84315;
+  }
 }
 
 /* ==========================================================================
    ALERTS / ERROR / SUCCESS
    ========================================================================== */
 
-.error-icon, .success-icon {
+.error-icon,
+.success-icon {
   font-size: 56px;
   margin-bottom: 14px;
   text-align: center;
 }
 
-.info-box, .details-box {
+.info-box,
+.details-box {
   background: var(--clay-bg);
   border: 1px solid rgba(178, 59, 50, 0.18);
   border-radius: var(--radius-lg);
@@ -1201,10 +1459,23 @@ tr[data-deity="hanuman"] .deity-pill { background: #FBE9E7; color: #D84315; }
    ========================================================================== */
 
 @media (max-width: 600px) {
-  .deity-card.optional { grid-column: span 2; }
-  .calendar-grid { grid-template-columns: repeat(1, 1fr); }
-  .calendar-day { min-height: auto; flex-direction: row; align-items: center; }
-  .calendar-day-header { display: none; }
+  .deity-card.optional {
+    grid-column: span 2;
+  }
+
+  .calendar-grid {
+    grid-template-columns: repeat(1, 1fr);
+  }
+
+  .calendar-day {
+    min-height: auto;
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .calendar-day-header {
+    display: none;
+  }
 }
 
 /* ==========================================================================
@@ -1232,7 +1503,10 @@ tr[data-deity="hanuman"] .deity-pill { background: #FBE9E7; color: #D84315; }
   transition: background 0.2s var(--ease), color 0.2s var(--ease);
 }
 
-.calendar-nav-btn:hover { background: var(--saffron-bg); color: var(--saffron-dk); }
+.calendar-nav-btn:hover {
+  background: var(--saffron-bg);
+  color: var(--saffron-dk);
+}
 
 .calendar-title {
   font-family: var(--font-display);
@@ -1281,13 +1555,37 @@ tr[data-deity="hanuman"] .deity-pill { background: #FBE9E7; color: #D84315; }
   border: 1px solid rgba(34, 30, 42, 0.08);
 }
 
-.legend-color.day-none { background: #f1eee6; }
-.legend-color.day-thursday { background: #ece3f4; }
-.legend-color.day-thursday-upcoming { background: #e8def7; border-color: #bda6db; }
-.legend-color.day-thursday-missed { background: #fbe1df; border-color: #d99a96; }
-.legend-color.day-festival { background: var(--gold-bg); }
-.legend-color.day-special { background: var(--sky-bg); border: 1px solid rgba(46, 111, 134, 0.3); }
-.legend-color.day-festival-perm { background: #fbe6cd; border: 1px solid #e8b872; }
+.legend-color.day-none {
+  background: #f1eee6;
+}
+
+.legend-color.day-thursday {
+  background: #ece3f4;
+}
+
+.legend-color.day-thursday-upcoming {
+  background: #e8def7;
+  border-color: #bda6db;
+}
+
+.legend-color.day-thursday-missed {
+  background: #fbe1df;
+  border-color: #d99a96;
+}
+
+.legend-color.day-festival {
+  background: var(--gold-bg);
+}
+
+.legend-color.day-special {
+  background: var(--sky-bg);
+  border: 1px solid rgba(46, 111, 134, 0.3);
+}
+
+.legend-color.day-festival-perm {
+  background: #fbe6cd;
+  border: 1px solid #e8b872;
+}
 
 .calendar-day {
   background: var(--surface);
@@ -1317,15 +1615,50 @@ tr[data-deity="hanuman"] .deity-pill { background: #FBE9E7; color: #D84315; }
   pointer-events: none;
 }
 
-.calendar-day.today { border: 2px solid var(--saffron); }
+.calendar-day.today {
+  border: 2px solid var(--saffron);
+}
 
-.calendar-day.day-none { background: var(--paper); color: var(--muted); }
-.calendar-day.day-thursday { background: #f4eefb; border-color: #d9c3ec; color: #5f3dc4; }
-.calendar-day.day-thursday-upcoming { background: #f1eafa; border-color: #c4addf; color: #68429b; }
-.calendar-day.day-thursday-missed { background: #fce9e7; border-color: #dc9d98; color: #a13e37; }
-.calendar-day.day-festival { background: var(--gold-bg); border-color: #e8c876; color: #8a6a12; }
-.calendar-day.day-special { background: var(--sky-bg); border-color: #a9cbd6; color: var(--sky); }
-.calendar-day.day-festival-perm { background: #fdeed7; border-color: #eec085; color: #a15c15; }
+.calendar-day.day-none {
+  background: var(--paper);
+  color: var(--muted);
+}
+
+.calendar-day.day-thursday {
+  background: #f4eefb;
+  border-color: #d9c3ec;
+  color: #5f3dc4;
+}
+
+.calendar-day.day-thursday-upcoming {
+  background: #f1eafa;
+  border-color: #c4addf;
+  color: #68429b;
+}
+
+.calendar-day.day-thursday-missed {
+  background: #fce9e7;
+  border-color: #dc9d98;
+  color: #a13e37;
+}
+
+.calendar-day.day-festival {
+  background: var(--gold-bg);
+  border-color: #e8c876;
+  color: #8a6a12;
+}
+
+.calendar-day.day-special {
+  background: var(--sky-bg);
+  border-color: #a9cbd6;
+  color: var(--sky);
+}
+
+.calendar-day.day-festival-perm {
+  background: #fdeed7;
+  border-color: #eec085;
+  color: #a15c15;
+}
 
 .calendar-date-num {
   font-weight: 700;
@@ -1379,14 +1712,32 @@ tr[data-deity="hanuman"] .deity-pill { background: #FBE9E7; color: #D84315; }
   box-shadow: var(--shadow-sm);
 }
 
-.dashboard-btn:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
+.dashboard-btn:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow);
+}
 
-.singer-btn { background: var(--sky); }
-.db-btn { background: var(--sage); }
-.admin-btn { background: var(--maroon); }
+.singer-btn {
+  background: var(--sky);
+}
 
-.btn-icon { font-size: 34px; margin-bottom: 8px; }
-.btn-text { font-size: 16px; font-weight: 700; }
+.db-btn {
+  background: var(--sage);
+}
+
+.admin-btn {
+  background: var(--maroon);
+}
+
+.btn-icon {
+  font-size: 34px;
+  margin-bottom: 8px;
+}
+
+.btn-text {
+  font-size: 16px;
+  font-weight: 700;
+}
 
 /* ==========================================================================
    FILTER INPUT
@@ -1412,6 +1763,7 @@ tr[data-deity="hanuman"] .deity-pill { background: #FBE9E7; color: #D84315; }
 }
 
 @media (max-width: 768px) {
+
   .filter-input,
   input.search-box {
     font-size: 16px;
@@ -1554,25 +1906,50 @@ tr[data-deity="hanuman"] .deity-pill { background: #FBE9E7; color: #D84315; }
 }
 
 @media (max-width: 700px) {
-  .page-toolbar { flex-direction: column; }
-  .toolbar-actions { width: 100%; }
-  .toolbar-actions .button { flex: 1; }
+  .page-toolbar {
+    flex-direction: column;
+  }
+
+  .toolbar-actions {
+    width: 100%;
+  }
+
+  .toolbar-actions .button {
+    flex: 1;
+  }
+
   .filter-bar {
     flex-wrap: nowrap;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
   }
-  .filter-bar::-webkit-scrollbar { display: none; }
-  .filter-chip { flex-shrink: 0; }
+
+  .filter-bar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .filter-chip {
+    flex-shrink: 0;
+  }
 }
 
-.bank-body { padding: 24px 28px 0; }
-.bank-table { margin: 0 28px 28px; }
+.bank-body {
+  padding: 24px 28px 0;
+}
+
+.bank-table {
+  margin: 0 28px 28px;
+}
 
 @media (max-width: 600px) {
-  .bank-body { padding: 16px 16px 0; }
-  .bank-table { margin: 0 16px 20px; }
+  .bank-body {
+    padding: 16px 16px 0;
+  }
+
+  .bank-table {
+    margin: 0 16px 20px;
+  }
 }
 
 /* ==========================================================================
@@ -1599,7 +1976,9 @@ tr[data-deity="hanuman"] .deity-pill { background: #FBE9E7; color: #D84315; }
 }
 
 @media (max-width: 600px) {
-  .dashboard-container { padding: 24px 18px; }
+  .dashboard-container {
+    padding: 24px 18px;
+  }
 }
 
 .hero-banner {
@@ -1616,7 +1995,9 @@ tr[data-deity="hanuman"] .deity-pill { background: #FBE9E7; color: #D84315; }
 }
 
 @media (max-width: 600px) {
-  .hero-banner { flex-direction: column; }
+  .hero-banner {
+    flex-direction: column;
+  }
 }
 
 .hero-image {
@@ -1628,7 +2009,9 @@ tr[data-deity="hanuman"] .deity-pill { background: #FBE9E7; color: #D84315; }
   box-shadow: var(--shadow-sm);
 }
 
-.hero-text { flex: 1; }
+.hero-text {
+  flex: 1;
+}
 
 .hero-subtitle {
   font-size: 12.5px;
@@ -1684,10 +2067,22 @@ tr[data-deity="hanuman"] .deity-pill { background: #FBE9E7; color: #D84315; }
 }
 
 @media (max-width: 600px) {
-  .dashboard-title { font-size: 30px; }
-  .dashboard-subtitle { font-size: 11px; letter-spacing: 2px; }
-  .quote-header { font-size: 17px; }
-  .quote-text-para { font-size: 13.5px; }
+  .dashboard-title {
+    font-size: 30px;
+  }
+
+  .dashboard-subtitle {
+    font-size: 11px;
+    letter-spacing: 2px;
+  }
+
+  .quote-header {
+    font-size: 17px;
+  }
+
+  .quote-text-para {
+    font-size: 13.5px;
+  }
 }
 
 .sai-quote-card {
@@ -1701,7 +2096,11 @@ tr[data-deity="hanuman"] .deity-pill { background: #FBE9E7; color: #D84315; }
   color: var(--ink-soft);
 }
 
-.om-symbol { font-size: 22px; margin-bottom: 10px; color: var(--saffron); }
+.om-symbol {
+  font-size: 22px;
+  margin-bottom: 10px;
+  color: var(--saffron);
+}
 
 .quote-text {
   font-style: italic;
@@ -1743,10 +2142,21 @@ tr[data-deity="hanuman"] .deity-pill { background: #FBE9E7; color: #D84315; }
   border-color: var(--saffron);
 }
 
-.card-pink .card-icon { color: var(--maroon); }
-.card-blue .card-icon { color: var(--sky); }
-.card-yellow .card-icon { color: var(--saffron-dk); }
-.card-green .card-icon { color: var(--sage); }
+.card-pink .card-icon {
+  color: var(--maroon);
+}
+
+.card-blue .card-icon {
+  color: var(--sky);
+}
+
+.card-yellow .card-icon {
+  color: var(--saffron-dk);
+}
+
+.card-green .card-icon {
+  color: var(--sage);
+}
 
 .card-icon {
   font-size: 28px;
@@ -1792,7 +2202,9 @@ tr[data-deity="hanuman"] .deity-pill { background: #FBE9E7; color: #D84315; }
   font-weight: 500;
 }
 
-.peace { font-size: 11px; }
+.peace {
+  font-size: 11px;
+}
 
 /* ==========================================================================
    SUPER ADMIN CONTROL CARDS (simple)
@@ -1827,8 +2239,16 @@ tr[data-deity="hanuman"] .deity-pill { background: #FBE9E7; color: #D84315; }
 }
 
 @media (max-width: 520px) {
-  .admin-dashboard-actions { grid-template-columns: 1fr 1fr; gap: 9px; }
-  .admin-dashboard-actions .button { min-height: 48px; padding: 9px 10px; font-size: 12px; }
+  .admin-dashboard-actions {
+    grid-template-columns: 1fr 1fr;
+    gap: 9px;
+  }
+
+  .admin-dashboard-actions .button {
+    min-height: 48px;
+    padding: 9px 10px;
+    font-size: 12px;
+  }
 }
 
 .admin-control-grid .admin-card {
@@ -1866,7 +2286,9 @@ tr[data-deity="hanuman"] .deity-pill { background: #FBE9E7; color: #D84315; }
   background: var(--clay-bg);
 }
 
-.admin-control-grid .admin-card.danger h3 { color: var(--clay); }
+.admin-control-grid .admin-card.danger h3 {
+  color: var(--clay);
+}
 
 /* ==========================================================================
    ADMIN USERS PAGE
@@ -1933,7 +2355,11 @@ tr[data-deity="hanuman"] .deity-pill { background: #FBE9E7; color: #D84315; }
   box-shadow: var(--shadow);
 }
 
-.stat-title { color: var(--muted); font-size: 13px; font-weight: 600; }
+.stat-title {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
 
 .stat-value {
   margin-top: 10px;
@@ -1960,9 +2386,16 @@ tr[data-deity="hanuman"] .deity-pill { background: #FBE9E7; color: #D84315; }
   gap: 18px;
 }
 
-.table-header h2 { margin: 0; font-size: 20px; }
+.table-header h2 {
+  margin: 0;
+  font-size: 20px;
+}
 
-.table-header p { margin-top: 4px; color: var(--muted); font-size: 13px; }
+.table-header p {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 13px;
+}
 
 input.search-box {
   width: 260px;
@@ -1979,7 +2412,9 @@ input.search-box {
   border-collapse: collapse;
 }
 
-.admin-users-wrapper .admin-table thead { background: var(--paper); }
+.admin-users-wrapper .admin-table thead {
+  background: var(--paper);
+}
 
 .admin-users-wrapper .admin-table th {
   padding: 16px 20px;
@@ -1999,9 +2434,15 @@ input.search-box {
   color: var(--ink-soft);
 }
 
-.admin-users-wrapper .admin-table tbody tr:hover { background: var(--paper); }
+.admin-users-wrapper .admin-table tbody tr:hover {
+  background: var(--paper);
+}
 
-.admin-user { display: flex; align-items: center; gap: 13px; }
+.admin-user {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
 
 .admin-avatar {
   width: 42px;
@@ -2017,9 +2458,16 @@ input.search-box {
   flex-shrink: 0;
 }
 
-.admin-name { font-weight: 600; color: var(--ink); }
+.admin-name {
+  font-weight: 600;
+  color: var(--ink);
+}
 
-.admin-id { margin-top: 3px; font-size: 12px; color: var(--muted); }
+.admin-id {
+  margin-top: 3px;
+  font-size: 12px;
+  color: var(--muted);
+}
 
 .admin-table code {
   background: var(--paper);
@@ -2037,7 +2485,9 @@ input.search-box {
   flex-wrap: wrap;
 }
 
-.table-actions form { margin: 0; }
+.table-actions form {
+  margin: 0;
+}
 
 .table-btn {
   display: inline-flex;
@@ -2055,13 +2505,34 @@ input.search-box {
   transition: background 0.2s var(--ease), border-color 0.2s var(--ease);
 }
 
-.table-btn:hover { background: var(--paper); border-color: var(--saffron); color: var(--saffron-dk); }
+.table-btn:hover {
+  background: var(--paper);
+  border-color: var(--saffron);
+  color: var(--saffron-dk);
+}
 
-.actions-column { text-align: right; }
+.actions-column {
+  text-align: right;
+}
 
 @media (max-width: 950px) {
-  .page-header { flex-direction: column; align-items: flex-start; }
-  .table-header { flex-direction: column; align-items: flex-start; }
-  input.search-box { width: 100%; }
-  .admin-users-wrapper .admin-table { display: block; overflow-x: auto; white-space: nowrap; }
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .table-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  input.search-box {
+    width: 100%;
+  }
+
+  .admin-users-wrapper .admin-table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
 }
