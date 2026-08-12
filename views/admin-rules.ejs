@@ -1,0 +1,36 @@
+<div class="container container-lg">
+  <div class="header">
+    <h1><%= date === 'default' ? '⚙️ Default Deity Rules' : `⚙️ Rules for ${date}` %></h1>
+    <p><%= date === 'default' ? 'Set base limits for all future sessions' : 'Set custom limits for this specific session' %></p>
+  </div>
+  <div style="margin-bottom: 20px;">
+    <a href="<%= date === 'default' ? '/admin' : `/admin/date/${date}` %>" class="button secondary">⬅️ Go Back</a>
+  </div>
+  <input type="hidden" id="ruleDate" value="<%= date %>">
+  <div class="table-container">
+    <table id="rulesTable">
+      <thead>
+        <tr>
+          <th>Deity</th>
+          <th>Min Required</th>
+          <th>Max Allowed <br><small style="font-weight:normal">(0 = Blocked)</small></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% rules.forEach(r => { %>
+          <tr>
+            <td>
+              <strong><%= r.deity_name %></strong>
+              <input type="hidden" class="rule-deity" value="<%= r.deity_name %>">
+            </td>
+            <td><input type="number" class="rule-min filter-input" value="<%= r.min_required %>" min="0" max="9" style="width:80px; text-align:center;"></td>
+            <td><input type="number" class="rule-max filter-input" value="<%= r.max_allowed %>" min="0" max="99" style="width:80px; text-align:center;"></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <div style="margin-top:20px; text-align:right;">
+    <button class="button" onclick="saveDeityRules()" style="background:#28a745; border:none;">💾 Save Rules</button>
+  </div>
+</div>

@@ -26,9 +26,13 @@ function generateSubmitFormHtml(
   const dateAttr = isAdminBool
     ? ""
     : 'readonly style="cursor:not-allowed; background:#f8f9fa;"';
-  const dateMsg = isAdminBool
-    ? '<span style="color:#e03131; font-weight:bold;">Admin Mode: Select any date</span>'
-    : "This form is for the upcoming Thursday session";
+  const dateNotice = isAdminBool
+    ? `<div style="background:#fff3cd; border:1px solid #ffe066; color:#856404; padding:10px 14px; border-radius:8px; font-size:12.5px; margin-top:8px; line-height:1.5;">
+        🔐 <strong>Admin Mode:</strong> You can select any date and manage bhajans at any time.
+       </div>`
+    : `<div style="background:#e7f5ff; border:1px solid #a5d8ff; color:#1864ab; padding:10px 14px; border-radius:8px; font-size:12.5px; margin-top:8px; line-height:1.5;">
+        ⏰ <strong>Submission Deadline:</strong> Submissions for <strong>${sessionDate}</strong> close on <strong>the night before at 11:59 PM</strong>. At 12:00 AM on the session date, submissions automatically lock and move to the History tab.
+       </div>`;
 
   return `<!DOCTYPE html>
 <html>
@@ -62,9 +66,9 @@ function generateSubmitFormHtml(
       <form method="post" action="/submit-form" id="bhajanForm">
         <input type="hidden" name="admin" value="${isAdminBool}" />
         <div class="form-group">
-          <label>📅 Bhajan Session Date (Thursday)</label>
+          <label>📅 Bhajan Session Date</label>
           <input type="date" name="session_date" value="${sessionDate}" required ${dateAttr} />
-          <div style="font-size:12px; color:#868e96; margin-top:6px;">${dateMsg}</div>
+          ${dateNotice}
         </div>
         
         <div class="bhajan-details" style="display:block; margin-top:0; background: #E1F5FE; border: 2px solid #81D4FA;">
@@ -144,10 +148,18 @@ function generateSubmitFormHtml(
           </div>
           
           <div class="form-row">
-            <div class="form-group" style="flex: 1;">
-               <label>🎵 Scale / Shruti</label>
-               <input type="text" name="scale" id="scaleInput" placeholder="e.g., 1.5P or C#" />
-            </div>
+             <div class="form-group" style="flex: 1;">
+                <label>🎵 Scale / Shruti</label>
+                <input type="text" name="scale" id="scaleInput" placeholder="e.g., 1.5P or C#" />
+                <div id="scaleSuggestionsContainer" style="margin-top:6px; display:flex; flex-direction:column; gap:4px;">
+                  <div id="singerPrevScaleBadge" style="display:none; color:#1971c2; background:#e7f5ff; border:1px solid #a5d8ff; padding:4px 8px; border-radius:6px; font-size:11.5px; font-weight:500;">
+                    👤 <strong>Your Previous Scale:</strong> <span id="singerPrevScaleVal"></span>
+                  </div>
+                  <div id="genderCommonScaleBadge" style="display:none; color:#d9480f; background:#fff4e6; border:1px solid #ffd8a8; padding:4px 8px; border-radius:6px; font-size:11.5px; font-weight:500;">
+                    👥 <strong>Most Common <span id="genderCommonScaleLabel">Male</span> Scale:</strong> <span id="genderCommonScaleVal"></span>
+                  </div>
+                </div>
+             </div>
             <div class="form-group" style="flex: 1;">
                <label>🎼 Raag</label>
                <input type="text" name="raga" id="ragaInput" readonly placeholder="Auto-filled..." style="background-color: #e9ecef; cursor: not-allowed; color: #495057; border: 1px solid #ced4da;" />
@@ -660,8 +672,14 @@ function generateAdminCalendarHtml(
 }
 
 function generateEditFormHtml(s) {
-  return `<!DOCTYPE html><html><head><meta charset="utf-8" /><title>Edit Bhajan</title><meta name="viewport" content="width=device-width, initial-scale=1" /><link rel="stylesheet" href="/css/style.css"></head><body>
-  <div class="container">
+  return `<!DOCTYPE html><html><head><meta charset="utf-8" /><title>Edit Bhajan</title><meta name="viewport" content="width=device-width, initial-scale=1" /><link rel="stylesheet" href="/css/style.css"><link rel="stylesheet" href="/css/admin.css"></head><body class="admin-page">
+  <div class="admin-layout">
+    <div class="main-content">
+    <div class="container">
+    <div style="margin-bottom:20px; display:flex; gap:10px; align-items:center;">
+      <a href="/admin/date/${s.session_date}" class="button secondary">⬅️ Back to Session</a>
+      <a href="/admin" class="button secondary">🏠 Dashboard</a>
+    </div>
     <h2>✏️ Edit Bhajan Entry</h2>
     <form method="post" action="/admin/edit/${s.id}">
       <div class="form-row">
@@ -674,18 +692,23 @@ function generateEditFormHtml(s) {
       </div>
       <div class="form-group"><label>Title</label><input type="text" name="title" value="${escapeHtml(s.title)}" required /></div>
       <div class="form-row">
-      <div class="form-group"><label>Scale</label><input type="text" name="scale" value="${escapeHtml(s.scale || "")}" /></div>
-      <div class="form-group"><label>Speed</label>
-        <select name="speed" required>
-          <option value="slow" ${s.speed === "slow" ? "selected" : ""}>Slow</option>
-          <option value="medium" ${s.speed === "medium" ? "selected" : ""}>Medium</option>
-          <option value="fast" ${s.speed === "fast" ? "selected" : ""}>Fast</option>
-        </select>
+        <div class="form-group"><label>Scale</label><input type="text" name="scale" value="${escapeHtml(s.scale || "")}" /></div>
+        <div class="form-group"><label>Speed</label>
+          <select name="speed" required>
+            <option value="slow" ${s.speed === "slow" ? "selected" : ""}>Slow</option>
+            <option value="medium" ${s.speed === "medium" ? "selected" : ""}>Medium</option>
+            <option value="fast" ${s.speed === "fast" ? "selected" : ""}>Fast</option>
+          </select>
+        </div>
+        <div class="form-group"><label>🎼 Raag</label><input type="text" name="raga" value="${escapeHtml(s.raga || "")}" placeholder="e.g. Yaman Kalyani" /></div>
       </div>
-      </div>
-      <div style="margin-top:20px; display:flex; gap:10px;"><button type="submit" class="button">Save Changes</button><a href="/admin" class="button secondary">Cancel</a></div>
+      <div style="margin-top:20px; display:flex; gap:10px;"><button type="submit" class="button">Save Changes</button><a href="/admin/date/${s.session_date}" class="button secondary">Cancel</a></div>
     </form>
-  </div></body></html>`;
+    </div>
+    </div>
+  </div>
+  <script src="/js/script.js"></script>
+</body></html>`;
 }
 
 function generateAdminRulesHtml(rules, date) {

@@ -118,6 +118,7 @@
             <th onclick="sortTable(6, 'masterBankTable')" style="cursor:pointer;" title="Click to sort">Scale (Female) ↕</th>
             <th onclick="sortTable(7, 'masterBankTable')" style="cursor:pointer;" title="Click to sort">West (F) ↕</th>
             <th onclick="sortTable(8, 'masterBankTable')" style="cursor:pointer;" title="Click to sort">Level ↕</th>
+            <th onclick="sortTable(9, 'masterBankTable')" style="cursor:pointer;" title="Click to sort">Language ↕</th>
             <% if (isAdmin) { %><th>Actions</th><% } %>
           </tr>
         </thead>
@@ -134,6 +135,7 @@
                 <td data-label="Scale (F)" class="<%= isAdmin ? 'edit-cell' : '' %>" data-field="shruti_female"><%= b.shruti_female || '-' %></td>
                 <td data-label="West (F)" id="west-f-<%= b.id %>" style="color:#8b8394; font-weight:600;"><%= getWesternScale(b.shruti_female) %></td>
                 <td data-label="Level" class="<%= isAdmin ? 'edit-cell' : '' %>" data-field="level"><%= b.level || '-' %></td>
+                <td data-label="Language" class="<%= isAdmin ? 'edit-cell' : '' %>" data-field="language"><%= b.language || '-' %></td>
                 <% if (isAdmin) { %>
                   <td data-label="Actions" class="action-cell" style="white-space: nowrap;">
                     <button class="button" style="padding:6px 12px; font-size:12px; background:#2e6f86; border:none; margin-right:4px;" onclick="editMasterRow(<%= b.id %>)">✏️ Edit</button>
@@ -143,7 +145,7 @@
               </tr>
             <% }) %>
           <% } else { %>
-            <tr><td colspan="<%= isAdmin ? 10 : 9 %>" style="text-align:center;">No master bhajans found.</td></tr>
+            <tr><td colspan="<%= isAdmin ? 11 : 10 %>" style="text-align:center;">No master bhajans found.</td></tr>
           <% } %>
         </tbody>
       </table>

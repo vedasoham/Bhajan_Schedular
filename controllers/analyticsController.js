@@ -2,14 +2,14 @@ const { Sequelize } = require("sequelize");
 
 const BhajanSubmission = require("../models/BhajanSubmission");
 const MasterBhajan = require("../models/MasterBhajan");
+const { getLocalDateStr, deityOrderKey, SPEED_ORDER } = require("../services/helpers");
 
 exports.showDatabase = async (req, res) => {
   try {
-    // Today as YYYY-MM-DD string for date-only comparison
-    const now = new Date();
-    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    // Today as YYYY-MM-DD string using local timezone
+    const todayStr = getLocalDateStr();
 
-    // Only fetch sessions whose date <= today (hide future even if plan exists)
+    // Fetch sessions whose date <= todayStr (shows Thursday's session immediately at 12:00 AM Thursday)
     const rawSubmissions = await BhajanSubmission.findAll({
       where: {
         session_date: { [Sequelize.Op.lte]: todayStr }

@@ -1,6 +1,8 @@
 const { initializeDatabase } = require("../services/databaseInitializer");
 const BhajanSubmission = require("../models/BhajanSubmission");
 const MasterBhajan = require("../models/MasterBhajan");
+const Singer = require("../models/Singer");
+const { normalizeName } = require("../services/helpers");
 const { Sequelize } = require("sequelize");
 
 const DEITY_KEYWORDS = [
@@ -55,6 +57,27 @@ function parseDateString(str) {
 
 async function parseBatchSessions(fullText) {
   await initializeDatabase();
+
+  // Pre-load all existing singers once so we can normalise-match without
+  // hammering the DB inside the per-bhajan loop.
+  const existingSingers = await Singer.findAll({ attributes: ['id', 'name', 'gender'], raw: true });
+
+  /**
+   * Resolve a raw singer name string to an existing Singer record (or create
+   * a new one). Uses case-insensitive / whitespace-normalised comparison to
+   * avoid creating duplicates.
+   */
+  async function resolveSinger(rawName) {
+    if (!rawName || !rawName.trim()) return null;
+    const norm = normalizeName(rawName);
+    let found = existingSingers.find(s => normalizeName(s.name) === norm);
+    if (!found) {
+      const created = await Singer.create({ name: rawName.trim(), gender: null });
+      found = { id: created.id, name: created.name, gender: created.gender };
+      existingSingers.push(found); // keep cache up to date
+    }
+    return found;
+  }
 
   // Split text into sessions by lines starting with 'Bhajan Plan –' or dates
   const rawSections = fullText.split(/(?=(?:Bhajan Plan\s*[-–—]\s*|\b\d{2}\/\d{2}\/\d{4}))/gi);
@@ -153,6 +176,10 @@ async function parseBatchSessions(fullText) {
         deity = normalizeDeity(masterMatch ? masterMatch.deity : inferDeity(cleanTitle));
         speed = masterMatch && masterMatch.tempo ? masterMatch.tempo.toLowerCase() : "medium";
       }
+
+      // Resolve singer against existing dictionary (avoids duplicates)
+      await resolveSinger(singerName);
+      if (partnerName) await resolveSinger(partnerName);
 
       listOrder++;
 

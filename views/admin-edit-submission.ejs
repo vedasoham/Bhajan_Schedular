@@ -1,0 +1,30 @@
+<div class="container">
+  <div style="margin-bottom:20px; display:flex; gap:10px; align-items:center;">
+    <a href="/admin/date/<%= s.session_date %>" class="button secondary">⬅️ Back to Session</a>
+    <a href="/admin" class="button secondary">🏠 Dashboard</a>
+  </div>
+  <h2>✏️ Edit Bhajan Entry</h2>
+  <form method="post" action="/admin/edit/<%= s.id %>">
+    <div class="form-row">
+      <div class="form-group"><label>Session Date</label><input type="date" name="session_date" value="<%= s.session_date %>" required /></div>
+      <div class="form-group"><label>Deity</label><input type="text" name="deity" value="<%= s.deity %>" required /></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Singer Name</label><input type="text" name="singer_name" value="<%= s.singer_name %>" required /></div>
+      <div class="form-group"><label>Partner</label><input type="text" name="partner_name" value="<%= s.partner_name || '' %>" /></div>
+    </div>
+    <div class="form-group"><label>Title</label><input type="text" name="title" value="<%= s.title %>" required /></div>
+    <div class="form-row">
+      <div class="form-group"><label>Scale</label><input type="text" name="scale" value="<%= s.scale || '' %>" /></div>
+      <div class="form-group"><label>Speed</label>
+        <select name="speed" required>
+          <option value="slow" <%= s.speed === 'slow' ? 'selected' : '' %>>Slow</option>
+          <option value="medium" <%= s.speed === 'medium' ? 'selected' : '' %>>Medium</option>
+          <option value="fast" <%= s.speed === 'fast' ? 'selected' : '' %>>Fast</option>
+        </select>
+      </div>
+      <div class="form-group"><label>🎼 Raag</label><input type="text" name="raga" value="<%= s.raga || '' %>" placeholder="e.g. Yaman Kalyani" /></div>
+    </div>
+    <div style="margin-top:20px; display:flex; gap:10px;"><button type="submit" class="button">Save Changes</button><a href="/admin/date/<%= s.session_date %>" class="button secondary">Cancel</a></div>
+  </form>
+</div>

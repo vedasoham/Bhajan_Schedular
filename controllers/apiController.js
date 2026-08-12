@@ -85,6 +85,111 @@ exports.checkCooldown = async (req, res) => {
   }
 };
 
+exports.getScaleSuggestions = async (req, res) => {
+  try {
+    const { title, singer_name, gender } = req.query;
+    if (!title || !title.trim()) {
+      return res.json({ singerPreviousScale: null, mostCommonGenderScale: null });
+    }
+
+    const cleanTitle = title.trim();
+    let singerPreviousScale = null;
+    let mostCommonGenderScale = null;
+
+    // Feature 1: Singer's Previous Scale
+    if (singer_name && singer_name.trim()) {
+      const cleanSinger = singer_name.trim();
+      const prevSubmission = await BhajanSubmission.findOne({
+        where: {
+          title: { [Sequelize.Op.like]: cleanTitle },
+          singer_name: { [Sequelize.Op.like]: cleanSinger },
+          scale: {
+            [Sequelize.Op.and]: [
+              { [Sequelize.Op.ne]: null },
+              { [Sequelize.Op.ne]: "" },
+              { [Sequelize.Op.ne]: "Not specified" }
+            ]
+          }
+        },
+        order: [["created_at", "DESC"], ["session_date", "DESC"], ["id", "DESC"]]
+      });
+
+      if (prevSubmission && prevSubmission.scale) {
+        singerPreviousScale = prevSubmission.scale.trim();
+      }
+    }
+
+    // Feature 2: Most Common Scale by Gender
+    let targetGender = gender ? gender.trim() : null;
+    if (!targetGender && singer_name && singer_name.trim()) {
+      const singerObj = await Singer.findOne({
+        where: { name: { [Sequelize.Op.like]: singer_name.trim() } }
+      });
+      if (singerObj && singerObj.gender) {
+        targetGender = singerObj.gender;
+      }
+    }
+
+    if (targetGender && ["Male", "Female"].includes(targetGender)) {
+      const sameGenderSingers = await Singer.findAll({
+        where: { gender: targetGender },
+        attributes: ["name"],
+        raw: true
+      });
+      const singerNamesList = sameGenderSingers.map(s => s.name);
+
+      const genderSubmissions = await BhajanSubmission.findAll({
+        where: {
+          title: { [Sequelize.Op.like]: cleanTitle },
+          [Sequelize.Op.or]: [
+            { gender: targetGender },
+            { singer_name: { [Sequelize.Op.in]: singerNamesList } }
+          ],
+          scale: {
+            [Sequelize.Op.and]: [
+              { [Sequelize.Op.ne]: null },
+              { [Sequelize.Op.ne]: "" },
+              { [Sequelize.Op.ne]: "Not specified" }
+            ]
+          }
+        },
+        attributes: ["scale"]
+      });
+
+      if (genderSubmissions && genderSubmissions.length > 0) {
+        const counts = {};
+        let maxCount = 0;
+        let topScale = null;
+
+        for (const sub of genderSubmissions) {
+          const s = (sub.scale || "").trim();
+          if (s && s !== "Not specified") {
+            counts[s] = (counts[s] || 0) + 1;
+            if (counts[s] > maxCount) {
+              maxCount = counts[s];
+              topScale = s;
+            }
+          }
+        }
+
+        if (topScale) {
+          mostCommonGenderScale = {
+            gender: targetGender,
+            scale: topScale
+          };
+        }
+      }
+    }
+
+    res.json({
+      singerPreviousScale,
+      mostCommonGenderScale
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 exports.getSingers = async (req, res) => {
   try {
     const singers = await Singer.findAll({ order: [['name', 'ASC']] });

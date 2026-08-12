@@ -158,6 +158,7 @@ document.addEventListener('DOMContentLoaded', function() {
   singerInput?.addEventListener('input', () => {
     applySingerGender(singerInput.value);
     renderSingerSuggestions();
+    fetchScaleSuggestions();
   });
   singerInput?.addEventListener('blur', () => setTimeout(hideSingerSuggestions, 150));
   singerInput?.addEventListener('keydown', event => {
@@ -320,6 +321,53 @@ document.addEventListener('DOMContentLoaded', function() {
     const cleanValue = (val) => (val && val !== '#N/A' && String(val).trim() !== '') ? val : 'Not specified';
 
     const warningDiv = document.getElementById('cooldownWarning');
+    const fetchScaleSuggestions = () => {
+      const title = titleInput ? titleInput.value.trim() : '';
+      const singer = singerInput ? singerInput.value.trim() : '';
+      const gender = genderSelect ? genderSelect.value.trim() : '';
+
+      const prevBadge = document.getElementById('singerPrevScaleBadge');
+      const prevVal = document.getElementById('singerPrevScaleVal');
+      const genderBadge = document.getElementById('genderCommonScaleBadge');
+      const genderLabel = document.getElementById('genderCommonScaleLabel');
+      const genderVal = document.getElementById('genderCommonScaleVal');
+
+      if (!title) {
+        if (prevBadge) prevBadge.style.display = 'none';
+        if (genderBadge) genderBadge.style.display = 'none';
+        return;
+      }
+
+      const params = new URLSearchParams({
+        title: title,
+        singer_name: singer,
+        gender: gender
+      });
+
+      fetch('/api/scale-suggestions?' + params.toString())
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.singerPreviousScale && prevBadge && prevVal) {
+            prevVal.textContent = data.singerPreviousScale;
+            prevBadge.style.display = 'block';
+          } else if (prevBadge) {
+            prevBadge.style.display = 'none';
+          }
+
+          if (data && data.mostCommonGenderScale && genderBadge && genderLabel && genderVal) {
+            genderLabel.textContent = data.mostCommonGenderScale.gender;
+            genderVal.textContent = data.mostCommonGenderScale.scale;
+            genderBadge.style.display = 'block';
+          } else if (genderBadge) {
+            genderBadge.style.display = 'none';
+          }
+        })
+        .catch(err => {
+          if (prevBadge) prevBadge.style.display = 'none';
+          if (genderBadge) genderBadge.style.display = 'none';
+        });
+    };
+
     if (selectedTitle.trim().length > 0) {
       fetch('/api/check-cooldown?title=' + encodeURIComponent(selectedTitle))
         .then(res => res.json())
@@ -331,7 +379,11 @@ document.addEventListener('DOMContentLoaded', function() {
             warningDiv.style.display = 'none';
           }
         });
-    } else if (warningDiv) { warningDiv.style.display = 'none'; }
+      fetchScaleSuggestions();
+    } else {
+      if (warningDiv) warningDiv.style.display = 'none';
+      fetchScaleSuggestions();
+    }
 
     if (matchedBhajan) {
       // 1. Auto-fill visible inputs
@@ -403,6 +455,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('scaleInput').value = scaleForGender(matchedBhajan, gender).scale;
       }
     }
+    fetchScaleSuggestions();
   });
 
   // POPUP LOGIC & Form validation
@@ -585,6 +638,31 @@ function openMissingBhajanModal(title) {
 }
 function closeMissingBhajanModal() {
   document.getElementById('missingBhajanModal').classList.remove('show');
+}
+
+function reconcileBhajan(submittedTitle, action, masterBhajanId) {
+  if (action === 'link' && !confirm(`Link all historical submissions of:\n\n"${submittedTitle}"\n\n...to the master bhajan? This will update all matching session records.`)) return;
+
+  fetch('/api/admin/reconcile-bhajan', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ submitted_title: submittedTitle, action, master_bhajan_id: masterBhajanId })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      if (action === 'link') {
+        alert(`✅ Done! Updated ${data.updatedCount} session record(s) to use master title:\n"${data.masterTitle}"`);
+        // Hide this reconcile card
+        const cardId = 'card-' + encodeURIComponent(submittedTitle);
+        const card = document.getElementById(cardId);
+        if (card) card.remove();
+      }
+    } else {
+      alert('Error: ' + (data.error || 'Unknown error'));
+    }
+  })
+  .catch(err => alert('Request failed: ' + err.message));
 }
 function saveMissingBhajan() {
   const data = {
@@ -795,9 +873,18 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!sortableBody) return;
 
   let draggedRow = null;
-  
+
+  function updateRowIndexNumbers() {
+    const rows = sortableBody.querySelectorAll('tr[data-id]');
+    rows.forEach((row, index) => {
+      const numEl = row.querySelector('.row-num');
+      if (numEl) numEl.textContent = index + 1;
+    });
+  }
+
   sortableBody.addEventListener('dragstart', (e) => {
     draggedRow = e.target.closest('tr');
+    if (!draggedRow) return;
     e.dataTransfer.effectAllowed = 'move';
     setTimeout(() => draggedRow.style.opacity = '0.5', 0);
   });
@@ -805,16 +892,56 @@ document.addEventListener('DOMContentLoaded', () => {
   sortableBody.addEventListener('dragover', (e) => {
     e.preventDefault();
     const targetRow = e.target.closest('tr');
-    if (targetRow && targetRow !== draggedRow) {
+    if (targetRow && targetRow !== draggedRow && targetRow.parentNode === sortableBody) {
       const rect = targetRow.getBoundingClientRect();
       const next = (e.clientY - rect.top) / (rect.bottom - rect.top) > 0.5;
       sortableBody.insertBefore(draggedRow, next ? targetRow.nextSibling : targetRow);
-      document.getElementById('saveOrderBtn').style.display = 'block';
+      updateRowIndexNumbers();
+      const saveBtn = document.getElementById('saveOrderBtn');
+      if (saveBtn) saveBtn.style.display = 'inline-block';
     }
   });
 
   sortableBody.addEventListener('dragend', () => {
-    if(draggedRow) draggedRow.style.opacity = '1';
+    if (draggedRow) draggedRow.style.opacity = '1';
+    updateRowIndexNumbers();
+  });
+
+  // Touch drag-and-drop support for mobile touch screens
+  let touchRow = null;
+
+  sortableBody.addEventListener('touchstart', (e) => {
+    const handle = e.target.closest('.drag-handle');
+    if (!handle) return;
+    touchRow = e.target.closest('tr');
+    if (!touchRow) return;
+    touchRow.style.opacity = '0.6';
+    touchRow.style.background = 'var(--success-bg)';
+  }, { passive: true });
+
+  sortableBody.addEventListener('touchmove', (e) => {
+    if (!touchRow) return;
+    const currentY = e.touches[0].clientY;
+    const elementUnderTouch = document.elementFromPoint(e.touches[0].clientX, currentY);
+    if (!elementUnderTouch) return;
+    const targetRow = elementUnderTouch.closest('#sortable-body tr[data-id]');
+    if (targetRow && targetRow !== touchRow) {
+      const rect = targetRow.getBoundingClientRect();
+      const next = (currentY - rect.top) / (rect.bottom - rect.top) > 0.5;
+      sortableBody.insertBefore(touchRow, next ? targetRow.nextSibling : targetRow);
+      updateRowIndexNumbers();
+      const saveBtn = document.getElementById('saveOrderBtn');
+      if (saveBtn) saveBtn.style.display = 'inline-block';
+    }
+  }, { passive: true });
+
+  sortableBody.addEventListener('touchend', () => {
+    if (touchRow) {
+      touchRow.style.opacity = '1';
+      touchRow.style.background = '';
+      touchRow = null;
+      updateRowIndexNumbers();
+    }
   });
 });
 

@@ -9,8 +9,11 @@ const Singer = require("../models/Singer");
 
 const {
     getNextThursday,
+    getThursdaySubmissionStatus,
+    getLocalDateStr,
     deityOrderKey,
-    SPEED_ORDER
+    SPEED_ORDER,
+    normalizeName
 } = require("../services/helpers");
 
 const {
@@ -33,25 +36,27 @@ exports.showSubmitForm = async (req, res) => {
 
     // Helper to fetch available dates
     const getAvailableDates = async () => {
-      const nextThursday = getNextThursday();
-      const today = new Date();
-      const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      const todayStr = getLocalDateStr();
+      const status = getThursdaySubmissionStatus();
+      
       const specialDays = await SessionPermission.findAll({
-        where: { date: { [Sequelize.Op.gte]: todayStr } },
+        where: { date: { [Sequelize.Op.gt]: todayStr } },
         order: [['date', 'ASC']]
       });
       
       const dates = new Map();
-      dates.set(nextThursday, { label: 'Next Thursday', desc: 'Regular Session' });
+      if (status.openThursday) {
+        dates.set(status.openThursday, { label: 'Next Thursday', desc: 'Regular Session' });
+      }
       specialDays.forEach(p => {
         const label = p.type === 'festival' ? 'Festival' : 'Special';
         dates.set(p.date, { label: label, desc: p.description || '' });
       });
-      return dates;
+      return { dates, status };
     };
 
     const renderSelectionScreen = async (msg) => {
-      const availableDates = await getAvailableDates();
+      const { dates: availableDates } = await getAvailableDates();
       const sortedDates = Array.from(availableDates.keys()).sort();
       let optionsHtml = '';
       const adminParam = isAdmin ? '&admin=true' : '';
@@ -71,18 +76,43 @@ exports.showSubmitForm = async (req, res) => {
       return res.send(`<!DOCTYPE html><html><head><title>Select Session</title><meta name="viewport" content="width=device-width, initial-scale=1" /><link rel="stylesheet" href="/css/style.css"></head><body><div class="container" style="text-align:center; padding:40px; max-width:500px;"><h2 style="color:#e65100; margin-bottom:20px;">🗓️ Select Session</h2><p style="color:#555; margin-bottom:20px;">${msg}</p><div style="background:#f8f9fa; padding:20px; border-radius:12px; border:1px solid #eee;"><div style="display:flex; flex-direction:column; gap:10px;">${optionsHtml}</div></div><div style="margin-top:25px;"><a href="${homeUrl}" class="button secondary">${homeText}</a></div></div></body></html>`);
     };
 
-    // If no date provided, check if we should show selection screen
+    // If no date provided, check if we should show selection screen or 8pm notice
+    const { dates: availableDates, status: thuStatus } = await getAvailableDates();
+
     if (!sessionDate) {
-      const availableDates = await getAvailableDates();
+      if (!isAdmin && thuStatus.opensAt8pmToday) {
+        const msg = `Today's Thursday session is locked.<br>Submissions for next Thursday (<strong>${thuStatus.nextThursdayDate}</strong>) will open today at 8:00 PM.`;
+        if (availableDates.size > 0) {
+          return renderSelectionScreen(`${msg}<br><br>You can submit for available Special/Festival sessions below:`);
+        } else {
+          const homeUrl = isAdmin ? '/admin' : '/';
+          const homeText = isAdmin ? '🏠 Return to Dashboard' : '🏠 Return Home';
+          return res.send(`<!DOCTYPE html><html><head><title>Submissions Opening at 8:00 PM</title><meta name="viewport" content="width=device-width, initial-scale=1" /><link rel="stylesheet" href="/css/style.css"></head><body><div class="container" style="text-align:center; padding:40px; max-width:500px;"><h2 style="color:#e65100; margin-bottom:20px;">🔒 Submissions Opening at 8:00 PM</h2><p style="color:#555; margin-bottom:25px; line-height:1.6;">${msg}</p><div><a href="${homeUrl}" class="button secondary">${homeText}</a></div></div></body></html>`);
+        }
+      }
+
       if (availableDates.size > 1) {
         return renderSelectionScreen("Please select a session to submit your bhajan:");
       }
-      sessionDate = getNextThursday();
+      sessionDate = thuStatus.openThursday || thuStatus.nextThursdayDate;
     }
 
+    const todayStr = getLocalDateStr();
+    const isPastOrToday = todayStr >= sessionDate;
     const meta = await SessionMeta.findByPk(sessionDate);
-    if (meta && meta.is_locked && !isAdmin) {
-      return renderSelectionScreen(`Submissions for <strong>${sessionDate}</strong> have been locked by the coordinator.<br>Please select a different session:`);
+    const isManuallyLocked = meta && meta.is_locked;
+    const isNextThuUnopened = !isAdmin && sessionDate === thuStatus.nextThursdayDate && thuStatus.opensAt8pmToday;
+
+    if (!isAdmin && (isManuallyLocked || isPastOrToday || isNextThuUnopened)) {
+      let reasonMsg = "";
+      if (isManuallyLocked) {
+        reasonMsg = `Submissions for <strong>${sessionDate}</strong> have been locked by the coordinator.`;
+      } else if (isNextThuUnopened) {
+        reasonMsg = `Submissions for next Thursday (<strong>${sessionDate}</strong>) will open today at 8:00 PM.`;
+      } else {
+        reasonMsg = `Submissions for session (<strong>${sessionDate}</strong>) closed on the night before at 11:59 PM.<br>Submissions for this session are now locked.`;
+      }
+      return renderSelectionScreen(`${reasonMsg}<br>Please select an available upcoming session:`);
     }
 
     // Check Permissions: Allow if Thursday OR Admin OR Explicitly Permitted
@@ -144,7 +174,7 @@ exports.showSubmitForm = async (req, res) => {
         return `<div class="deity-card disabled ${countClass}" style="opacity:0.4; pointer-events:none;"><div class="deity-name">${deity}</div><span class="badge badge-taken" style="background:#e03131;">Blocked</span></div>`;
       }
 
-      const isFull = !isSpecialOrFestival && status.count >= status.maxAllowed;
+      const isFull = status.count >= status.maxAllowed;
       const bhajanText = `${status.count} Bhajan${status.count === 1 ? '' : 's'}`;
 
       if (isFull) {
@@ -205,9 +235,23 @@ exports.showSubmitForm = async (req, res) => {
       return res.status(400).send('<h1>Error</h1><p>Missing required fields.</p><a class="button" href="javascript:history.back()">Go Back</a>');
     }
     
+    const todayStr = getLocalDateStr();
+    const thuStatus = getThursdaySubmissionStatus();
+    const isPastOrToday = todayStr >= session_date;
     const meta = await SessionMeta.findByPk(session_date);
-    if (meta && meta.is_locked && !isAdmin) {
-      return res.status(403).send(`<h1>Locked</h1><p>This session has been locked by the coordinator.</p><a class="button" href="${isAdmin ? '/admin' : '/'}">${isAdmin ? 'Return to Dashboard' : 'Go Home'}</a>`);
+    const isManuallyLocked = meta && meta.is_locked;
+    const isNextThuUnopened = !isAdmin && session_date === thuStatus.nextThursdayDate && thuStatus.opensAt8pmToday;
+
+    if (!isAdmin && (isManuallyLocked || isPastOrToday || isNextThuUnopened)) {
+      let reasonMsg = "";
+      if (isManuallyLocked) {
+        reasonMsg = "This session has been locked by the coordinator.";
+      } else if (isNextThuUnopened) {
+        reasonMsg = `Submissions for next Thursday (${session_date}) will open today at 8:00 PM.`;
+      } else {
+        reasonMsg = `Submissions for session (${session_date}) closed on the night before at 11:59 PM. Submissions for this session are now locked.`;
+      }
+      return res.status(403).send(`<h1>Locked</h1><p>${reasonMsg}</p><a class="button" href="${isAdmin ? '/admin' : '/'}">${isAdmin ? 'Return to Dashboard' : 'Go Home'}</a>`);
     }
 
     // Fetch all submissions for this date to check rules
@@ -235,33 +279,42 @@ exports.showSubmitForm = async (req, res) => {
     const ruleForDeity = rules.find(r => r.deity_name === deity) || { max_allowed: 2 };
     const maxAllowed = ruleForDeity.max_allowed;
 
-    if (maxAllowed === 0 && !isSpecialOrFestival && !isAdmin) {
-      return res.send(generateErrorHtml(deity, { singer_name: "Admin", title: "Blocked for this session", created_at: new Date() }, session_date));
-    }
-    
-    if (!isSpecialOrFestival && !isAdmin) {
-      // Check existing count for requested deity
+    if (!isAdmin) {
+      if (maxAllowed === 0) {
+        return res.send(generateErrorHtml(deity, { singer_name: "Admin", title: "Blocked for this session", created_at: new Date() }, session_date));
+      }
+
+      // Check existing count for requested deity against maxAllowed
       const existingEntries = allSubmissions.filter(s => s.deity === deity);
-      
-      if (existingEntries.length > 0) {
-        // Check specific max limit for this deity
-        if (existingEntries.length >= maxAllowed) {
-          return res.send(generateErrorHtml(deity, existingEntries[existingEntries.length - 1], session_date));
-        }
-        
-        // If we pass here, we allow the 2nd entry
+      if (existingEntries.length >= maxAllowed) {
+        return res.send(generateErrorHtml(deity, existingEntries[existingEntries.length - 1], session_date));
       }
     }
     
     // Save a singer's gender the first time it is supplied. Once recorded,
     // always use that stored value rather than trusting a changed form value.
+    //
+    // Normalize the submitted name to avoid creating duplicate singer records
+    // when the name differs only in case or spacing (e.g. 'Prashant Bhatt' vs
+    // ' Prashant  Bhatt'). We look for an existing record first using a
+    // case-insensitive SQL LIKE on the trimmed name, and only create a new
+    // row if no match is found.
     const submittedGender = gender || locked_gender;
-    const [singer] = await Singer.findOrCreate({
-      where: { name: singer_name.trim() },
-      defaults: { gender: submittedGender || null }
-    });
-    if (!singer.gender && submittedGender) {
+    const normalizedInputName = normalizeName(singer_name);
+
+    // Try to find an existing singer whose normalized name matches
+    const allSingers = await Singer.findAll({ attributes: ['id', 'name', 'gender'] });
+    let singer = allSingers.find(s => normalizeName(s.name) === normalizedInputName) || null;
+
+    if (!singer) {
+      // No existing singer found — create a new record using the trimmed submitted name
+      singer = await Singer.create({
+        name: singer_name.trim(),
+        gender: submittedGender || null
+      });
+    } else if (!singer.gender && submittedGender) {
       await singer.update({ gender: submittedGender });
+      singer.gender = submittedGender;
     }
     const resolvedGender = singer.gender || submittedGender || null;
 

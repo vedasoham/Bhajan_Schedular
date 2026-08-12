@@ -1,0 +1,87 @@
+<div class="container container-xl">
+  <div class="header">
+    <h1>🛠️ Session Details</h1>
+    <p>Date: <%= date %></p>
+    <% if (isLocked) { %>
+      <span style="background:#e03131; color:white; padding:4px 12px; border-radius:12px; font-size:12px; font-weight:bold; margin-top:10px; display:inline-block;">🔒 SESSION LOCKED</span>
+    <% } %>
+  </div>
+  
+  <div style="margin-bottom: 24px; display:flex; gap:12px; flex-wrap:wrap; justify-content:center;">
+    <a href="/admin" class="button secondary">⬅️ Back to Calendar</a>
+    <a href="/submit-form?admin=true&session_date=<%= date %>" class="button">➕ Add / Append to this Date</a>
+    <a href="/admin/rules?date=<%= date %>" class="button secondary">⚙️ Session Rules</a>
+    <button onclick="toggleSessionLock('<%= date %>', <%= !isLocked %>)" class="button" style="background:<%= isLocked ? '#28a745' : '#e03131' %>; border:none;"><%= isLocked ? "🔓 Unlock Submissions" : "🔒 Lock Submissions" %></button>
+    <a href="/plan-view?session_date=<%= date %>" class="button secondary">📅 View Plan</a>
+    <a href="/admin" class="button secondary">🏠 Dashboard</a>
+  </div>
+
+  <section class="submitted-bhajans" aria-labelledby="submittedBhajansHeading">
+    <div class="submitted-bhajans-heading" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:12px;">
+      <div>
+        <h3 id="submittedBhajansHeading">🎵 Bhajan Sequence & Lineup</h3>
+        <p><%= submissions.length %> bhajan<%= submissions.length === 1 ? '' : 's' %> in this session. Drag ☰ handle to reorder sequence.</p>
+      </div>
+      <button id="saveOrderBtn" class="button" style="background:#28a745; border:none; display:none; padding:8px 18px; font-weight:700;" onclick="saveReorderSequence()">💾 Save New Sequence</button>
+    </div>
+
+    <% if (submissions.length > 0) { %>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th width="50" style="text-align:center;">#</th>
+              <th>Singer</th>
+              <th>Deity</th>
+              <th>Bhajan</th>
+              <th>Tempo</th>
+              <th>Raag</th>
+              <th>Scale</th>
+              <th style="text-align:right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="sortable-body">
+            <% submissions.forEach((s, idx) => { %>
+              <tr data-id="<%= s.id %>" class="draggable-row" draggable="true" style="cursor: grab;">
+                <td data-label="#" style="text-align:center; white-space:nowrap;">
+                  <span class="drag-handle" title="Drag to reorder" style="cursor:grab; font-size:16px; margin-right:4px; color:var(--primary); -webkit-user-select:none; user-select:none;">☰</span>
+                  <strong class="row-num"><%= idx + 1 %></strong>
+                </td>
+                <td data-label="Singer">
+                  <strong><%= s.singer_name %></strong>
+                  <% if (s.partner_name) { %><br><small style="color:var(--text-light);">& <%= s.partner_name %></small><% } %>
+                  <% if (s.gender) { %><br><small style="color:var(--text-light); font-size:11px;">(<%= s.gender %>)</small><% } %>
+                </td>
+                <td data-label="Deity"><span class="deity-pill"><%= s.deity %></span></td>
+                <td data-label="Bhajan"><strong><%= s.title %></strong></td>
+                <td data-label="Tempo"><%= s.speed || '-' %></td>
+                <td data-label="Raag"><%= s.raga || '-' %></td>
+                <td data-label="Scale"><%= s.scale || '-' %></td>
+                <td data-label="Actions" style="text-align:right;">
+                  <div style="display:flex; gap:6px; justify-content:flex-end;">
+                    <a href="/admin/edit/<%= s.id %>" class="button secondary" style="padding:4px 10px; font-size:12px; text-decoration:none;">✏️ Edit</a>
+                    <form action="/admin/delete/<%= s.id %>" method="POST" onsubmit="return confirm('Delete this entry?');" style="margin:0;">
+                      <button type="submit" class="button" style="padding:4px 10px; font-size:12px; background:var(--danger); border:none; color:white; cursor:pointer;">❌ Del</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } else { %>
+      <p class="submitted-bhajans-empty" style="padding:20px 0; text-align:center;">No bhajan submissions found for this date.</p>
+    <% } %>
+  </section>
+
+  <div style="margin-top:30px; background:var(--paper); padding:20px; border-radius:var(--radius); border:1px solid var(--border);">
+    <h3 style="margin-bottom:8px; color:var(--text); font-size:16px;">🔄 Copy Previous Session</h3>
+    <p style="font-size:13px; color:var(--text-light); margin-bottom:14px;">Duplicate the singer lineup from a past session directly into this date.</p>
+    <form action="/admin/copy-session" method="POST" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+      <input type="hidden" name="target_date" value="<%= date %>">
+      <input type="date" name="source_date" required class="filter-input" style="max-width:200px;">
+      <button type="submit" class="button secondary" onclick="return confirm('Copy all entries? This will append to the current list.')">Copy Lineup</button>
+    </form>
+  </div>
+</div>

@@ -1,5 +1,5 @@
 const { Sequelize } = require("sequelize");
-const sequelize = require("../config/database"); // <-- add this line
+const sequelize = require("../config/database");
 const activityService = require("../services/activityService");
 const BhajanSubmission = require("../models/BhajanSubmission");
 const SessionPermission = require("../models/SessionPermission");
@@ -9,12 +9,15 @@ const DeityRule = require("../models/DeityRule");
 
 const {
   getNextThursday,
+  getLocalDateStr,
   formatDateHuman,
   timeSince,
   deityOrderKey,
   SPEED_ORDER,
   DEITY_ORDER,
 } = require("../services/helpers");
+
+const { findSimilarBhajans } = require("../services/fuzzyMatcher");
 
 const {
   generateAdminCalendarHtml,
@@ -87,9 +90,21 @@ exports.dashboard = async (req, res) => {
       masterTitles.map((m) => (m.title || "").trim().toLowerCase()),
     );
 
-    const missingBhajans = submittedTitles
+    const rawMissingTitles = submittedTitles
       .map((s) => (s.title || "").trim())
       .filter((title) => title && !masterSet.has(title.toLowerCase()));
+
+    // Load all master bhajans once for fuzzy matching
+    const allMasterBhajans = await MasterBhajan.findAll({
+      attributes: ['id', 'title', 'deity', 'raga', 'shruti'],
+      raw: true
+    });
+
+    // For each missing title, find similar master bhajans (candidates)
+    const missingBhajans = rawMissingTitles.map(submittedTitle => ({
+      submittedTitle,
+      candidates: findSimilarBhajans(submittedTitle, allMasterBhajans)
+    }));
 
     // Dashboard statistics
     const [
@@ -108,7 +123,7 @@ exports.dashboard = async (req, res) => {
       SessionPermission.findOne({
         where: {
           date: {
-            [Sequelize.Op.gte]: new Date().toISOString().split("T")[0],
+            [Sequelize.Op.gte]: getLocalDateStr(),
           },
         },
         order: [["date", "ASC"]],
@@ -247,7 +262,12 @@ exports.sessionView = async (req, res) => {
     const meta = await SessionMeta.findByPk(date);
     const isLocked = meta ? meta.is_locked : false;
 
-    res.send(generateAdminSessionViewHtml(date, sorted, isLocked));
+    res.render("admin-session-view", {
+      date,
+      submissions: sorted,
+      isLocked,
+      pageTitle: `Session - ${date}`,
+    });
   } catch (error) {
     res.status(500).send(`<h1>Error</h1><p>${error.message}</p>`);
   }
@@ -257,7 +277,10 @@ exports.editSubmissionForm = async (req, res) => {
   try {
     const submission = await BhajanSubmission.findByPk(req.params.id);
     if (!submission) return res.status(404).send("Entry not found");
-    res.send(generateEditFormHtml(submission));
+    res.render("admin-edit-submission", {
+      s: submission,
+      pageTitle: "Edit Bhajan Entry",
+    });
   } catch (error) {
     res.status(500).send(`<h1>Error</h1><p>${error.message}</p>`);
   }
@@ -273,6 +296,7 @@ exports.updateSubmission = async (req, res) => {
       deity,
       scale,
       speed,
+      raga,
     } = req.body;
     await BhajanSubmission.update(
       {
@@ -283,6 +307,7 @@ exports.updateSubmission = async (req, res) => {
         deity,
         scale,
         speed,
+        raga: raga || null,
       },
       {
         where: { id: req.params.id },
@@ -321,7 +346,11 @@ exports.showRules = async (req, res) => {
         order: [["deity_name", "ASC"]],
       });
     }
-    res.send(generateAdminRulesHtml(rules, date));
+    res.render("admin-rules", {
+      rules,
+      date,
+      pageTitle: date === "default" ? "Default Deity Rules" : `Rules for ${date}`,
+    });
   } catch (error) {
     res.status(500).send(`<h1>Error</h1><p>${error.message}</p>`);
   }
@@ -440,24 +469,42 @@ exports.dangerResetHistory = async (req, res) => {
 };
 
 exports.showImportSessions = (req, res) => {
-  res.send(generateAdminImportSessionsHtml());
+  res.render("admin-import-sessions", {
+    resultInfo: null,
+    pageTitle: "Import Past Sessions",
+  });
 };
 
 exports.processImportSessions = async (req, res) => {
   try {
     const rawText = req.body.raw_text;
     if (!rawText || !rawText.trim()) {
-      return res.send(generateAdminImportSessionsHtml({ error: "No text provided. Please paste session data." }));
+      return res.render("admin-import-sessions", {
+        resultInfo: { error: "No text provided. Please paste session data." },
+        pageTitle: "Import Past Sessions",
+      });
     }
 
     const result = await parseBatchSessions(rawText);
     if (!result || result.totalSessions === 0) {
-      return res.send(generateAdminImportSessionsHtml({ error: "No valid dates found in the text. Make sure dates are formatted as DD/MM/YYYY or 'Bhajan Plan – YYYY-MM-DD'." }));
+      return res.render("admin-import-sessions", {
+        resultInfo: {
+          error:
+            "No valid dates found in the text. Make sure dates are formatted as DD/MM/YYYY or 'Bhajan Plan – YYYY-MM-DD'.",
+        },
+        pageTitle: "Import Past Sessions",
+      });
     }
 
-    res.send(generateAdminImportSessionsHtml(result));
+    res.render("admin-import-sessions", {
+      resultInfo: result,
+      pageTitle: "Import Past Sessions",
+    });
   } catch (error) {
-    res.send(generateAdminImportSessionsHtml({ error: error.message }));
+    res.render("admin-import-sessions", {
+      resultInfo: { error: error.message },
+      pageTitle: "Import Past Sessions",
+    });
   }
 };
 
