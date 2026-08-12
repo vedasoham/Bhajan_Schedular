@@ -94,17 +94,25 @@ exports.dashboard = async (req, res) => {
       .map((s) => (s.title || "").trim())
       .filter((title) => title && !masterSet.has(title.toLowerCase()));
 
-    // Load all master bhajans once for fuzzy matching
-    const allMasterBhajans = await MasterBhajan.findAll({
-      attributes: ['id', 'title', 'deity', 'raga', 'shruti'],
-      raw: true
-    });
+    // Compute candidates for missing bhajans (optimized to avoid event loop lag)
+    let missingBhajans = [];
+    if (rawMissingTitles.length > 0) {
+      const allMasterBhajans = await MasterBhajan.findAll({
+        attributes: ['id', 'title', 'deity', 'raga', 'shruti'],
+        raw: true
+      });
 
-    // For each missing title, find similar master bhajans (candidates)
-    const missingBhajans = rawMissingTitles.map(submittedTitle => ({
-      submittedTitle,
-      candidates: findSimilarBhajans(submittedTitle, allMasterBhajans)
-    }));
+      missingBhajans = rawMissingTitles.slice(0, 10).map(submittedTitle => ({
+        submittedTitle,
+        candidates: findSimilarBhajans(submittedTitle, allMasterBhajans, 0.60, 3)
+      }));
+
+      if (rawMissingTitles.length > 10) {
+        rawMissingTitles.slice(10).forEach(submittedTitle => {
+          missingBhajans.push({ submittedTitle, candidates: [] });
+        });
+      }
+    }
 
     // Dashboard statistics
     const [

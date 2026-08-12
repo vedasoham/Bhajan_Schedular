@@ -90,17 +90,25 @@ function combinedScore(a, b) {
  * @param {number} topN - Maximum candidates to return (default 5).
  * @returns {Array<{master, score}>} Sorted highest-score first.
  */
-function findSimilarBhajans(submittedTitle, masterBhajans, threshold = 0.55, topN = 5) {
-  const results = masterBhajans
-    .map(master => ({
-      master,
-      score: combinedScore(submittedTitle, master.title)
-    }))
-    .filter(r => r.score >= threshold)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, topN);
+function findSimilarBhajans(submittedTitle, masterBhajans, threshold = 0.60, topN = 3) {
+  const normSubmitted = normalizeBhajanTitle(submittedTitle);
+  if (!normSubmitted || normSubmitted.length < 3) return [];
 
-  return results;
+  const results = [];
+  for (let i = 0; i < masterBhajans.length; i++) {
+    const master = masterBhajans[i];
+    const normMaster = normalizeBhajanTitle(master.title);
+
+    // Fast length difference check: skip expensive bigram comparison if lengths differ significantly
+    if (Math.abs(normSubmitted.length - normMaster.length) > 12) continue;
+
+    const score = combinedScore(submittedTitle, master.title);
+    if (score >= threshold) {
+      results.push({ master, score });
+    }
+  }
+
+  return results.sort((a, b) => b.score - a.score).slice(0, topN);
 }
 
 module.exports = {
