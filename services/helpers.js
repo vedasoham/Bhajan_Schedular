@@ -11,45 +11,46 @@ function deityOrderKey(deity) {
 }
 
 /**
- * Returns "today" as YYYY-MM-DD using the LOCAL timezone (not UTC).
- * Using new Date().toISOString().split('T')[0] gives the UTC date, which is
- * wrong for IST (UTC+5:30) — at 00:30 IST it would return yesterday's date.
+ * Returns "today" as YYYY-MM-DD in the target timezone (defaults to Asia/Kolkata / IST).
+ * On cloud servers (Render, Railway, Heroku, AWS, Vercel) running in UTC timezone,
+ * calling native Date methods gives UTC date (e.g. 21:00 UTC on Wednesday = 02:30 AM Thursday IST).
+ * Intl.DateTimeFormat with Asia/Kolkata guarantees the correct date regardless of server location.
  */
-function getLocalDateStr(date = new Date()) {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
+function getLocalDateStr(date = new Date(), timeZone = process.env.APP_TIMEZONE || 'Asia/Kolkata') {
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
+  return formatter.format(date);
 }
 
 /**
- * Returns the date of the NEXT open Thursday session as YYYY-MM-DD.
- *
- * Session Auto-Lock Rule:
- * - A Thursday session (e.g. 2026-08-13) is open for singer submissions
- *   up until Wednesday 11:59 PM (2026-08-12).
- * - As soon as Thursday 12:00 AM arrives (today >= 2026-08-13), the Thursday
- *   session is automatically LOCKED for non-admin submissions and moves into History.
- * - Therefore, on Thursday (or Fri, Sat, Sun, Mon, Tue, Wed), getNextThursday()
- *   returns the upcoming Thursday that has NOT yet reached Thursday 12:00 AM!
- */
-/**
- * Returns info about regular Thursday submission availability:
+ * Returns info about regular Thursday submission availability in target timezone (IST):
  *  - openThursday: YYYY-MM-DD string of the open Thursday session (or null if closed until 8 PM)
  *  - opensAt8pmToday: boolean (true if today is Thursday before 8 PM)
  *  - nextThursdayDate: YYYY-MM-DD string of next Thursday
  */
-function getThursdaySubmissionStatus(now = new Date()) {
-  const day = now.getDay(); // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
-  const hour = now.getHours(); // 0..23
+function getThursdaySubmissionStatus(now = new Date(), timeZone = process.env.APP_TIMEZONE || 'Asia/Kolkata') {
+  const todayStr = getLocalDateStr(now, timeZone);
+
+  // Day of week in target timezone (0=Sun, 1=Mon, ..., 6=Sat)
+  const dayStr = new Intl.DateTimeFormat('en-US', { timeZone, weekday: 'short' }).format(now);
+  const dayMap = { 'Sun': 0, 'Mon': 1, 'Tue': 2, 'Wed': 3, 'Thu': 4, 'Fri': 5, 'Sat': 6 };
+  const day = dayMap[dayStr];
+
+  // Hour of day in target timezone (0..23)
+  const hourStr = new Intl.DateTimeFormat('en-US', { timeZone, hour: 'numeric', hour12: false }).format(now);
+  const hour = parseInt(hourStr, 10);
 
   const daysUntilNextThu = (4 - day + 7) % 7 || 7;
-  const nextThuObj = new Date(now);
-  nextThuObj.setDate(now.getDate() + daysUntilNextThu);
-  const nextThuStr = getLocalDateStr(nextThuObj);
+  const [y, m, d] = todayStr.split('-').map(Number);
+  const nextThuObj = new Date(y, m - 1, d + daysUntilNextThu);
+  const nextThuStr = getLocalDateStr(nextThuObj, timeZone);
 
   if (day === 4 && hour < 20) {
-    // Today is Thursday before 8:00 PM: next Thursday is NOT open yet for non-admins
+    // Today is Thursday before 8:00 PM IST: next Thursday is NOT open yet for non-admins
     return {
       openThursday: null,
       opensAt8pmToday: true,
