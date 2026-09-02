@@ -159,7 +159,7 @@ async function checkSchedulePublished() {
       type: "schedule_published",
       title: "📖 Bhajan Schedule Published",
       body: `The bhajan schedule for ${dayName}, ${dateFormatted} is now available. Tap to view the sequence.`,
-      link: `/plan-view?session_date=${sessionDate}`,
+      link: `/database`,
       eventKey
     });
 
@@ -184,7 +184,7 @@ async function triggerSchedulePublished(sessionDate) {
     type: "schedule_published",
     title: "📖 Bhajan Schedule Published",
     body: `The bhajan schedule for ${dayName}, ${dateFormatted} is now available. Tap to view the sequence.`,
-    link: `/plan-view?session_date=${sessionDate}`,
+    link: `/database`,
     eventKey
   });
 

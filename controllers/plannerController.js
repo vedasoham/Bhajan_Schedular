@@ -27,33 +27,33 @@ const {
 const normalizeBhajanTitle = (title) =>
   String(title || "").trim().replace(/\s+/g, " ").toLocaleLowerCase();
 
+// Helper to fetch available dates across planner endpoints
+const getAvailableDates = async () => {
+  const todayStr = getLocalDateStr();
+  const status = getThursdaySubmissionStatus();
+  
+  const specialDays = await SessionPermission.findAll({
+    where: { date: { [Sequelize.Op.gt]: todayStr } },
+    order: [['date', 'ASC']]
+  });
+  
+  const dates = new Map();
+  if (status.openThursday) {
+    dates.set(status.openThursday, { label: 'Next Thursday', desc: 'Regular Session' });
+  }
+  specialDays.forEach(p => {
+    const label = p.type === 'festival' ? 'Festival' : 'Special';
+    dates.set(p.date, { label: label, desc: p.description || '' });
+  });
+  return { dates, status };
+};
+
 exports.showSubmitForm = async (req, res) => {
     
   try {
     const isAdmin = req.query.admin === 'true' || !!(req.session && req.session.admin);
     const showSuccess = req.query.success === 'true';
     let sessionDate = req.query.session_date;
-
-    // Helper to fetch available dates
-    const getAvailableDates = async () => {
-      const todayStr = getLocalDateStr();
-      const status = getThursdaySubmissionStatus();
-      
-      const specialDays = await SessionPermission.findAll({
-        where: { date: { [Sequelize.Op.gt]: todayStr } },
-        order: [['date', 'ASC']]
-      });
-      
-      const dates = new Map();
-      if (status.openThursday) {
-        dates.set(status.openThursday, { label: 'Next Thursday', desc: 'Regular Session' });
-      }
-      specialDays.forEach(p => {
-        const label = p.type === 'festival' ? 'Festival' : 'Special';
-        dates.set(p.date, { label: label, desc: p.description || '' });
-      });
-      return { dates, status };
-    };
 
     const renderSelectionScreen = async (msg) => {
       const { dates: availableDates } = await getAvailableDates();
@@ -527,28 +527,43 @@ exports.getPlan = async (req,res)=>{
   }
 };
 
-// ── Smart session redirection (routes to submit-form if open, history if moved) ──
+// ── Smart session redirection (routes to submit-form if open, history if moved/closed) ──
 exports.sessionLink = async (req, res) => {
   try {
-    const sessionDate = req.query.session_date || req.query.date;
-    if (!sessionDate) {
-      return res.redirect("/submit-form");
-    }
-
     const { getLocalDateStr } = require("../services/helpers");
     const SessionMeta = require("../models/SessionMeta");
+    const SessionPermission = require("../models/SessionPermission");
+
+    let sessionDate = req.query.session_date || req.query.date;
+
+    const { dates: availableDates, status: thuStatus } = await getAvailableDates();
+
+    if (!sessionDate) {
+      sessionDate = thuStatus.openThursday;
+    }
+
+    if (!sessionDate) {
+      return res.redirect("/database");
+    }
 
     const todayStr = getLocalDateStr();
     const isPastOrToday = todayStr >= sessionDate;
     const meta = await SessionMeta.findByPk(sessionDate);
     const isManuallyLocked = meta && meta.is_locked;
+    const isNextThuUnopened = sessionDate === thuStatus.nextThursdayDate && thuStatus.opensAt8pmToday;
 
-    // If session has already moved to history (locked or date arrived), direct to History tab
-    if (isPastOrToday || isManuallyLocked) {
+    // Check if date is a Thursday or has explicit admin permission
+    const [sYear, sMonth, sDay] = sessionDate.split('-').map(Number);
+    const dayOfWeek = new Date(sYear, sMonth - 1, sDay).getDay();
+    const isThursday = dayOfWeek === 4;
+    const permission = await SessionPermission.findByPk(sessionDate);
+
+    // If session submissions are closed/locked/past or not enabled, direct to History tab
+    if (isPastOrToday || isManuallyLocked || isNextThuUnopened || (!isThursday && !permission)) {
       return res.redirect("/database");
     }
 
-    // If session is open, direct to submit-form
+    // Submissions are open — direct to submit-form for this session
     return res.redirect(`/submit-form?session_date=${sessionDate}`);
   } catch (error) {
     console.error("sessionLink error:", error);
