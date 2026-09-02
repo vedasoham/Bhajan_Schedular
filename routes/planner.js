@@ -4,6 +4,7 @@ const router = express.Router();
 const plannerController = require("../controllers/plannerController");
 
 router.get("/submit-form", plannerController.showSubmitForm);
+router.get("/session-link", plannerController.sessionLink);
 router.post("/submit-form", plannerController.submitForm);
 router.get("/plan-view", plannerController.planView);
 router.post("/submit", plannerController.submitApi);

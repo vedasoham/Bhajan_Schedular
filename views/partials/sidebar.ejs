@@ -83,6 +83,18 @@
         <a href="/admin?copy=true"><span>📋</span>Copy Session</a>
         <a href="/plan-view"><span>📤</span>Plan &amp; Share</a>
 
+        <a href="/admin/bulletins"
+           class="<%= page === 'bulletins' ? 'active' : '' %>">
+            <span>📢</span>
+            Bulletins
+        </a>
+
+        <a href="/admin/notifications"
+           class="<%= page === 'notifications' ? 'active' : '' %>">
+            <span>🔔</span>
+            Notifications
+        </a>
+
         <% if(currentAdmin.role==="super_admin"){ %>
 
         <a href="/admin/admin-users"

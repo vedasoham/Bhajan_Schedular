@@ -79,6 +79,7 @@ app.use((req, res, next) => {
   res.locals.pageTitle = "Bhajan Planner";
   res.locals.pageCSS = null;
   res.locals.pageJS = null;
+  res.locals.showLoader = false;
   res.locals.isAdminPage = ADMIN_PATH_PREFIXES.some((prefix) =>
     req.path === prefix || req.path.startsWith(prefix + "/")
   );
@@ -93,6 +94,8 @@ const masterBankRoutes = require("./routes/masterBank");
 const analyticsRoutes = require("./routes/analytics");
 const singerRoutes = require("./routes/singer");
 const adminUserRoutes = require("./routes/adminUsers");
+const notificationRoutes = require("./routes/notifications");
+const bulletinRoutes = require("./routes/bulletin");
 
 app.use("/", homeRoutes);
 app.use("/", plannerRoutes);
@@ -103,6 +106,8 @@ app.use("/", masterBankRoutes);
 app.use("/", analyticsRoutes);
 app.use("/", singerRoutes);
 app.use("/", adminUserRoutes);
+app.use("/", notificationRoutes);
+app.use("/", bulletinRoutes);
 
 // Do not expose stack traces or database details to visitors.
 app.use((error, req, res, next) => {

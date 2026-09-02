@@ -1,9 +1,3 @@
-<meta charset="utf-8" />
-    <title>Admin Calendar</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="stylesheet" href="/css/style.css">
-    <script src="/js/script.js"></script>
-
 <div class="container container-xl">
 
     <div class="header">
@@ -60,45 +54,39 @@
     </nav>
 
 
-    <div class="calendar-header">
+    <div class="calendar-wrapper">
+        <div class="calendar-header">
 
-        <a
-            href="/admin?month=<%= prevMonth %>&year=<%= prevYear %>"
-            class="calendar-nav-btn"
-        >
-            ←
-        </a>
+            <a
+                href="/admin?month=<%= prevMonth %>&year=<%= prevYear %>"
+                class="calendar-nav-btn"
+                aria-label="Previous month"
+            >
+                ←
+            </a>
 
-        <div class="calendar-title">
-            <%= currentMonthName %> <%= year %>
+            <div class="calendar-title">
+                <%= currentMonthName %> <%= year %>
+            </div>
+
+            <a
+                href="/admin?month=<%= nextMonth %>&year=<%= nextYear %>"
+                class="calendar-nav-btn"
+                aria-label="Next month"
+            >
+                →
+            </a>
+
         </div>
 
-        <a
-            href="/admin?month=<%= nextMonth %>&year=<%= nextYear %>"
-            class="calendar-nav-btn"
-        >
-            →
-        </a>
+        <div class="calendar-weekdays">
+            <%- calendarHeadersHtml %>
+        </div>
 
+        <div class="calendar-grid">
+            <%- calendarCells %>
+        </div>
     </div>
-
-
-    <div class="calendar-legend">
-    <div class="legend-item"><span class="legend-color day-none"></span>No Session</div>
-    <div class="legend-item"><span class="legend-color day-thursday-upcoming"></span>Upcoming Thursday</div>
-    <div class="legend-item"><span class="legend-color day-thursday"></span>Thursday (Submitted)</div>
-    <div class="legend-item"><span class="legend-color day-thursday-missed"></span>Missed Thursday</div>
-    <div class="legend-item"><span class="legend-color day-special"></span>Special</div>
-    <div class="legend-item"><span class="legend-color day-festival-perm"></span>Festival</div>
-</div>
-
-
-    <div class="calendar-grid">
-
-    ...
-    <%- calendarCells %>
-
-</div>
 </div>
 <div class="admin-control-grid">
 

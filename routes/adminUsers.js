@@ -5,8 +5,7 @@ const adminUserController = require("../controllers/adminUserController");
 
 const {requireLogin,requireSuperAdmin} = require("../middleware/auth");
 
-router.use(requireLogin);
-router.use(requireSuperAdmin);
+router.use("/admin/admin-users", requireLogin, requireSuperAdmin);
 
 router.get("/admin/admin-users",adminUserController.listAdmins);
 router.get("/admin/admin-users/new",adminUserController.showCreateForm);

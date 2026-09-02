@@ -11,6 +11,12 @@ const DeityRule = require("../models/DeityRule");
 const ActivityLog = require("../models/ActivityLog");
 const UserPresence = require("../models/UserPresence");
 
+// New models for notification + bulletin system
+const Notification = require("../models/Notification");
+const NotificationRead = require("../models/NotificationRead");
+const PushSubscription = require("../models/PushSubscription");
+const Bulletin = require("../models/Bulletin");
+
 async function initializeSuperAdmin() {
   const superAdminCount = await AdminUser.count({
     where: { role: "super_admin" }
@@ -66,6 +72,17 @@ async function ensureSingerGenderColumn() {
     const [columns] = await sequelize.query("PRAGMA table_info(singer_dictionary)");
     if (!columns.some((column) => column.name === "gender")) {
       await sequelize.query("ALTER TABLE singer_dictionary ADD COLUMN gender VARCHAR(20)");
+    }
+  } catch (err) {
+    // Ignore if table info query fails
+  }
+}
+
+async function ensureSingerPinColumn() {
+  try {
+    const [columns] = await sequelize.query("PRAGMA table_info(singer_dictionary)");
+    if (!columns.some((column) => column.name === "pin")) {
+      await sequelize.query("ALTER TABLE singer_dictionary ADD COLUMN pin VARCHAR(100)");
     }
   } catch (err) {
     // Ignore if table info query fails
@@ -146,8 +163,10 @@ async function ensureAdminUserColumns() {
 
 async function ensureActivityTables() {
   try {
-    await ActivityLog.sync({ alter: true });
-    await UserPresence.sync({ alter: true });
+    await sequelize.query("DROP TABLE IF EXISTS user_presence_backup");
+    await sequelize.query("DROP TABLE IF EXISTS activity_logs_backup");
+    await ActivityLog.sync();
+    await UserPresence.sync();
 
     // Double check session_id column in activity_logs
     const [actCols] = await sequelize.query("PRAGMA table_info(activity_logs)");
@@ -165,18 +184,38 @@ async function ensureActivityTables() {
   }
 }
 
+async function ensureNotificationTables() {
+  try {
+    // These sync() calls only CREATE tables if they don't exist.
+    // They will NOT alter or drop existing tables.
+    await Notification.sync();
+    await NotificationRead.sync();
+    await PushSubscription.sync();
+    await Bulletin.sync();
+    console.log("✅ Notification & bulletin tables ready.");
+  } catch (err) {
+    console.error("Notification tables check failed:", err.message);
+  }
+}
+
 async function initializeDatabase() {
   try {
     await sequelize.sync();
     await ensureAdminUserColumns();
     await ensureSingerGenderColumn();
+    await ensureSingerPinColumn();
     await ensureActivityTables();
+    await ensureNotificationTables();
 
     await initializeSuperAdmin();
     await migrateLegacySubmissions();
     await loadMasterBhajans();
     await initDeityRules();
     await normalizeDeityNames();
+
+    // Start session lifecycle scheduler for automatic notifications
+    const { startSessionScheduler } = require("./sessionScheduler");
+    startSessionScheduler();
 
     console.log("✅ Database initialization complete.");
   } catch (error) {

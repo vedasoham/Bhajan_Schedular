@@ -158,6 +158,12 @@ exports.dashboard = async (req, res) => {
     const daysInMonth = new Date(year, month, 0).getDate();
     const firstDayIndex = new Date(year, month - 1, 1).getDay();
 
+    const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    let calendarHeadersHtml = "";
+    for (const wd of weekdays) {
+      calendarHeadersHtml += `<div class="calendar-day-header">${wd}</div>`;
+    }
+
     let calendarCells = "";
 
     for (let i = 0; i < firstDayIndex; i++) {
@@ -165,50 +171,71 @@ exports.dashboard = async (req, res) => {
     }
 
     const todayDate = new Date();
-const isCurrentMonth =
-  todayDate.getFullYear() === year && todayDate.getMonth() + 1 === month;
-const todayStrGlobal = `${todayDate.getFullYear()}-${String(todayDate.getMonth() + 1).padStart(2, "0")}-${String(todayDate.getDate()).padStart(2, "0")}`;
+    const isCurrentMonth =
+      todayDate.getFullYear() === year && todayDate.getMonth() + 1 === month;
+    const todayStrGlobal = `${todayDate.getFullYear()}-${String(todayDate.getMonth() + 1).padStart(2, "0")}-${String(todayDate.getDate()).padStart(2, "0")}`;
 
-for (let day = 1; day <= daysInMonth; day++) {
-  const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 
-  const count = eventCounts[dateStr] || 0;
-  const perm = permissionMap[dateStr];
-  const desc = descriptionMap[dateStr] || "";
+      const count = eventCounts[dateStr] || 0;
+      const perm = permissionMap[dateStr];
+      const desc = descriptionMap[dateStr] || "";
 
-  const dow = new Date(year, month - 1, day).getDay();
-  const isThursday = dow === 4;
-  const isPast = dateStr < todayStrGlobal;
+      const dow = new Date(year, month - 1, day).getDay();
+      const isThursday = dow === 4;
+      const isPast = dateStr < todayStrGlobal;
 
-  let colorClass = "day-none";
-  let pillHtml = count ? `<div class="event-pill">${count} Bhajans</div>` : "";
+      let colorClass = "day-none";
+      let pillHtml = count ? `<div class="event-pill">${count} Bhajans</div>` : "";
 
-  if (perm === "special") {
-    colorClass = "day-special";
-  } else if (perm === "festival") {
-    colorClass = "day-festival-perm";
-  } else if (count > 0) {
-    colorClass = isThursday ? "day-thursday" : "day-festival";
-  } else if (isThursday && !isPast) {
-    colorClass = "day-thursday-upcoming";
-    pillHtml = `<div class="event-pill pill-muted">Regular Session</div>`;
-  } else if (isThursday && isPast) {
-    colorClass = "day-thursday-missed";
-    pillHtml = `<div class="event-pill pill-missed">Missed Session</div>`;
-  }
+      if (perm === "special") {
+        colorClass = "day-special";
+      } else if (perm === "festival") {
+        colorClass = "day-festival-perm";
+      } else if (count > 0) {
+        colorClass = isThursday ? "day-thursday" : "day-festival";
+      } else if (isThursday && !isPast) {
+        colorClass = "day-thursday-upcoming";
+        pillHtml = `<div class="event-pill pill-muted">Regular Session</div>`;
+      } else if (isThursday && isPast) {
+        colorClass = "day-thursday-missed";
+        pillHtml = `<div class="event-pill pill-missed">Missed Session</div>`;
+      }
 
-  const isToday = isCurrentMonth && todayDate.getDate() === day;
+      // Compact mobile-only indicators that fit inside 35-40px cells
+      let mobileIndicatorHtml = "";
+      if (count > 0) {
+        mobileIndicatorHtml = `<span class="mobile-count-pill">${count}</span>`;
+      } else if (isThursday && !isPast) {
+        mobileIndicatorHtml = `<span class="mobile-thu-indicator">Thu</span>`;
+      } else if (isThursday && isPast) {
+        mobileIndicatorHtml = `<span class="mobile-missed-indicator">✕</span>`;
+      }
 
-  calendarCells += `
+      let mobilePermHtml = "";
+      if (perm === "special") {
+        mobilePermHtml = `<span class="mobile-perm-pill special">✨ Spec</span>`;
+      } else if (perm === "festival") {
+        mobilePermHtml = `<span class="mobile-perm-pill festival">🪔 Fest</span>`;
+      }
+
+      const isToday = isCurrentMonth && todayDate.getDate() === day;
+
+      calendarCells += `
 <div class="calendar-day ${colorClass} ${isToday ? "today" : ""}"
 onclick="openAdminDateModal('${dateStr}','${perm || ""}','${desc.replace(/'/g, "&apos;")}')">
-<div class="calendar-date-num">${day}</div>
-<div class="calendar-actions">
-${pillHtml}
-${perm ? `<div class="perm-pill">${perm.toUpperCase()}</div>` : ""}
-</div>
+  <div class="calendar-date-num">${day}</div>
+  <div class="calendar-actions desktop-only">
+    ${pillHtml}
+    ${perm ? `<div class="perm-pill">${perm.toUpperCase()}</div>` : ""}
+  </div>
+  <div class="calendar-actions-mobile mobile-only">
+    ${mobileIndicatorHtml}
+    ${mobilePermHtml}
+  </div>
 </div>`;
-}
+    }
 
     const prevMonth = month === 1 ? 12 : month - 1;
     const prevYear = month === 1 ? year - 1 : year;
@@ -219,11 +246,14 @@ ${perm ? `<div class="perm-pill">${perm.toUpperCase()}</div>` : ""}
     res.render("admin-dashboard", {
       page: "dashboard",
       pageTitle: "Dashboard",
+      showLoader: true,
+      isAdminPage: true,
 
       year,
       month,
 
       currentMonthName,
+      calendarHeadersHtml,
       calendarCells,
       prevMonth,
       prevYear,
@@ -408,6 +438,17 @@ exports.toggleLock = async (req, res) => {
   try {
     const { date, is_locked } = req.body;
     await SessionMeta.upsert({ session_date: date, is_locked });
+
+    // When a session is locked, trigger schedule-published notification
+    if (is_locked) {
+      try {
+        const { triggerSchedulePublished } = require("../services/sessionScheduler");
+        await triggerSchedulePublished(date);
+      } catch (err) {
+        console.error("Schedule published notification failed:", err.message);
+      }
+    }
+
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });

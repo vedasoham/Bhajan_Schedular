@@ -11,5 +11,6 @@ router.get("/admin/singer-dictionary", requireLogin, singerController.showSinger
 router.post("/api/admin/add-singer", requireApiLogin, singerController.addSinger);
 router.post("/api/admin/edit-singer/:id", requireApiLogin, singerController.editSinger);
 router.post("/api/admin/delete-singer/:id", requireApiLogin, singerController.deleteSinger);
+router.post("/api/admin/reset-singer-pin/:id", requireApiLogin, singerController.resetSingerPin);
 
 module.exports = router;

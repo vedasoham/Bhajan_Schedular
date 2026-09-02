@@ -28,6 +28,7 @@
           <tr>
             <th onclick="sortTable(0, 'singerDictTable')" style="cursor:pointer;">Singer Name ↕</th>
             <th>Gender</th>
+            <th>Notification PIN</th>
             <th style="text-align:right;">Actions</th>
           </tr>
         </thead>
@@ -37,6 +38,16 @@
               <tr>
                 <td><strong><%= s.name %></strong></td>
                 <td><%= s.gender || 'Not set' %></td>
+                <td>
+                  <% if (s.pin) { %>
+                    <span style="display:inline-block; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:600; background:#e6fcf5; color:#0ca678; border:1px solid #c3fae8;">🔒 Protected</span>
+                    <form action="/api/admin/reset-singer-pin/<%= s.id %>" method="POST" style="margin:0; display:inline; margin-left:6px;" onsubmit="return confirm('Reset the 4-digit PIN for <%= s.name.replace(/'/g, "\\'") %>? The singer will be able to set a new PIN on their next visit.');">
+                      <button type="submit" class="button secondary" style="padding:3px 8px; font-size:11px; border:1px solid #ffa94d; color:#d9480f; background:#fff4e6; cursor:pointer;" title="Reset PIN">🔄 Reset</button>
+                    </form>
+                  <% } else { %>
+                    <span style="display:inline-block; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:500; background:#f1f3f5; color:#868e96;">🔓 Not Set</span>
+                  <% } %>
+                </td>
                 <td style="text-align:right;">
                   <form action="/api/admin/edit-singer/<%= s.id %>" method="POST" style="margin:0; display:inline;" id="edit-form-<%= s.id %>">
                     <input type="hidden" name="name" id="edit-input-<%= s.id %>" value="<%= s.name %>">

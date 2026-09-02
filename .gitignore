@@ -1,5 +1,5 @@
 # ============================================================
-# DATABASE — CRITICAL: these contain real user data & hashes
+# DATABASE — CRITICAL: contains real user data & hashes
 # ============================================================
 *.db
 *.db-journal
@@ -7,20 +7,32 @@
 *.db-shm
 *.sqlite
 *.sqlite3
+*.bak
+*.backup
+*.dump
+database_backup/
 
 # ============================================================
-# ENVIRONMENT — secrets, credentials, API keys
+# ENVIRONMENT & SECRETS — credentials, API keys, VAPID keys
 # ============================================================
 .env
 .env.local
 .env.*.local
 .env.production
 .env.staging
+!.env.example
+vapid-keys.json
+vapid.json
+*.pem
+*.key
+*.cert
+*.crt
 
 # ============================================================
 # DEPENDENCIES
 # ============================================================
 node_modules/
+.npm
 
 # ============================================================
 # LOGS
@@ -40,13 +52,15 @@ desktop.ini
 ehthumbs.db
 
 # ============================================================
-# IDE / EDITOR
+# IDE & AI AGENT ARTIFACTS
 # ============================================================
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+.gemini/
+.agents/
 
 # ============================================================
 # BUILD & TEMPORARY
@@ -56,6 +70,8 @@ build/
 tmp/
 temp/
 coverage/
+scratch/
+test_*.js
 
 # ============================================================
 # DECOMPILED APK / UNRELATED ASSETS

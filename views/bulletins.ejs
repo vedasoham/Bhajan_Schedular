@@ -1,0 +1,37 @@
+<div class="prasanthi-border"></div>
+<div class="bulletin-list-container">
+  <a href="/" class="bulletin-back-link">← Back to Home</a>
+  
+  <div class="bulletin-list-header">
+    <h1>📢 Latest Updates</h1>
+    <p>Notices and announcements from the Samiti</p>
+  </div>
+
+  <% if (bulletins && bulletins.length > 0) { %>
+    <% bulletins.forEach(function(b) { %>
+      <% 
+        const catInfo = CATEGORY_INFO[b.category] || CATEGORY_INFO.announcement;
+        const isNew = b.published_at && (Date.now() - new Date(b.published_at).getTime()) < 5 * 24 * 60 * 60 * 1000;
+      %>
+      <a href="/bulletins/<%= b.id %>" class="bulletin-card">
+        <div class="bulletin-card-header">
+          <span class="bulletin-category-badge" style="background:<%= catInfo.color %>"><%= catInfo.icon %> <%= catInfo.label %></span>
+          <% if (isNew) { %><span class="bulletin-new-badge">🆕 NEW</span><% } %>
+          <% if (b.is_pinned) { %><span class="bulletin-pin-badge">📌</span><% } %>
+        </div>
+        <h3 class="bulletin-card-title"><%= b.title %></h3>
+        <p class="bulletin-card-preview"><%- formatContent((b.content || '').substring(0, 120)) %><%= b.content && b.content.length > 120 ? '...' : '' %></p>
+        <div class="bulletin-card-date">
+          <% if (b.published_at) { %>
+            <%= new Date(b.published_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) %>
+          <% } %>
+        </div>
+      </a>
+    <% }); %>
+  <% } else { %>
+    <div class="bulletin-empty">
+      <div class="bulletin-empty-icon">📭</div>
+      <p>No updates at this time. Check back later!</p>
+    </div>
+  <% } %>
+</div>

@@ -1,0 +1,94 @@
+<!-- Notification Bell - Floating notification center for user-facing pages -->
+<% if (typeof isAdminPage === 'undefined' || !isAdminPage || !currentAdmin) { %>
+<button class="notif-bell-btn" id="notifBellBtn" aria-label="Notifications" title="Notifications" type="button">
+  <svg class="notif-bell-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+  </svg>
+  <span class="notif-badge" id="notifBadge" style="display:none">0</span>
+</button>
+<% } %>
+
+<!-- Notification Panel -->
+<div class="notif-panel" id="notifPanel">
+  <div class="notif-panel-header">
+    <h3>🔔 Notifications</h3>
+    <div class="notif-panel-actions">
+      <button class="notif-mark-all" id="notifMarkAllRead" title="Mark all as read">✓ All</button>
+      <a href="/notification-settings" class="notif-settings-link" title="Notification Settings">⚙️</a>
+      <button class="notif-close-btn" id="notifCloseBtn" aria-label="Close">✕</button>
+    </div>
+  </div>
+  <div class="notif-panel-body" id="notifPanelBody">
+    <div class="notif-loading">Loading...</div>
+  </div>
+</div>
+<div class="notif-overlay" id="notifOverlay"></div>
+
+<!-- One-Time First-Visit Permission Popup -->
+<% if (typeof isAdminPage === 'undefined' || !isAdminPage || !currentAdmin) { %>
+<div class="notif-prompt-overlay" id="notifPromptOverlay" style="display:none;">
+  <div class="notif-prompt-modal">
+    <div class="notif-prompt-header">
+      <div class="notif-prompt-icon">🔔</div>
+      <div class="notif-prompt-titles">
+        <h3 class="notif-prompt-title">Enable Bhajan Notifications</h3>
+        <p class="notif-prompt-subtitle">Sri Sathya Sai Seva Organisation, Gandhinagar</p>
+      </div>
+    </div>
+
+    <!-- Notification Benefits Callout -->
+    <div class="notif-benefits-box">
+      <div class="notif-benefits-title">✨ Why enable notifications?</div>
+      <ul class="notif-benefits-list">
+        <li>⏰ <strong>Deadline Reminders:</strong> Get alerted before submissions close so you never miss adding a bhajan.</li>
+        <li>🤝 <strong>Partner Alerts:</strong> Know instantly when someone adds a bhajan partnering with you.</li>
+        <li>📋 <strong>Finalized Schedules:</strong> Instant access the moment the session sequence is published.</li>
+        <li>📢 <strong>Samiti Updates:</strong> Important announcements and practice timings directly from coordinators.</li>
+      </ul>
+    </div>
+    
+    <div class="notif-prompt-form">
+      <label for="notifPromptSingerSelect" class="notif-prompt-label">Select your name:</label>
+      <select id="notifPromptSingerSelect" class="notif-prompt-select">
+        <option value="">— Select your name —</option>
+      </select>
+    </div>
+
+    <!-- 4-Digit Security PIN Section -->
+    <div id="notifPromptPinSection" class="notif-pin-section" style="display:none;">
+      <div id="notifPromptPinNotice" class="notif-pin-security-notice">
+        <div class="notif-pin-notice-header">🔒 <strong>Securing Your Notifications</strong></div>
+        <p class="notif-pin-notice-desc" id="notifPromptPinDesc">
+          This 4-digit PIN secures your profile and prevents anyone else from claiming your name and receiving your partner notifications.
+        </p>
+        <p class="notif-pin-notice-reminder" id="notifPromptPinReminder">
+          <strong>Important:</strong> Please remember this PIN for receiving notifications on other devices (like your laptop or tablet). If you ever forget it, contact the Samiti coordinator / admin for a reset.
+        </p>
+      </div>
+
+      <div class="notif-pin-input-group">
+        <label id="notifPromptPinLabel" for="notifPromptPinInput" class="notif-pin-label">Create a 4-Digit Security PIN:</label>
+        <div class="notif-pin-field-wrap">
+          <input type="password" id="notifPromptPinInput" class="notif-pin-input" maxlength="4" pattern="[0-9]*" inputmode="numeric" placeholder="••••" autocomplete="off">
+          <button type="button" id="notifPromptPinToggleBtn" class="notif-pin-toggle-btn" title="Show/Hide PIN">👁️</button>
+        </div>
+        <div id="notifPromptPinHelp" class="notif-pin-help">Enter 4 numeric digits (e.g. 1234)</div>
+        <div id="notifPromptPinError" class="notif-pin-error"></div>
+      </div>
+    </div>
+
+    <div class="notif-prompt-actions">
+      <button type="button" class="notif-btn-prompt-enable" id="notifPromptEnableBtn" disabled>
+        Enable Notifications
+      </button>
+      <button type="button" class="notif-btn-prompt-dismiss" id="notifPromptDismissBtn">
+        Not Now
+      </button>
+    </div>
+    <div class="notif-prompt-footer">
+      This is a one-time request. You can change your identity or update your device anytime via notification settings (⚙️).
+    </div>
+  </div>
+</div>
+<% } %>

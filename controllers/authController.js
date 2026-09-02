@@ -45,7 +45,8 @@ exports.showLogin = (req, res) => {
 
   res.render("admin-login", {
     error: null,
-    googleClientId: process.env.GOOGLE_CLIENT_ID || null
+    googleClientId: process.env.GOOGLE_CLIENT_ID || null,
+    showLoader: true
   });
 };
 

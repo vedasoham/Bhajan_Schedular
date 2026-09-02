@@ -1,0 +1,384 @@
+<div class="prasanthi-border"></div>
+<div class="notif-settings-container">
+  <a href="/" class="bulletin-back-link">← Back to Home</a>
+
+  <div class="notif-settings-card">
+    <h2>🔔 Notification Settings</h2>
+    <p class="subtitle">Stay updated on submission deadlines, partner additions, and bhajan schedules</p>
+
+    <!-- Notification Benefits Callout -->
+    <div class="notif-benefits-box">
+      <div class="notif-benefits-title">✨ Why enable notifications?</div>
+      <ul class="notif-benefits-list">
+        <li>⏰ <strong>Deadline Reminders:</strong> Get alerted before submissions close so you never miss adding a bhajan.</li>
+        <li>🤝 <strong>Partner Alerts:</strong> Know instantly when someone adds a bhajan partnering with you.</li>
+        <li>📋 <strong>Finalized Schedules:</strong> Instant access the moment the session sequence is published.</li>
+        <li>📢 <strong>Samiti Updates:</strong> Important announcements and rehearsal timings directly from coordinators.</li>
+      </ul>
+    </div>
+
+    <!-- Current Status -->
+    <div id="notifStatusSection" style="display:none;">
+      <div class="notif-status-card" id="notifStatusCard">
+        <div class="notif-status-label">Status</div>
+        <div class="notif-status-value" id="notifStatusText">Checking...</div>
+      </div>
+    </div>
+
+    <!-- Singer Selection (Initial) -->
+    <div id="notifEnableSection">
+      <label for="singerSelect">Select your name:</label>
+      <select id="singerSelect" class="notif-singer-select">
+        <option value="">— Select your name —</option>
+      </select>
+
+      <!-- Dynamic 4-Digit Security PIN Section -->
+      <div id="settingsPinSection" class="notif-pin-section" style="display:none;">
+        <div id="settingsPinNotice" class="notif-pin-security-notice">
+          <div class="notif-pin-notice-header">🔒 <strong>Securing Your Notifications</strong></div>
+          <p class="notif-pin-notice-desc" id="settingsPinDesc">
+            This 4-digit PIN secures your profile and prevents anyone else from claiming your name and receiving your partner notifications.
+          </p>
+          <p class="notif-pin-notice-reminder" id="settingsPinReminder">
+            <strong>Important:</strong> Please remember this PIN for receiving notifications on other devices (like your laptop or tablet). If you ever forget it, contact the Samiti coordinator / admin for a reset.
+          </p>
+        </div>
+
+        <div class="notif-pin-input-group">
+          <label id="settingsPinLabel" for="settingsPinInput" class="notif-pin-label">Create a 4-Digit Security PIN:</label>
+          <div class="notif-pin-field-wrap">
+            <input type="password" id="settingsPinInput" class="notif-pin-input" maxlength="4" pattern="[0-9]*" inputmode="numeric" placeholder="••••" autocomplete="off">
+            <button type="button" id="settingsPinToggleBtn" class="notif-pin-toggle-btn" title="Show/Hide PIN">👁️</button>
+          </div>
+          <div id="settingsPinHelp" class="notif-pin-help">Enter 4 numeric digits (e.g. 1234)</div>
+          <div id="settingsPinError" class="notif-pin-error"></div>
+        </div>
+      </div>
+
+      <button id="notifEnableBtn" class="notif-btn-enable" style="margin-top:14px;" disabled>
+        Enable Notifications
+      </button>
+    </div>
+
+    <!-- Disable/Change section (shown when subscribed) -->
+    <div id="notifManageSection" style="display:none;">
+      <label for="singerChangeSelect">Change identity:</label>
+      <select id="singerChangeSelect" class="notif-singer-select">
+        <option value="">— Select your name —</option>
+      </select>
+
+      <!-- PIN Section for changing identity -->
+      <div id="settingsChangePinSection" class="notif-pin-section" style="display:none;">
+        <div id="settingsChangePinNotice" class="notif-pin-security-notice">
+          <div class="notif-pin-notice-header">🔒 <strong>Identity Security Check</strong></div>
+          <p class="notif-pin-notice-desc" id="settingsChangePinDesc">
+            Enter the 4-digit PIN for this profile to switch identity.
+          </p>
+        </div>
+
+        <div class="notif-pin-input-group">
+          <label id="settingsChangePinLabel" for="settingsChangePinInput" class="notif-pin-label">4-Digit PIN:</label>
+          <div class="notif-pin-field-wrap">
+            <input type="password" id="settingsChangePinInput" class="notif-pin-input" maxlength="4" pattern="[0-9]*" inputmode="numeric" placeholder="••••" autocomplete="off">
+            <button type="button" id="settingsChangePinToggleBtn" class="notif-pin-toggle-btn" title="Show/Hide PIN">👁️</button>
+          </div>
+          <div id="settingsChangePinError" class="notif-pin-error"></div>
+        </div>
+      </div>
+
+      <button id="notifChangeBtn" class="notif-btn-enable" style="margin-top:12px; background:linear-gradient(135deg, #4dabf7 0%, #228be6 100%);" disabled>
+        Update Identity
+      </button>
+
+      <button id="notifDisableBtn" class="notif-btn-disable">
+        🔕 Disable Notifications
+      </button>
+    </div>
+
+    <div style="margin-top:20px; font-size:12px; color:#aaa; text-align:center;">
+      Protected by 4-digit singer PIN. No username or password required.
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  function getDeviceId() {
+    let id = localStorage.getItem('bp_device_id');
+    if (!id) {
+      id = 'dev_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 9);
+      localStorage.setItem('bp_device_id', id);
+    }
+    return id;
+  }
+  const deviceId = window.BP_DEVICE_ID || getDeviceId();
+
+  const singerSelect = document.getElementById('singerSelect');
+  const singerChangeSelect = document.getElementById('singerChangeSelect');
+  const enableBtn = document.getElementById('notifEnableBtn');
+  const changeBtn = document.getElementById('notifChangeBtn');
+  const disableBtn = document.getElementById('notifDisableBtn');
+  const enableSection = document.getElementById('notifEnableSection');
+  const manageSection = document.getElementById('notifManageSection');
+  const statusSection = document.getElementById('notifStatusSection');
+  const statusCard = document.getElementById('notifStatusCard');
+  const statusText = document.getElementById('notifStatusText');
+
+  const settingsPinSection = document.getElementById('settingsPinSection');
+  const settingsPinInput = document.getElementById('settingsPinInput');
+  const settingsPinLabel = document.getElementById('settingsPinLabel');
+  const settingsPinNotice = document.getElementById('settingsPinNotice');
+  const settingsPinDesc = document.getElementById('settingsPinDesc');
+  const settingsPinReminder = document.getElementById('settingsPinReminder');
+  const settingsPinHelp = document.getElementById('settingsPinHelp');
+  const settingsPinError = document.getElementById('settingsPinError');
+  const settingsPinToggleBtn = document.getElementById('settingsPinToggleBtn');
+
+  const settingsChangePinSection = document.getElementById('settingsChangePinSection');
+  const settingsChangePinInput = document.getElementById('settingsChangePinInput');
+  const settingsChangePinLabel = document.getElementById('settingsChangePinLabel');
+  const settingsChangePinDesc = document.getElementById('settingsChangePinDesc');
+  const settingsChangePinError = document.getElementById('settingsChangePinError');
+  const settingsChangePinToggleBtn = document.getElementById('settingsChangePinToggleBtn');
+
+  // PIN toggle visibility
+  if (settingsPinToggleBtn && settingsPinInput) {
+    settingsPinToggleBtn.addEventListener('click', () => {
+      settingsPinInput.type = settingsPinInput.type === 'password' ? 'text' : 'password';
+    });
+  }
+  if (settingsChangePinToggleBtn && settingsChangePinInput) {
+    settingsChangePinToggleBtn.addEventListener('click', () => {
+      settingsChangePinInput.type = settingsChangePinInput.type === 'password' ? 'text' : 'password';
+    });
+  }
+
+  // Load singers
+  fetch('/api/singers')
+    .then(r => r.json())
+    .then(singers => {
+      const list = Array.isArray(singers) ? singers : (singers.singers || []);
+      list.sort((a, b) => a.name.localeCompare(b.name));
+      list.forEach(s => {
+        const opt1 = new Option(s.name, s.id);
+        const opt2 = new Option(s.name, s.id);
+        singerSelect.add(opt1);
+        singerChangeSelect.add(opt2);
+      });
+      checkStatus();
+    })
+    .catch(() => {});
+
+  // Check current subscription status
+  function checkStatus() {
+    fetch(`/api/notifications/subscription-status?device_id=${encodeURIComponent(deviceId)}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.subscribed) {
+          statusSection.style.display = 'block';
+          statusCard.classList.remove('disabled');
+          statusText.textContent = `Notifications enabled as "${data.singer_name}"`;
+          enableSection.style.display = 'none';
+          manageSection.style.display = 'block';
+          singerChangeSelect.value = data.singer_id;
+        } else {
+          statusSection.style.display = 'block';
+          statusCard.classList.add('disabled');
+          statusText.textContent = 'Notifications are not enabled';
+          enableSection.style.display = 'block';
+          manageSection.style.display = 'none';
+        }
+      })
+      .catch(() => {});
+  }
+
+  // Check PIN status on singer select change
+  async function handleSingerChange(selectEl, pinSection, pinInput, pinLabel, pinNotice, pinDesc, pinReminder, pinHelp, pinError, actionBtn) {
+    const singerId = selectEl.value;
+    pinError.style.display = 'none';
+    pinError.textContent = '';
+    pinInput.value = '';
+    pinInput.classList.remove('is-invalid');
+
+    if (!singerId) {
+      pinSection.style.display = 'none';
+      actionBtn.disabled = true;
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/notifications/singer-pin-status?singer_id=${encodeURIComponent(singerId)}`);
+      const data = await res.json();
+
+      pinSection.style.display = 'block';
+
+      if (data.hasPin) {
+        if (pinNotice) pinNotice.classList.add('existing');
+        if (pinLabel) pinLabel.textContent = `Enter your 4-Digit PIN for ${data.singer_name}:`;
+        if (pinDesc) pinDesc.textContent = `Enter the 4-digit security PIN previously created for ${data.singer_name} to connect this device.`;
+        if (pinReminder) pinReminder.innerHTML = `<strong>Forgot your PIN?</strong> Contact the Samiti coordinator / admin for a quick reset.`;
+        if (pinHelp) pinHelp.textContent = 'Enter your 4-digit PIN';
+      } else {
+        if (pinNotice) pinNotice.classList.remove('existing');
+        if (pinLabel) pinLabel.textContent = `Create a 4-Digit Security PIN for ${data.singer_name}:`;
+        if (pinDesc) pinDesc.textContent = `This 4-digit PIN secures your profile and prevents anyone else from claiming your name and receiving your partner notifications.`;
+        if (pinReminder) pinReminder.innerHTML = `<strong>Important:</strong> Please remember this PIN for receiving notifications on other devices (like your laptop or tablet). If you ever forget it, contact the coordinator / admin for a reset.`;
+        if (pinHelp) pinHelp.textContent = 'Choose any 4 digits you will remember (e.g. 1234)';
+      }
+
+      actionBtn.disabled = pinInput.value.trim().length !== 4;
+    } catch (err) {
+      console.error('Error fetching PIN status:', err);
+      pinSection.style.display = 'block';
+      actionBtn.disabled = true;
+    }
+  }
+
+  singerSelect.addEventListener('change', () => {
+    handleSingerChange(
+      singerSelect, settingsPinSection, settingsPinInput,
+      settingsPinLabel, settingsPinNotice, settingsPinDesc,
+      settingsPinReminder, settingsPinHelp, settingsPinError, enableBtn
+    );
+  });
+
+  settingsPinInput.addEventListener('input', () => {
+    settingsPinInput.value = settingsPinInput.value.replace(/\D/g, '').slice(0, 4);
+    settingsPinError.style.display = 'none';
+    enableBtn.disabled = !singerSelect.value || settingsPinInput.value.length !== 4;
+  });
+
+  singerChangeSelect.addEventListener('change', () => {
+    handleSingerChange(
+      singerChangeSelect, settingsChangePinSection, settingsChangePinInput,
+      settingsChangePinLabel, null, settingsChangePinDesc,
+      null, null, settingsChangePinError, changeBtn
+    );
+  });
+
+  settingsChangePinInput.addEventListener('input', () => {
+    settingsChangePinInput.value = settingsChangePinInput.value.replace(/\D/g, '').slice(0, 4);
+    settingsChangePinError.style.display = 'none';
+    changeBtn.disabled = !singerChangeSelect.value || settingsChangePinInput.value.length !== 4;
+  });
+
+  // Subscribe with PIN
+  async function subscribePush(singerId, pin, errorEl) {
+    try {
+      let subscription = null;
+
+      if ('Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window) {
+        try {
+          const keyRes = await fetch('/api/notifications/vapid-key');
+          const { publicKey } = await keyRes.json();
+          if (publicKey) {
+            const permission = await Notification.requestPermission();
+            if (permission === 'granted') {
+              const reg = await navigator.serviceWorker.ready;
+              const sub = await reg.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(publicKey)
+              });
+              subscription = sub.toJSON();
+            }
+          }
+        } catch (pushErr) {
+          console.warn('Web Push setup note:', pushErr);
+        }
+      }
+
+      const res = await fetch('/api/notifications/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          singer_id: parseInt(singerId),
+          device_id: deviceId,
+          pin: pin,
+          subscription: subscription
+        })
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        return true;
+      } else {
+        const msg = data.error || 'Failed to enable notifications';
+        if (errorEl) {
+          errorEl.textContent = msg;
+          errorEl.style.display = 'block';
+        } else {
+          alert(msg);
+        }
+        return false;
+      }
+    } catch (err) {
+      console.error('Subscription error:', err);
+      if (errorEl) {
+        errorEl.textContent = 'Network error. Please try again.';
+        errorEl.style.display = 'block';
+      } else {
+        alert('Failed to enable notifications. Please try again.');
+      }
+      return false;
+    }
+  }
+
+  // Enable button click
+  enableBtn.addEventListener('click', async () => {
+    if (!singerSelect.value || settingsPinInput.value.length !== 4) return;
+    enableBtn.disabled = true;
+    enableBtn.textContent = 'Verifying PIN...';
+    const success = await subscribePush(singerSelect.value, settingsPinInput.value, settingsPinError);
+    if (success) {
+      checkStatus();
+    }
+    enableBtn.disabled = false;
+    enableBtn.textContent = 'Enable Notifications';
+  });
+
+  // Change identity
+  changeBtn.addEventListener('click', async () => {
+    if (!singerChangeSelect.value || settingsChangePinInput.value.length !== 4) return;
+    changeBtn.disabled = true;
+    changeBtn.textContent = 'Verifying PIN...';
+    const success = await subscribePush(singerChangeSelect.value, settingsChangePinInput.value, settingsChangePinError);
+    if (success) {
+      checkStatus();
+    }
+    changeBtn.disabled = false;
+    changeBtn.textContent = 'Update Identity';
+  });
+
+  // Disable
+  disableBtn.addEventListener('click', async () => {
+    if (!confirm('Are you sure you want to disable notifications on this device?')) return;
+    try {
+      if ('serviceWorker' in navigator) {
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.getSubscription();
+        if (sub) await sub.unsubscribe();
+      }
+      await fetch('/api/notifications/unsubscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ device_id: deviceId })
+      });
+      checkStatus();
+    } catch (err) {
+      console.error('Unsubscribe error:', err);
+      alert('Failed to disable notifications');
+    }
+  });
+
+  function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  }
+})();
+</script>

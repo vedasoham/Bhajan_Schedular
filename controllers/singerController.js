@@ -63,3 +63,17 @@ exports.deleteSinger = async (req, res) => {
     res.status(500).send(error.message);
   }
 };
+
+exports.resetSingerPin = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const singer = await Singer.findByPk(id);
+    if (!singer) {
+      return res.status(404).send("Singer not found");
+    }
+    await singer.update({ pin: null });
+    res.redirect("/admin/singer-dictionary?pin_reset=success");
+  } catch (error) {
+    res.status(500).send(`<h1>Error resetting PIN</h1><p>${error.message}</p><a href="/admin/singer-dictionary">Back</a>`);
+  }
+};

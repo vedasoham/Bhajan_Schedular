@@ -1,0 +1,84 @@
+<div class="page-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:12px;">
+  <h2 style="margin:0;">📢 Manage Bulletins</h2>
+  <a href="/admin/bulletins/new" class="admin-bulletin-form btn-save" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px; padding:8px 18px; font-size:13px;">
+    + New Bulletin
+  </a>
+</div>
+
+<% if (bulletins && bulletins.length > 0) { %>
+<div style="overflow-x: auto;">
+  <table class="admin-bulletin-table">
+    <thead>
+      <tr>
+        <th>Title</th>
+        <th>Status</th>
+        <th>Category</th>
+        <th>Published</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% bulletins.forEach(function(b) { %>
+        <% const catInfo = CATEGORY_INFO[b.category] || CATEGORY_INFO.announcement; %>
+        <tr>
+          <td>
+            <strong><%= b.title %></strong>
+            <% if (b.is_pinned) { %><span title="Pinned">📌</span><% } %>
+          </td>
+          <td>
+            <span class="admin-bulletin-status <%= b.status %>"><%= b.status %></span>
+          </td>
+          <td>
+            <span class="bulletin-category-badge" style="background:<%= catInfo.color %>; font-size:10px;"><%= catInfo.icon %> <%= catInfo.label %></span>
+          </td>
+          <td style="font-size:12px; color:#888;">
+            <% if (b.published_at) { %>
+              <%= new Date(b.published_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) %>
+            <% } else { %>
+              —
+            <% } %>
+          </td>
+          <td>
+            <div class="admin-bulletin-actions">
+              <a href="/admin/bulletins/<%= b.id %>/edit">Edit</a>
+              <button onclick="togglePin(<%= b.id %>)" title="<%= b.is_pinned ? 'Unpin' : 'Pin' %>"><%= b.is_pinned ? 'Unpin' : 'Pin' %></button>
+              <button onclick="togglePublish(<%= b.id %>)"><%= b.status === 'published' ? 'Unpublish' : 'Publish' %></button>
+              <% if (b.status !== 'archived') { %>
+              <button onclick="archiveBulletin(<%= b.id %>)" class="btn-delete">Archive</button>
+              <% } %>
+            </div>
+          </td>
+        </tr>
+      <% }); %>
+    </tbody>
+  </table>
+</div>
+<% } else { %>
+<div class="bulletin-empty">
+  <div class="bulletin-empty-icon">📋</div>
+  <p>No bulletins yet. Create your first one!</p>
+</div>
+<% } %>
+
+<script>
+function togglePin(id) {
+  fetch(`/admin/bulletins/${id}/toggle-pin`, { method: 'POST' })
+    .then(r => r.json())
+    .then(() => location.reload())
+    .catch(err => alert('Error: ' + err.message));
+}
+function togglePublish(id) {
+  fetch(`/admin/bulletins/${id}/toggle-publish`, { method: 'POST' })
+    .then(r => r.json())
+    .then(() => location.reload())
+    .catch(err => alert('Error: ' + err.message));
+}
+function archiveBulletin(id) {
+  if (!confirm('Archive this bulletin?')) return;
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = `/admin/bulletins/${id}/delete`;
+  document.body.appendChild(form);
+  form.submit();
+}
+</script>

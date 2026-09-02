@@ -17,7 +17,7 @@ router.get("/admin/rules", requireLogin, adminController.showRules);
 router.post("/admin/update-rules", requireLogin, adminController.updateRules);
 router.post(
   "/admin/permission",
-  requireApiSuperAdmin,
+  requireApiLogin,
   adminController.updatePermission
 );
 router.post(

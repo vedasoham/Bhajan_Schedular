@@ -3,7 +3,8 @@ const sequelize = require("../config/database");
 const Singer = sequelize.define('Singer', {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
   name: { type: DataTypes.STRING, allowNull: false, unique: true },
-  gender: { type: DataTypes.STRING, allowNull: true }
+  gender: { type: DataTypes.STRING, allowNull: true },
+  pin: { type: DataTypes.STRING, allowNull: true }
 }, {
   tableName: 'singer_dictionary',
   timestamps: false

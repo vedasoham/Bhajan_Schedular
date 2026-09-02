@@ -618,10 +618,24 @@ function updatePermission(type) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ date: currentAdminDate, type: type, description: description })
   })
-  .then(res => res.json())
+  .then(res => {
+    if (res.status === 401) {
+      alert('Your admin session has expired. Please log in again.');
+      window.location.href = '/admin-login';
+      return null;
+    }
+    return res.json();
+  })
   .then(data => {
-    if(data.success) location.reload();
-    else alert('Error updating permission');
+    if (!data) return;
+    if (data.success) {
+      location.reload();
+    } else {
+      alert(data.error || 'Error updating permission');
+    }
+  })
+  .catch(err => {
+    alert('Network error updating permission: ' + err.message);
   });
 }
 

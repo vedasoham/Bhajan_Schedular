@@ -48,7 +48,34 @@
       </a>
     </div>
 
-
+    <!-- Bulletin / Latest Updates Section -->
+    <% if (typeof bulletins !== 'undefined' && bulletins && bulletins.length > 0) { %>
+    <div class="bulletin-section">
+      <div class="bulletin-section-header">
+        <h3>📢 Latest Updates</h3>
+        <a href="/bulletins" class="bulletin-view-all">View All →</a>
+      </div>
+      <% bulletins.forEach(function(b) { %>
+        <% 
+          const catInfo = (typeof CATEGORY_INFO !== 'undefined' && CATEGORY_INFO[b.category]) ? CATEGORY_INFO[b.category] : { label: 'Update', icon: '📢', color: '#4dabf7' };
+          const isNew = b.published_at && (Date.now() - new Date(b.published_at).getTime()) < 5 * 24 * 60 * 60 * 1000;
+        %>
+        <a href="/bulletins/<%= b.id %>" class="bulletin-card">
+          <div class="bulletin-card-header">
+            <span class="bulletin-category-badge" style="background:<%= catInfo.color %>"><%= catInfo.icon %> <%= catInfo.label %></span>
+            <% if (isNew) { %><span class="bulletin-new-badge">🆕 NEW</span><% } %>
+            <% if (b.is_pinned) { %><span class="bulletin-pin-badge">📌</span><% } %>
+          </div>
+          <h3 class="bulletin-card-title"><%= b.title %></h3>
+          <div class="bulletin-card-date">
+            <% if (b.published_at) { %>
+              <%= new Date(b.published_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) %>
+            <% } %>
+          </div>
+        </a>
+      <% }); %>
+    </div>
+    <% } %>
 
     <div class="sai-quote-card">
       <h3 class="quote-header" style="margin-bottom: 12px;">🕉️ The Spirit of Bhajan</h3>

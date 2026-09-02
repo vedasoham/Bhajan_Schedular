@@ -103,15 +103,13 @@ exports.showSubmitForm = async (req, res) => {
     const isManuallyLocked = meta && meta.is_locked;
     const isNextThuUnopened = !isAdmin && sessionDate === thuStatus.nextThursdayDate && thuStatus.opensAt8pmToday;
 
-    if (!isAdmin && (isManuallyLocked || isPastOrToday || isNextThuUnopened)) {
-      let reasonMsg = "";
-      if (isManuallyLocked) {
-        reasonMsg = `Submissions for <strong>${sessionDate}</strong> have been locked by the coordinator.`;
-      } else if (isNextThuUnopened) {
-        reasonMsg = `Submissions for next Thursday (<strong>${sessionDate}</strong>) will open today at 8:00 PM.`;
-      } else {
-        reasonMsg = `Submissions for session (<strong>${sessionDate}</strong>) closed on the night before at 11:59 PM.<br>Submissions for this session are now locked.`;
-      }
+    if (!isAdmin && (isManuallyLocked || isPastOrToday)) {
+      // Session has already locked and moved — redirect directly to history tab
+      return res.redirect("/database");
+    }
+
+    if (!isAdmin && isNextThuUnopened) {
+      const reasonMsg = `Submissions for next Thursday (<strong>${sessionDate}</strong>) will open today at 8:00 PM.`;
       return renderSelectionScreen(`${reasonMsg}<br>Please select an available upcoming session:`);
     }
 
@@ -319,7 +317,7 @@ exports.showSubmitForm = async (req, res) => {
     const resolvedGender = singer.gender || submittedGender || null;
 
     // Save submission
-    await BhajanSubmission.create({
+    const newSubmission = await BhajanSubmission.create({
       session_date,
       singer_name,
       gender: resolvedGender,
@@ -332,6 +330,45 @@ exports.showSubmitForm = async (req, res) => {
       level,
       language
     });
+
+    // ── Partner notification ───────────────────────────────────
+    // If a partner was specified, send a personalized notification
+    // to the partner's registered devices (if any).
+    if (partner_name && partner_name.trim()) {
+      try {
+        const notificationService = require("../services/notificationService");
+        const partnerNormalized = normalizeName(partner_name);
+        const allSingers = await Singer.findAll({ attributes: ['id', 'name'] });
+        const partnerSinger = allSingers.find(s => normalizeName(s.name) === partnerNormalized);
+
+        if (partnerSinger) {
+          // Format day and date for notification (e.g. Thursday, 3 September)
+          let dateText = session_date;
+          try {
+            const [y, m, d] = session_date.split('-').map(Number);
+            const dateObj = new Date(y, m - 1, d);
+            const dayName = dateObj.toLocaleDateString("en-US", { weekday: "long" });
+            const dateFormatted = dateObj.toLocaleDateString("en-GB", {
+              day: "numeric",
+              month: "long"
+            });
+            dateText = `${dayName}, ${dateFormatted}`;
+          } catch (e) {}
+
+          await notificationService.createPersonalized({
+            type: "partner_bhajan",
+            title: "🔔 Bhajan Added With You",
+            body: `${singer_name} added "${title}" with you as partner for ${dateText}. Tap to view.`,
+            link: `/session-link?session_date=${session_date}`,
+            eventKey: `partner_bhajan:${newSubmission.id}`,
+            singerId: partnerSinger.id
+          });
+        }
+      } catch (notifErr) {
+        // Non-critical — don't fail the submission
+        console.error("Partner notification failed:", notifErr.message);
+      }
+    }
     
     // Success response
     const adminQuery = isAdmin ? '&admin=true' : '';
@@ -487,5 +524,34 @@ exports.getPlan = async (req,res)=>{
     res.json(plan);
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+};
+
+// ── Smart session redirection (routes to submit-form if open, history if moved) ──
+exports.sessionLink = async (req, res) => {
+  try {
+    const sessionDate = req.query.session_date || req.query.date;
+    if (!sessionDate) {
+      return res.redirect("/submit-form");
+    }
+
+    const { getLocalDateStr } = require("../services/helpers");
+    const SessionMeta = require("../models/SessionMeta");
+
+    const todayStr = getLocalDateStr();
+    const isPastOrToday = todayStr >= sessionDate;
+    const meta = await SessionMeta.findByPk(sessionDate);
+    const isManuallyLocked = meta && meta.is_locked;
+
+    // If session has already moved to history (locked or date arrived), direct to History tab
+    if (isPastOrToday || isManuallyLocked) {
+      return res.redirect("/database");
+    }
+
+    // If session is open, direct to submit-form
+    return res.redirect(`/submit-form?session_date=${sessionDate}`);
+  } catch (error) {
+    console.error("sessionLink error:", error);
+    res.redirect("/database");
   }
 };

@@ -1462,20 +1462,6 @@ tr[data-deity="hanuman"] .deity-pill {
   .deity-card.optional {
     grid-column: span 2;
   }
-
-  .calendar-grid {
-    grid-template-columns: repeat(1, 1fr);
-  }
-
-  .calendar-day {
-    min-height: auto;
-    flex-direction: row;
-    align-items: center;
-  }
-
-  .calendar-day-header {
-    display: none;
-  }
 }
 
 /* ==========================================================================

@@ -23,8 +23,13 @@
 </title>
     <!-- Global CSS -->
 <link rel="stylesheet" href="/css/style.css">
-<link rel="stylesheet" href="/css/loading.css">
 <link rel="stylesheet" href="/css/pwa.css">
+<link rel="stylesheet" href="/css/notifications.css">
+<link rel="stylesheet" href="/css/bulletin.css">
+
+<% if (typeof showLoader !== "undefined" && showLoader) { %>
+<link rel="stylesheet" href="/css/loading.css">
+<% } %>
 
 <% if (typeof isAdminPage !== "undefined" && isAdminPage) { %>
 <link rel="stylesheet" href="/css/admin.css">
@@ -60,12 +65,17 @@
           <button class="pwa-btn-dismiss" id="pwaBtnDismiss">Not Now</button>
         </div>
         <div class="pwa-ios-instructions" id="pwaIosInstructions" style="display:none">
-          <p>Tap <strong>Share</strong> <span class="pwa-ios-share-icon">⬆</span> then <strong>“Add to Home Screen”</strong></p>
+          <p>Tap <strong>Share</strong> <span class="pwa-ios-share-icon">⬆</span> then <strong>"Add to Home Screen"</strong></p>
         </div>
       </div>
     </div>
 
+    <% if (typeof showLoader !== "undefined" && showLoader) { %>
     <%- include("../partials/loading") %>
+    <% } %>
+
+    <!-- Notification Center (user-facing) -->
+    <%- include("../partials/notification-bell") %>
 
     <% if (typeof isAdminPage !== "undefined" && isAdminPage && currentAdmin) { %>
       <div class="admin-layout">
@@ -82,8 +92,12 @@
 
     <!-- Global JS -->
     <script src="/js/script.js"></script>
-    <script src="/js/loading.js"></script>
     <script src="/js/pwa.js"></script>
+    <script src="/js/notifications.js"></script>
+
+    <% if (typeof showLoader !== "undefined" && showLoader) { %>
+    <script src="/js/loading.js"></script>
+    <% } %>
 
     <!-- Optional page-specific JS -->
     <% if (typeof pageJS !== "undefined") { %>
@@ -92,3 +106,4 @@
 
 </body>
 </html>
+

@@ -4,7 +4,7 @@
 // for static assets, cache Google Fonts
 // ============================================================
 
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
 const CACHE_NAME    = `bhajan-planner-${CACHE_VERSION}`;
 
 // Assets to pre-cache during the install step.
@@ -15,9 +15,12 @@ const PRECACHE_URLS = [
   '/css/style.css',
   '/css/loading.css',
   '/css/pwa.css',
+  '/css/notifications.css',
+  '/css/bulletin.css',
   '/js/script.js',
   '/js/loading.js',
   '/js/pwa.js',
+  '/js/notifications.js',
   '/images/icons/icon-192x192.png',
   '/images/icons/icon-512x512.png',
 ];
@@ -109,5 +112,53 @@ self.addEventListener('fetch', (event) => {
   // ─ Everything else: network-first ─
   event.respondWith(
     fetch(request).catch(() => caches.match(request))
+  );
+});
+
+// ── Push notifications ────────────────────────────────────────
+self.addEventListener('push', (event) => {
+  let data = { title: 'Bhajan Planner', body: 'You have a new notification', url: '/' };
+
+  try {
+    if (event.data) {
+      data = event.data.json();
+    }
+  } catch (e) {
+    console.warn('[SW] Push data parse error:', e);
+  }
+
+  const options = {
+    body: data.body || '',
+    icon: data.icon || '/images/icons/icon-192x192.png',
+    badge: data.badge || '/images/icons/icon-192x192.png',
+    data: { url: data.url || '/' },
+    vibrate: [200, 100, 200],
+    tag: data.tag || 'bhajan-planner-notification',
+    renotify: true
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(data.title || 'Bhajan Planner', options)
+  );
+});
+
+// ── Notification click — navigate to the relevant page ────────
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+
+  const url = event.notification.data?.url || '/';
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // If a window is already open, focus it and navigate
+      for (const client of clientList) {
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          client.focus();
+          return client.navigate(url);
+        }
+      }
+      // Otherwise open a new window
+      return clients.openWindow(url);
+    })
   );
 });
