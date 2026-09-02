@@ -73,7 +73,9 @@ const ADMIN_PATH_PREFIXES = [
   "/master-bank",
 ];
 
-app.use((req, res, next) => {
+const { getCachedMissingCount } = require("./services/helpers");
+
+app.use(async (req, res, next) => {
   res.locals.currentAdmin = req.session.admin || null;
   res.locals.page = "";
   res.locals.pageTitle = "Bhajan Planner";
@@ -83,6 +85,15 @@ app.use((req, res, next) => {
   res.locals.isAdminPage = ADMIN_PATH_PREFIXES.some((prefix) =>
     req.path === prefix || req.path.startsWith(prefix + "/")
   );
+  if (res.locals.isAdminPage && req.session && req.session.admin) {
+    try {
+      res.locals.missingCount = await getCachedMissingCount();
+    } catch (_) {
+      res.locals.missingCount = 0;
+    }
+  } else {
+    res.locals.missingCount = 0;
+  }
   next();
 });
 const homeRoutes = require("./routes/home");

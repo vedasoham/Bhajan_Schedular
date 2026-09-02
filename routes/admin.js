@@ -6,6 +6,7 @@ const activityController = require("../controllers/activityController");
 const { requireLogin, requireApiLogin, requireSuperAdmin, requireApiSuperAdmin } = require("../middleware/auth");
 
 router.get("/admin", requireLogin, adminController.dashboard);
+router.get("/admin/missing-bhajans", requireLogin, adminController.showMissingBhajans);
 router.get("/admin/activity-logs", requireSuperAdmin, activityController.showActivityLogs);
 router.get("/api/admin/activity-feed", requireSuperAdmin, activityController.getActivityFeedJson);
 router.post("/admin/activity-logs/purge", requireSuperAdmin, activityController.purgeOldLogs);

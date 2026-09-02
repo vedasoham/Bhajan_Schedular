@@ -17,7 +17,7 @@ const {
   DEITY_ORDER,
 } = require("../services/helpers");
 
-const { findSimilarBhajans } = require("../services/fuzzyMatcher");
+const { findSimilarBhajans, buildMasterIndex, matchWithIndex } = require("../services/fuzzyMatcher");
 
 const {
   generateAdminCalendarHtml,
@@ -74,45 +74,6 @@ exports.dashboard = async (req, res) => {
     submissions.forEach((s) => {
       eventCounts[s.session_date] = (eventCounts[s.session_date] || 0) + 1;
     });
-
-    // Missing bhajans
-    const submittedTitles = await BhajanSubmission.findAll({
-      attributes: [[Sequelize.fn("DISTINCT", Sequelize.col("title")), "title"]],
-      raw: true,
-    });
-
-    const masterTitles = await MasterBhajan.findAll({
-      attributes: [[Sequelize.fn("DISTINCT", Sequelize.col("title")), "title"]],
-      raw: true,
-    });
-
-    const masterSet = new Set(
-      masterTitles.map((m) => (m.title || "").trim().toLowerCase()),
-    );
-
-    const rawMissingTitles = submittedTitles
-      .map((s) => (s.title || "").trim())
-      .filter((title) => title && !masterSet.has(title.toLowerCase()));
-
-    // Compute candidates for missing bhajans (optimized to avoid event loop lag)
-    let missingBhajans = [];
-    if (rawMissingTitles.length > 0) {
-      const allMasterBhajans = await MasterBhajan.findAll({
-        attributes: ['id', 'title', 'deity', 'raga', 'shruti'],
-        raw: true
-      });
-
-      missingBhajans = rawMissingTitles.slice(0, 10).map(submittedTitle => ({
-        submittedTitle,
-        candidates: findSimilarBhajans(submittedTitle, allMasterBhajans, 0.60, 3)
-      }));
-
-      if (rawMissingTitles.length > 10) {
-        rawMissingTitles.slice(10).forEach(submittedTitle => {
-          missingBhajans.push({ submittedTitle, candidates: [] });
-        });
-      }
-    }
 
     // Dashboard statistics
     const [
@@ -263,7 +224,6 @@ onclick="openAdminDateModal('${dateStr}','${perm || ""}','${desc.replace(/'/g, "
       eventCounts,
       permissionMap,
       descriptionMap,
-      missingBhajans,
 
       stats: {
         totalSessions,
@@ -554,6 +514,69 @@ exports.processImportSessions = async (req, res) => {
       resultInfo: { error: error.message },
       pageTitle: "Import Past Sessions",
     });
+  }
+};
+
+exports.showMissingBhajans = async (req, res) => {
+  try {
+    const submittedTitles = await BhajanSubmission.findAll({
+      attributes: [[Sequelize.fn("DISTINCT", Sequelize.col("title")), "title"]],
+      raw: true,
+    });
+
+    const masterTitles = await MasterBhajan.findAll({
+      attributes: [[Sequelize.fn("DISTINCT", Sequelize.col("title")), "title"]],
+      raw: true,
+    });
+
+    const masterSet = new Set(
+      masterTitles.map((m) => (m.title || "").trim().toLowerCase()),
+    );
+
+    const rawMissingTitles = submittedTitles
+      .map((s) => (s.title || "").trim())
+      .filter((title) => title && !masterSet.has(title.toLowerCase()));
+
+    const totalMissing = rawMissingTitles.length;
+    const PAGE_SIZE = 50;
+    const totalPages = Math.max(1, Math.ceil(totalMissing / PAGE_SIZE));
+    let currentPage = parseInt(req.query.page, 10) || 1;
+    if (currentPage < 1) currentPage = 1;
+    if (currentPage > totalPages) currentPage = totalPages;
+
+    const startIndex = (currentPage - 1) * PAGE_SIZE;
+    const pageTitles = rawMissingTitles.slice(startIndex, startIndex + PAGE_SIZE);
+
+    let missingBhajans = [];
+    if (pageTitles.length > 0) {
+      const allMasterBhajans = await MasterBhajan.findAll({
+        attributes: ['id', 'title', 'deity', 'raga', 'shruti'],
+        raw: true
+      });
+
+      const masterIndex = buildMasterIndex(allMasterBhajans);
+
+      // Ultra-fast match computation (<200ms) for 50 items against 3,000+ master records
+      missingBhajans = pageTitles.map(submittedTitle => ({
+        submittedTitle,
+        candidates: matchWithIndex(submittedTitle, masterIndex, 0.45, 4)
+      }));
+    }
+
+    res.render("admin-missing-bhajans", {
+      page: "missing-bhajans",
+      pageTitle: "Missing Bhajan Catcher",
+      missingBhajans,
+      totalMissing,
+      missingCount: totalMissing,
+      currentPage,
+      totalPages,
+      pageSize: PAGE_SIZE,
+      startIndex: totalMissing === 0 ? 0 : startIndex + 1,
+      endIndex: Math.min(startIndex + pageTitles.length, totalMissing)
+    });
+  } catch (error) {
+    res.status(500).send(`<h1>Error</h1><p>${error.message}</p>`);
   }
 };
 

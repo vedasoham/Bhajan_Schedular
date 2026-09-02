@@ -125,6 +125,42 @@ function timeSince(dateStr) {
   return `${Math.floor(diffDays / 365)} year(s) ago`;
 }
 
+// In-memory cache for missing bhajan count so admin sidebar never lags
+let cachedMissingCount = null;
+let lastMissingCountTime = 0;
+
+async function getCachedMissingCount(forceRefresh = false) {
+  const now = Date.now();
+  if (!forceRefresh && cachedMissingCount !== null && (now - lastMissingCountTime < 45000)) {
+    return cachedMissingCount;
+  }
+  try {
+    const { BhajanSubmission, MasterBhajan } = require('../models');
+    const { Sequelize } = require('sequelize');
+
+    const submitted = await BhajanSubmission.findAll({
+      attributes: [[Sequelize.fn("DISTINCT", Sequelize.col("title")), "title"]],
+      raw: true
+    });
+    const master = await MasterBhajan.findAll({
+      attributes: [[Sequelize.fn("DISTINCT", Sequelize.col("title")), "title"]],
+      raw: true
+    });
+    const masterSet = new Set(master.map(m => (m.title || "").trim().toLowerCase()));
+    const count = submitted.filter(s => (s.title || "").trim() && !masterSet.has((s.title || "").trim().toLowerCase())).length;
+
+    cachedMissingCount = count;
+    lastMissingCountTime = now;
+    return count;
+  } catch (e) {
+    return cachedMissingCount || 0;
+  }
+}
+
+function invalidateMissingCount() {
+  cachedMissingCount = null;
+}
+
 module.exports = {
   DEITY_ORDER,
   SPEED_ORDER,
@@ -134,5 +170,7 @@ module.exports = {
   getLocalDateStr,
   normalizeName,
   formatDateHuman,
-  timeSince
+  timeSince,
+  getCachedMissingCount,
+  invalidateMissingCount
 };

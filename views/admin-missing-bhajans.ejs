@@ -1,0 +1,433 @@
+<div class="container container-xl">
+  <!-- Toast Notification Container -->
+  <div id="catcherToast"
+    style="display:none; position:fixed; top:20px; right:20px; z-index:9999; background:#2b8a3e; color:#fff; padding:12px 20px; border-radius:8px; font-size:14px; font-weight:600; box-shadow:0 4px 12px rgba(0,0,0,0.15); transition:all 0.3s ease;">
+  </div>
+
+  <div class="header">
+    <h1>🚨 Missing Bhajan Catcher</h1>
+    <p>Reconcile bhajans sung in sessions with the Master Database</p>
+  </div>
+
+  <div
+    style="margin-bottom: 20px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between;">
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <a href="/admin" class="button secondary">🏠 Dashboard</a>
+      <a href="/master-bank" class="button secondary">📚 Master Bank</a>
+      <a href="/admin/import-sessions" class="button secondary">📥 Import Sessions</a>
+    </div>
+
+    <% if (totalMissing> 0) { %>
+      <div style="width:100%; max-width:320px;">
+        <input type="text" id="missingSearchInput" onkeyup="filterMissingBhajans()"
+          placeholder="🔍 Filter this batch of 50..." class="filter-input"
+          style="width:100%; padding:10px 14px; font-size:13.5px; border-radius:8px; border:1px solid #ced4da;">
+      </div>
+      <% } %>
+  </div>
+
+  <!-- Status & Pagination Summary Banner -->
+  <div style="background:#fff3cd; border:1px solid #ffe066; padding:18px 20px; border-radius:12px; margin-bottom:20px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+      <div>
+        <h2 style="color:#d9480f; margin:0 0 6px 0; font-size:18px;">
+          <% if (totalMissing===0) { %>
+            ✅ All Sung Bhajans are in Master Database!
+            <% } else { %>
+              🚨 <span class="total-missing-count">
+                <%= totalMissing %>
+              </span> Missing Bhajan<%= totalMissing===1 ? '' : 's' %> Remaining
+                <% } %>
+        </h2>
+        <p style="font-size:13.5px; margin:0; color:#555;">
+          <% if (totalMissing===0) { %>
+            Every bhajan submitted in past sessions matches a canonical record in the Master Database.
+            <% } else { %>
+              Processing <strong>50 at a time</strong> for high speed. Currently showing <strong>#<%= startIndex %> to #
+                  <%= endIndex %></strong> (Batch <strong>
+                <%= currentPage %>
+              </strong> of <strong>
+                <%= totalPages %>
+              </strong>).
+              <% } %>
+        </p>
+      </div>
+
+      <% if (totalMissing> 0) { %>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span
+            style="background:#d9480f; color:#fff; font-weight:800; font-size:13px; padding:6px 14px; border-radius:20px;">
+            <span class="total-missing-count">
+              <%= totalMissing %>
+            </span> To Match
+          </span>
+        </div>
+        <% } %>
+    </div>
+
+    <!-- Pagination Controls -->
+    <% if (totalPages> 1) { %>
+      <div
+        style="margin-top:16px; padding-top:14px; border-top:1px solid #ffe066; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+        <div style="display:flex; gap:6px;">
+          <% if (currentPage> 1) { %>
+            <a href="/admin/missing-bhajans?page=<%= currentPage - 1 %>" class="button"
+              style="background:#4dabf7; text-decoration:none; padding:6px 14px; font-size:13px; color:white; border-radius:6px; font-weight:600;">
+              ← Previous 50
+            </a>
+            <% } else { %>
+              <span class="button"
+                style="background:#ced4da; cursor:not-allowed; padding:6px 14px; font-size:13px; color:#fff; border-radius:6px;">
+                ← Previous 50
+              </span>
+              <% } %>
+
+                <% if (currentPage < totalPages) { %>
+                  <a href="/admin/missing-bhajans?page=<%= currentPage + 1 %>" class="button"
+                    style="background:#228be6; text-decoration:none; padding:6px 14px; font-size:13px; color:white; border-radius:6px; font-weight:600;">
+                    Next 50 →
+                  </a>
+                  <% } else { %>
+                    <span class="button"
+                      style="background:#ced4da; cursor:not-allowed; padding:6px 14px; font-size:13px; color:#fff; border-radius:6px;">
+                      Next 50 →
+                    </span>
+                    <% } %>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:6px; font-size:13px; color:#495057;">
+          <span>Jump to batch:</span>
+          <select onchange="window.location.href='/admin/missing-bhajans?page=' + this.value"
+            style="padding:5px 8px; border-radius:6px; border:1px solid #ced4da; font-size:13px; font-weight:600; background:#fff;">
+            <% for (let p=1; p <=totalPages; p++) { %>
+              <option value="<%= p %>" <%=p===currentPage ? 'selected' : '' %>>
+                Batch <%= p %> (<%= (p - 1) * pageSize + 1 %> - <%= Math.min(p * pageSize, totalMissing) %>)
+              </option>
+              <% } %>
+          </select>
+        </div>
+      </div>
+      <% } %>
+  </div>
+
+  <% if (missingBhajans && missingBhajans.length> 0) { %>
+    <div id="missingListContainer" style="display:flex; flex-direction:column; gap:16px;">
+      <% missingBhajans.forEach(function(item, idx) { %>
+        <div class="reconcile-card missing-card-item" id="card-<%= encodeURIComponent(item.submittedTitle) %>"
+          data-title="<%= item.submittedTitle.toLowerCase() %>"
+          style="background:#fff; border:1px solid #ffd43b; border-radius:12px; padding:18px; box-shadow:0 2px 6px rgba(0,0,0,0.03); transition:all 0.3s ease;">
+
+          <div
+            style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:14px; border-bottom:1px solid #fff3bf; padding-bottom:12px;">
+            <div style="font-size:16px; font-weight:700; color:#212529;">
+              📝 <%= item.submittedTitle %>
+            </div>
+            <span style="font-size:12px; color:#868e96; white-space:nowrap;">Item #<%= startIndex + idx %></span>
+          </div>
+
+          <% if (item.candidates && item.candidates.length> 0) { %>
+            <div
+              style="font-size:13px; color:#495057; margin-bottom:12px; font-weight:600; display:flex; align-items:center; gap:6px;">
+              <span>🔍</span> Similar bhajans found in Master Database — are any of these the same?
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <% item.candidates.forEach(function(c) { %>
+                <div
+                  style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; background:#f8f9fa; border:1px solid #e9ecef; border-radius:10px; padding:12px 16px;">
+                  <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; flex:1;">
+                    <span class="deity-pill" style="font-size:11px; text-transform:uppercase;">
+                      <%= c.master.deity %>
+                    </span>
+                    <strong style="font-size:14.5px; color:#212529;">
+                      <%= c.master.title %>
+                    </strong>
+                    <% if (c.master.raga) { %>
+                      <span style="font-size:12px; color:#6c757d;">— Raga: <%= c.master.raga %></span>
+                      <% } %>
+                        <span
+                          style="background:#e7f5ff; color:#1971c2; border:1px solid #a5d8ff; padding:2px 8px; border-radius:12px; font-size:11.5px; font-weight:700;">
+                          <%= Math.round(c.score * 100) %>% match
+                        </span>
+                  </div>
+
+                  <button class="button"
+                    style="padding:7px 18px; font-size:12.5px; background:#2f9e44; border:none; color:white; border-radius:6px; cursor:pointer; font-weight:700; white-space:nowrap;"
+                    onclick="liveReconcile('<%= item.submittedTitle.replace(/'/g, " \\'") %>', 'link', <%= c.master.id
+                      %>, '<%= c.master.title.replace(/'/g, "\\'" ) %>')">
+                        ✓ Yes, same bhajan
+                  </button>
+                </div>
+                <% }); %>
+            </div>
+
+            <div
+              style="margin-top:14px; padding-top:10px; border-top:1px dashed #dee2e6; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+              <span style="font-size:12.5px; color:#6c757d;">None of these match?</span>
+              <button class="button"
+                style="padding:6px 14px; font-size:12.5px; background:#4dabf7; border:none; color:white; border-radius:6px; cursor:pointer;"
+                onclick="openMissingBhajanModal('<%= item.submittedTitle.replace(/'/g, " \\'") %>')">
+                ✕ No — Add as new bhajan
+              </button>
+            </div>
+
+            <% } else { %>
+              <div
+                style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; background:#f8f9fa; padding:12px 16px; border-radius:8px;">
+                <span style="font-size:13px; color:#6c757d;">No similar bhajans found in Master Database.</span>
+                <button class="button"
+                  style="padding:7px 16px; font-size:12.5px; background:#4dabf7; border:none; color:white; border-radius:6px; cursor:pointer; font-weight:600;"
+                  onclick="openMissingBhajanModal('<%= item.submittedTitle.replace(/'/g, " \\'") %>')">
+                  ➕ Add to Master
+                </button>
+              </div>
+              <% } %>
+
+        </div>
+        <% }); %>
+    </div>
+
+    <!-- Bottom Pagination -->
+    <% if (totalPages> 1) { %>
+      <div
+        style="margin-top:24px; padding:16px 20px; background:#fff; border:1px solid #e9ecef; border-radius:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+        <div>
+          Showing <strong>
+            <%= startIndex %> to <%= endIndex %>
+          </strong> of <strong><span class="total-missing-count">
+              <%= totalMissing %>
+            </span></strong>
+        </div>
+        <div style="display:flex; gap:6px;">
+          <% if (currentPage> 1) { %>
+            <a href="/admin/missing-bhajans?page=<%= currentPage - 1 %>" class="button"
+              style="background:#4dabf7; text-decoration:none; padding:6px 14px; font-size:13px; color:white; border-radius:6px; font-weight:600;">
+              ← Previous 50
+            </a>
+            <% } %>
+              <% if (currentPage < totalPages) { %>
+                <a href="/admin/missing-bhajans?page=<%= currentPage + 1 %>" class="button"
+                  style="background:#228be6; text-decoration:none; padding:6px 14px; font-size:13px; color:white; border-radius:6px; font-weight:600;">
+                  Next 50 →
+                </a>
+                <% } %>
+        </div>
+      </div>
+      <% } %>
+
+        <% } else { %>
+          <div style="background:#fff; border:1px solid #e9ecef; border-radius:12px; padding:40px; text-align:center;">
+            <h3 style="color:#2f9e44; margin-bottom:8px;">🎉 Perfect Synchronization!</h3>
+            <p style="color:#6c757d; margin:0;">All bhajans sung in recorded sessions are present in the Master
+              Database.</p>
+          </div>
+          <% } %>
+</div>
+
+<!-- Missing Bhajan Modal -->
+<div id="missingBhajanModal" class="modal">
+  <div class="modal-content" style="max-width: 420px; text-align:left;">
+    <div class="modal-header">
+      <h3>➕ Add to Master Database</h3>
+      <button class="close-btn" onclick="closeMissingBhajanModal()">&times;</button>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:14px; margin-top:16px;">
+      <div>
+        <label style="font-size:12px; font-weight:700; color:#495057; display:block; margin-bottom:4px;">Title</label>
+        <input type="text" id="mbTitle" readonly
+          style="width:100%; padding:9px; border:1px solid #ced4da; background:#f8f9fa; border-radius:6px; font-weight:600;">
+      </div>
+      <div>
+        <label style="font-size:12px; font-weight:700; color:#495057; display:block; margin-bottom:4px;">Deity</label>
+        <select id="mbDeity"
+          style="width:100%; padding:9px; border:1px solid #ced4da; border-radius:6px; background:#fff;">
+          <option value="Ganesha">Ganesha</option>
+          <option value="Guru">Guru</option>
+          <option value="Mata">Mata</option>
+          <option value="SarvaDharma">SarvaDharma</option>
+          <option value="Sai">Sai</option>
+          <option value="Shiva">Shiva</option>
+          <option value="Krishna">Krishna</option>
+          <option value="Rama">Rama</option>
+          <option value="Narayana">Narayana</option>
+          <option value="Vitthala">Vitthala</option>
+          <option value="Hanuman">Hanuman</option>
+        </select>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+        <div>
+          <label style="font-size:12px; font-weight:700; color:#495057; display:block; margin-bottom:4px;">Tempo
+            (Speed)</label>
+          <select id="mbTempo"
+            style="width:100%; padding:9px; border:1px solid #ced4da; border-radius:6px; background:#fff;">
+            <option value="Slow">Slow</option>
+            <option value="Medium" selected>Medium</option>
+            <option value="Fast">Fast</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:12px; font-weight:700; color:#495057; display:block; margin-bottom:4px;">Level</label>
+          <select id="mbLevel"
+            style="width:100%; padding:9px; border:1px solid #ced4da; border-radius:6px; background:#fff;">
+            <option value="">Unknown</option>
+            <option value="Easy">Easy</option>
+            <option value="Medium">Medium</option>
+            <option value="Advanced">Advanced</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label style="font-size:12px; font-weight:700; color:#495057; display:block; margin-bottom:4px;">Raga</label>
+        <input type="text" id="mbRaga" placeholder="e.g., Yaman Kalyani"
+          style="width:100%; padding:9px; border:1px solid #ced4da; border-radius:6px;">
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+        <div>
+          <label style="font-size:12px; font-weight:700; color:#495057; display:block; margin-bottom:4px;">Shruti
+            (Male)</label>
+          <input type="text" id="mbShruti" placeholder="e.g., 1.5P"
+            style="width:100%; padding:9px; border:1px solid #ced4da; border-radius:6px;">
+        </div>
+        <div>
+          <label style="font-size:12px; font-weight:700; color:#495057; display:block; margin-bottom:4px;">Shruti
+            (Female)</label>
+          <input type="text" id="mbShrutiFemale" placeholder="e.g., 4P"
+            style="width:100%; padding:9px; border:1px solid #ced4da; border-radius:6px;">
+        </div>
+      </div>
+      <button class="button" onclick="liveSaveMissingBhajan()"
+        style="margin-top:8px; background:#28a745; border:none; padding:12px; font-weight:700; font-size:14px; border-radius:6px; cursor:pointer;">
+        💾 Save to Master DB
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function showToast(message, type = 'success') {
+    const toast = document.getElementById('catcherToast');
+    if (!toast) return;
+    toast.textContent = message;
+    toast.style.background = type === 'error' ? '#c92a2a' : '#2b8a3e';
+    toast.style.display = 'block';
+    toast.style.opacity = '1';
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      setTimeout(() => toast.style.display = 'none', 300);
+    }, 3500);
+  }
+
+  function liveRemoveCard(submittedTitle) {
+    const cardId = 'card-' + encodeURIComponent(submittedTitle);
+    const card = document.getElementById(cardId);
+    if (card) {
+      card.style.transition = 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)';
+      card.style.opacity = '0';
+      card.style.transform = 'translateY(-10px) scale(0.97)';
+      setTimeout(() => {
+        card.style.maxHeight = '0';
+        card.style.padding = '0';
+        card.style.margin = '0';
+        card.style.overflow = 'hidden';
+        card.style.border = 'none';
+      }, 150);
+      setTimeout(() => {
+        card.remove();
+        decrementAllCounters();
+      }, 380);
+    }
+  }
+
+  function decrementAllCounters() {
+    const countElems = document.querySelectorAll('.total-missing-count, .missing-catcher-badge');
+    countElems.forEach(el => {
+      let current = parseInt(el.textContent.replace(/[^\d]/g, ''), 10);
+      if (!isNaN(current) && current > 0) {
+        let updated = current - 1;
+        el.textContent = updated > 999 ? '999+' : (updated > 0 ? updated : '');
+        if (updated <= 0) {
+          el.style.display = 'none';
+          const dot = document.querySelector('.sidebar-badge-dot');
+          if (dot) dot.style.display = 'none';
+        }
+      }
+    });
+
+    const remaining = document.querySelectorAll('.missing-card-item');
+    if (remaining.length === 0) {
+      const container = document.getElementById('missingListContainer');
+      if (container) {
+        container.innerHTML = `
+        <div style="background:#fff; border:1px solid #d3f9d8; border-radius:12px; padding:40px 20px; text-align:center;">
+          <h3 style="color:#2b8a3e; margin-bottom:8px;">🎉 Batch Completed!</h3>
+          <p style="color:#495057; margin-bottom:18px;">All 50 bhajans in this batch have been reconciled.</p>
+          <a href="/admin/missing-bhajans" class="button" style="background:#2f9e44; text-decoration:none; padding:10px 22px; border-radius:8px; color:white; font-weight:700;">
+            Continue to Next Batch →
+          </a>
+        </div>
+      `;
+      }
+    }
+  }
+
+  function liveReconcile(submittedTitle, action, masterBhajanId, masterTitle) {
+    fetch('/api/admin/reconcile-bhajan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ submitted_title: submittedTitle, action, master_bhajan_id: masterBhajanId })
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          showToast('✓ Linked "' + submittedTitle + '" to "' + (masterTitle || data.masterTitle || '') + '"');
+          liveRemoveCard(submittedTitle);
+        } else {
+          showToast('Error: ' + (data.error || 'Unknown error'), 'error');
+        }
+      })
+      .catch(err => showToast('Request failed: ' + err.message, 'error'));
+  }
+
+  function liveSaveMissingBhajan() {
+    const title = document.getElementById('mbTitle').value;
+    const data = {
+      title: title,
+      deity: document.getElementById('mbDeity').value,
+      tempo: document.getElementById('mbTempo').value,
+      raga: document.getElementById('mbRaga').value,
+      shruti: document.getElementById('mbShruti').value,
+      shruti_female: document.getElementById('mbShrutiFemale').value,
+      level: document.getElementById('mbLevel').value
+    };
+
+    fetch('/api/add-master-bhajan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    })
+      .then(res => res.json())
+      .then(result => {
+        if (result.success) {
+          closeMissingBhajanModal();
+          showToast('✅ Added "' + title + '" to Master Database!');
+          liveRemoveCard(title);
+        } else {
+          showToast('Error: ' + (result.error || 'Failed to add'), 'error');
+        }
+      })
+      .catch(err => showToast('Request failed: ' + err.message, 'error'));
+  }
+
+  function filterMissingBhajans() {
+    const query = (document.getElementById('missingSearchInput').value || '').toLowerCase().trim();
+    const cards = document.querySelectorAll('.missing-card-item');
+    cards.forEach(card => {
+      const title = card.getAttribute('data-title') || '';
+      if (!query || title.includes(query)) {
+        card.style.display = 'block';
+      } else {
+        card.style.display = 'none';
+      }
+    });
+  }
+</script>

@@ -3,6 +3,7 @@ const { Sequelize } = require("sequelize");
 const MasterBhajan = require("../models/MasterBhajan");
 const BhajanSubmission = require("../models/BhajanSubmission");
 const { normalizeBhajanTitle } = require("../services/fuzzyMatcher");
+const { invalidateMissingCount } = require("../services/helpers");
 
 const{
     escapeHTML
@@ -23,6 +24,7 @@ exports.addMasterBhajan = async (req,res) =>{
     try {
     const { title, deity, raga, tempo, level, shruti, shruti_female } = req.body;
     await MasterBhajan.create({ title, deity, raga, tempo, level, shruti, shruti_female });
+    invalidateMissingCount();
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -108,6 +110,7 @@ exports.reconcileBhajan = async (req, res) => {
           { title: master.title },
           { where: { id: { [Sequelize.Op.in]: ids } } }
         );
+        invalidateMissingCount();
       }
 
       return res.json({

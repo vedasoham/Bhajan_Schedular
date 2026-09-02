@@ -86,127 +86,26 @@
         <div class="calendar-grid">
             <%- calendarCells %>
         </div>
-    </div>
-</div>
-<div class="admin-control-grid">
 
-    <a href="/admin/admin-users" class="admin-card">
-        <h3>👥 Admin Users</h3>
-        <p>Manage administrator accounts and roles.</p>
-    </a>
-
-    <div class="admin-card info">
-    <h3>🔐 Permissions</h3>
-    <p>Click any date on the calendar above to mark it Special or Festival.</p>
-</div>
-
-<a href="javascript:void(0)" class="admin-card" onclick="openCopySessionModal()">
-    <h3>📋 Copy Session</h3>
-    <p>Copy a previous bhajan session's line-up onto a new date.</p>
-</a>
-
-    <a href="/admin/danger-reset-history" class="admin-card danger">
-        <h3>🗑️ Reset History</h3>
-        <p>Danger Zone.</p>
-    </a>
-
-</div>
-<!-- END admin-cards grid -->
-
-<!-- Missing Bhajan Catcher -->
-
-    <div
-        class="admin-section"
-        style="margin-top:40px;padding:20px;background:#fff3cd;border-radius:12px;border:1px solid #ffe066;"
-    >
-
-        <h2 style="color:#d9480f;margin-bottom:8px;">
-            🚨 Missing Bhajan Catcher
-        </h2>
-
-        <p style="font-size:14px;margin-bottom:20px;color:#555;">
-            Bhajans sung in sessions but not in the Master Database.
-            For likely matches, confirm if they are the same bhajan.
-        </p>
-
-        <div style="display:flex; flex-direction:column; gap:16px;">
-
-            <% if (missingBhajans.length === 0) { %>
-
-                <div style="color:#2b8a3e;font-weight:bold;">
-                    ✅ All sung bhajans are safely in the Master Database!
-                </div>
-
-            <% } else { %>
-
-                <% missingBhajans.forEach(function(item){ %>
-
-                    <div class="reconcile-card" id="card-<%= encodeURIComponent(item.submittedTitle) %>"
-                        style="background:#fff; padding:16px; border-radius:10px; border:1px solid #ffd43b; position:relative;">
-
-                        <!-- Submitted title -->
-                        <div style="font-weight:700; font-size:15px; color:#343a40; margin-bottom:10px;">
-                            📝 <em><%= item.submittedTitle %></em>
-                        </div>
-
-                        <% if (item.candidates && item.candidates.length > 0) { %>
-                            <!-- Show candidates for reconciliation -->
-                            <div style="font-size:12px; color:#666; margin-bottom:10px; font-weight:600;">
-                                🔍 Similar bhajans found in Master Database — are any of these the same?
-                            </div>
-
-                            <% item.candidates.forEach(function(c){ %>
-                                <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;
-                                            background:#f8f9fa; border:1px solid #e9ecef; border-radius:8px; padding:10px 12px; margin-bottom:8px;">
-                                    <div>
-                                        <span class="deity-pill" style="font-size:11px; margin-right:6px;"><%= c.master.deity %></span>
-                                        <strong><%= c.master.title %></strong>
-                                        <% if (c.master.raga) { %><small style="color:#888;"> — Raga: <%= c.master.raga %></small><% } %>
-                                        <span style="margin-left:8px; background:#e7f5ff; color:#1971c2; padding:2px 7px; border-radius:20px; font-size:11px; font-weight:700;">
-                                            <%= Math.round(c.score * 100) %>% match
-                                        </span>
-                                    </div>
-                                    <div style="display:flex; gap:8px; flex-shrink:0;">
-                                        <button class="button"
-                                            style="padding:5px 14px; font-size:12px; background:#2f9e44; border:none; white-space:nowrap;"
-                                            onclick="reconcileBhajan('<%= item.submittedTitle.replace(/'/g, "\\'") %>', 'link', <%= c.master.id %>)">
-                                            ✓ Yes, same bhajan
-                                        </button>
-                                    </div>
-                                </div>
-                            <% }); %>
-
-                            <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-                                <span style="font-size:12px; color:#888;">None of these match?</span>
-                                <button class="button"
-                                    style="padding:5px 14px; font-size:12px; background:#4dabf7; border:none;"
-                                    onclick="openMissingBhajanModal('<%= item.submittedTitle.replace(/'/g, "\\'") %>')">
-                                    ✕ No — Add as new bhajan
-                                </button>
-                            </div>
-
-                        <% } else { %>
-                            <!-- No candidates — direct add -->
-                            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                                <span style="font-size:12px; color:#888;">No similar bhajans found in Master Database.</span>
-                                <button class="button"
-                                    style="padding:6px 12px; font-size:12px; background:#4dabf7; border:none;"
-                                    onclick="openMissingBhajanModal('<%= item.submittedTitle.replace(/'/g, "\\'") %>')">
-                                    ➕ Add to Master
-                                </button>
-                            </div>
-                        <% } %>
-
-                    </div>
-
-                <% }); %>
-
-            <% } %>
-
+        <div class="calendar-legend" style="display:flex; justify-content:center; flex-wrap:wrap; gap:8px 16px; margin-top:14px; padding-top:12px; border-top:1px solid #f1f3f5;">
+            <div class="legend-item" style="display:flex; align-items:center; gap:6px; font-size:12px; color:#495057;">
+                <span class="legend-color" style="width:12px; height:12px; border-radius:3px; background:#eef2ff; border:1px solid #c7d2fe; display:inline-block;"></span> Thursday
+            </div>
+            <div class="legend-item" style="display:flex; align-items:center; gap:6px; font-size:12px; color:#495057;">
+                <span class="legend-color" style="width:12px; height:12px; border-radius:3px; background:#e7f5ff; border:1px solid #a5d8ff; display:inline-block;"></span> Special
+            </div>
+            <div class="legend-item" style="display:flex; align-items:center; gap:6px; font-size:12px; color:#495057;">
+                <span class="legend-color" style="width:12px; height:12px; border-radius:3px; background:#fff9db; border:1px solid #ffe066; display:inline-block;"></span> Festival
+            </div>
+            <div class="legend-item" style="display:flex; align-items:center; gap:6px; font-size:12px; color:#495057;">
+                <span class="legend-color" style="width:12px; height:12px; border-radius:3px; background:#fff; border:2px solid #ff9933; display:inline-block;"></span> Today
+            </div>
         </div>
 
+        <div class="calendar-hint" style="text-align:center; font-size:12px; color:#868e96; margin-top:8px;">
+            💡 Tap any date to configure sessions, view song line-ups, or set Special/Festival status.
+        </div>
     </div>
-
 </div>
 
 
